@@ -74,21 +74,18 @@
                                        (draw-grid (empty-scene WIDTH HEIGHT)))))))
 
 ; Bewegt die Schlange basierend auf der aktuellen Richtung
-(define (move-snake snake direction)
+(define (move-snake snake direction score)
   (let ([head (first snake)])
     (let* ([new-head (cond
-                       [(eq? direction 'up)    (list (first head) (sub1 (second head)))]
-                       [(eq? direction 'down)  (list (first head) (add1 (second head)))]
-                       [(eq? direction 'left)  (list (sub1 (first head)) (second head))]
-                       [(eq? direction 'right) (list (add1 (first head)) (second head))])]
-           [new-snake (cons new-head (take snake (sub1 (length snake))))])
-      new-snake)))
+     
+                       [(eq? direction 'up)    (list (first head) (modulo (sub1 (second head)) GRID-SIZE))]
+                       [(eq? direction 'down)  (list (first head) (modulo (add1 (second head)) GRID-SIZE))]
+                       [(eq? direction 'left)  (list (modulo (sub1 (first head)) GRID-SIZE) (second head))]
+                       [(eq? direction 'right) (list (modulo (add1 (first head)) GRID-SIZE) (second head))])]
 
-; Hilfsfunktion: Gibt die Koordinaten der Schlange in der Konsole aus
-(define (print-snake-coordinates snake)
-  (for-each (lambda (segment)
-              (printf "Position Schlange: ~a\n" segment))
-            snake))
+           ; Schlange wächst entsprechend des Scores
+           [new-snake (cons new-head (take snake (+ 1 score)))])
+      new-snake)))
 
 ; Berechnet den nächsten Zustand des Spiels nach einem Tick
 (define (tock state)
@@ -96,26 +93,28 @@
          [direction (second state)]
          [food (third state)]
          [score (fourth state)]
-         [new-snake (move-snake snake direction)]
-         [new-food (if (equal? (first new-snake) food)
+         [new-snake (move-snake snake direction score)]  ; Schlange wächst basierend auf dem Score
+         [ate-food? (equal? (first new-snake) food)]  ; Prüfen, ob das Futter gegessen wurde
+         [new-food (if ate-food?
                        (list (random GRID-SIZE) (random GRID-SIZE))
-                       food)]
-         [new-score (if (equal? (first new-snake) food)
-                        (+ score 1)
-                        score)])
-    ; Ruft die Hilfsfunktion auf, um die Koordinaten auszugeben
-    (print-snake-coordinates new-snake)
+                       food)]  ; Neues Futter, wenn gegessen
+         [new-score (if ate-food? (+ score 1) score)])  ; Punkte erhöhen, wenn Futter gegessen wurde
     (list new-snake direction new-food new-score)))
 
 ; Bewegt die Schlange basierend auf Tasteneingaben
+; Überprüft die vorherige Richtung und erlaubt dementsprechend Richtungswechsel
 (define (move state key)
   (let ([snake (first state)]
         [direction (second state)])
     (cond
-      [(key=? key "up")    (list snake 'up (third state) (fourth state))]
-      [(key=? key "down")  (list snake 'down (third state) (fourth state))]
-      [(key=? key "left")  (list snake 'left (third state) (fourth state))]
-      [(key=? key "right") (list snake 'right (third state) (fourth state))]
+      [(and (key=? key "up") (not (eq? direction 'down)))
+       (list snake 'up (third state) (fourth state))]
+      [(and (key=? key "down") (not (eq? direction 'up)))
+       (list snake 'down (third state) (fourth state))]
+      [(and (key=? key "left") (not (eq? direction 'right)))
+       (list snake 'left (third state) (fourth state))]
+      [(and (key=? key "right") (not (eq? direction 'left)))
+       (list snake 'right (third state) (fourth state))]
       [else state])))
 
 ; Stopp-Bedingung: Beendet das Spiel, wenn die Schlange aus dem Spielfeld läuft,
@@ -126,7 +125,6 @@
     (or (out-of-bounds? (first snake))  ; Schlange außerhalb des Spielfelds
         (collision? snake)              ; Schlange kollidiert mit sich selbst
         (>= score 10))))                ; Punktestand erreicht oder überschritten 10 Punkte
-
 
 ; Überprüft, ob die Schlange außerhalb des Spielfelds ist
 (define (out-of-bounds? pos)
