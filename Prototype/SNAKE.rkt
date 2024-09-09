@@ -11,7 +11,7 @@
 ; Schlange, Initialzustand
 (define INITIAL-SNAKE (list (list 7 7)))  ; Startet in der Mitte
 (define INITIAL-DIRECTION 'right)         ; Anfangs bewegt sich die Schlange nach rechts
-(define INITIAL-FOOD (list 5 5))          ; Das Futter wird zufällig platziert
+(define INITIAL-FOOD (list (random GRID-SIZE) (random GRID-SIZE)))        ; Das Futter wird zufällig platziert
 (define INITIAL-SCORE 0)                  ; Initialer Punktestand
 
 ; Initialer Zustand des Spiels: (Schlange, Richtung, Futter, Punktestand)
@@ -42,8 +42,8 @@
      (let ([x (first pos)]
            [y (second pos)])
        (place-image (rectangle CELL-SIZE CELL-SIZE "solid" "green") 
-                    (* x CELL-SIZE)
-                    (* y CELL-SIZE)
+                    (+ (/ CELL-SIZE 2) (* x CELL-SIZE))
+                    (+ (/ CELL-SIZE 2) (* y CELL-SIZE))
                     image)))
    scene
    snake))
@@ -53,8 +53,8 @@
   (let ([x (first food)]
         [y (second food)])
     (place-image (rectangle CELL-SIZE CELL-SIZE "solid" "red")
-                 (* x CELL-SIZE)
-                 (* y CELL-SIZE)
+                 (+ (/ CELL-SIZE 2) (* x CELL-SIZE))
+                 (+ (/ CELL-SIZE 2) (* y CELL-SIZE))
                  scene)))
 
 ; Zeichnet den Punktestand
@@ -87,7 +87,7 @@
 ; Hilfsfunktion: Gibt die Koordinaten der Schlange in der Konsole aus
 (define (print-snake-coordinates snake)
   (for-each (lambda (segment)
-              (printf "Schlange Segment: ~a\n" segment))
+              (printf "Position Schlange: ~a\n" segment))
             snake))
 
 ; Berechnet den nächsten Zustand des Spiels nach einem Tick
