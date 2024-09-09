@@ -9,9 +9,9 @@
 (define HEIGHT (* GRID-SIZE CELL-SIZE)) ; Gesamthöhe des Spielfelds
 
 ; Schlange, Initialzustand
-(define INITIAL-SNAKE (list (list 7 7)))  ; Startet in der Mitte
+(define INITIAL-SNAKE (list (list 7 7)))  ; Startet mit nur einem Segment
 (define INITIAL-DIRECTION 'right)         ; Anfangs bewegt sich die Schlange nach rechts
-(define INITIAL-FOOD (list (random GRID-SIZE) (random GRID-SIZE)))        ; Das Futter wird zufällig platziert
+(define INITIAL-FOOD (list (random GRID-SIZE) (random GRID-SIZE)))  ; Das Futter wird zufällig platziert
 (define INITIAL-SCORE 0)                  ; Initialer Punktestand
 
 ; Initialer Zustand des Spiels: (Schlange, Richtung, Futter, Punktestand)
@@ -52,7 +52,7 @@
 (define (draw-food food scene)
   (let ([x (first food)]
         [y (second food)])
-    (place-image (rectangle CELL-SIZE CELL-SIZE "solid" "red")
+    (place-image (circle GRID-SIZE "solid" "red")
                  (+ (/ CELL-SIZE 2) (* x CELL-SIZE))
                  (+ (/ CELL-SIZE 2) (* y CELL-SIZE))
                  scene)))
@@ -74,17 +74,18 @@
                                        (draw-grid (empty-scene WIDTH HEIGHT)))))))
 
 ; Bewegt die Schlange basierend auf der aktuellen Richtung
-(define (move-snake snake direction score)
+(define (move-snake snake direction grow?)
   (let ([head (first snake)])
     (let* ([new-head (cond
-     
-                       [(eq? direction 'up)    (list (first head) (modulo (sub1 (second head)) GRID-SIZE))]
-                       [(eq? direction 'down)  (list (first head) (modulo (add1 (second head)) GRID-SIZE))]
-                       [(eq? direction 'left)  (list (modulo (sub1 (first head)) GRID-SIZE) (second head))]
-                       [(eq? direction 'right) (list (modulo (add1 (first head)) GRID-SIZE) (second head))])]
-
-           ; Schlange wächst entsprechend des Scores
-           [new-snake (cons new-head (take snake (+ 1 score)))])
+                       [(eq? direction 'up)    (list (first head) (sub1 (second head)))]
+                       [(eq? direction 'down)  (list (first head) (add1 (second head)))]
+                       [(eq? direction 'left)  (list (sub1 (first head)) (second head))]
+                       [(eq? direction 'right) (list (add1 (first head)) (second head))])]
+           ; Falls die Schlange wachsen soll, wird der neue Kopf einfach hinzugefügt,
+           ; ansonsten wird der Rest entsprechend angepasst
+           [new-snake (if grow?
+                          (cons new-head snake)  ; Schlange wächst
+                          (cons new-head (take snake (sub1 (length snake)))))])
       new-snake)))
 
 ; Berechnet den nächsten Zustand des Spiels nach einem Tick
@@ -93,28 +94,23 @@
          [direction (second state)]
          [food (third state)]
          [score (fourth state)]
-         [new-snake (move-snake snake direction score)]  ; Schlange wächst basierend auf dem Score
-         [ate-food? (equal? (first new-snake) food)]  ; Prüfen, ob das Futter gegessen wurde
+         [ate-food? (equal? (first snake) food)]  ; Prüfen, ob das Futter gegessen wurde
          [new-food (if ate-food?
                        (list (random GRID-SIZE) (random GRID-SIZE))
                        food)]  ; Neues Futter, wenn gegessen
-         [new-score (if ate-food? (+ score 1) score)])  ; Punkte erhöhen, wenn Futter gegessen wurde
+         [new-score (if ate-food? (+ score 1) score)]  ; Punkte erhöhen, wenn Futter gegessen wurde
+         [new-snake (move-snake snake direction ate-food?)])  ; Schlange wächst nur, wenn Futter gegessen wurde
     (list new-snake direction new-food new-score)))
 
 ; Bewegt die Schlange basierend auf Tasteneingaben
-; Überprüft die vorherige Richtung und erlaubt dementsprechend Richtungswechsel
 (define (move state key)
   (let ([snake (first state)]
         [direction (second state)])
     (cond
-      [(and (key=? key "up") (not (eq? direction 'down)))
-       (list snake 'up (third state) (fourth state))]
-      [(and (key=? key "down") (not (eq? direction 'up)))
-       (list snake 'down (third state) (fourth state))]
-      [(and (key=? key "left") (not (eq? direction 'right)))
-       (list snake 'left (third state) (fourth state))]
-      [(and (key=? key "right") (not (eq? direction 'left)))
-       (list snake 'right (third state) (fourth state))]
+      [(key=? key "up")    (list snake 'up (third state) (fourth state))]
+      [(key=? key "down")  (list snake 'down (third state) (fourth state))]
+      [(key=? key "left")  (list snake 'left (third state) (fourth state))]
+      [(key=? key "right") (list snake 'right (third state) (fourth state))]
       [else state])))
 
 ; Stopp-Bedingung: Beendet das Spiel, wenn die Schlange aus dem Spielfeld läuft,
