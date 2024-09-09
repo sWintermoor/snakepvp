@@ -79,7 +79,7 @@
               (printf "Position Schlange: ~a\n" segment))
             snake))
 
-; **NEU** Hilfsfunktion: Gibt die Koordinaten des Futters in der Konsole aus
+;Hilfsfunktion: Gibt die Koordinaten des Futters in der Konsole aus
 (define (print-food-coordinates food)
   (printf "Futter gefressen an Position: ~a\n" food))
 
