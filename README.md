@@ -1,5 +1,11 @@
 # snake-pvp
 
+## Benutzerhandbuch:
+### Ziel des Spiels
+Mehr Früchte als der Gegner sammeln, ohne mit Schalngen zu kollidieren.
+### Spielstart
+- [ ] Universe Starten (Server)
+- [ ] World Datei starten (Spieler)
 
 ## Wichtige Links
 
