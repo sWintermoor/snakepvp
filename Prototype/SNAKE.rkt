@@ -77,16 +77,17 @@
 (define (move-snake snake direction grow?)
   (let ([head (first snake)])
     (let* ([new-head (cond
-                       [(eq? direction 'up)    (list (first head) (sub1 (second head)))]
-                       [(eq? direction 'down)  (list (first head) (add1 (second head)))]
-                       [(eq? direction 'left)  (list (sub1 (first head)) (second head))]
-                       [(eq? direction 'right) (list (add1 (first head)) (second head))])]
-           ; Falls die Schlange wachsen soll, wird der neue Kopf einfach hinzugefügt,
-           ; ansonsten wird der Rest entsprechend angepasst
-           [new-snake (if grow?
-                          (cons new-head snake)  ; Schlange wächst
-                          (cons new-head (take snake (sub1 (length snake)))))])
-      new-snake)))
+                       [(eq? direction 'up)    (list (first head) (modulo (sub1 (second head)) GRID-SIZE))]
+                       [(eq? direction 'down)  (list (first head) (modulo (add1 (second head)) GRID-SIZE))]
+                       [(eq? direction 'left)  (list (modulo (sub1 (first head)) GRID-SIZE) (second head))]
+                       [(eq? direction 'right) (list (modulo (add1 (first head)) GRID-SIZE) (second head))])]
+           
+                       ; Falls die Schlange wachsen soll, wird der neue Kopf einfach hinzugefügt,
+                       ; ansonsten wird der Rest entsprechend angepasst
+                       [new-snake (if grow?
+                                      (cons new-head snake)  ; Schlange wächst
+                                      (cons new-head (take snake (sub1 (length snake)))))])
+                     new-snake)))
 
 ; Berechnet den nächsten Zustand des Spiels nach einem Tick
 (define (tock state)
@@ -103,14 +104,19 @@
     (list new-snake direction new-food new-score)))
 
 ; Bewegt die Schlange basierend auf Tasteneingaben
+; Überprüft die vorherige Richtung und erlaubt dementsprechend Richtungswechsel
 (define (move state key)
   (let ([snake (first state)]
         [direction (second state)])
     (cond
-      [(key=? key "up")    (list snake 'up (third state) (fourth state))]
-      [(key=? key "down")  (list snake 'down (third state) (fourth state))]
-      [(key=? key "left")  (list snake 'left (third state) (fourth state))]
-      [(key=? key "right") (list snake 'right (third state) (fourth state))]
+      [(and (key=? key "up") (not (eq? direction 'down)))
+       (list snake 'up (third state) (fourth state))]
+      [(and (key=? key "down") (not (eq? direction 'up)))
+       (list snake 'down (third state) (fourth state))]
+      [(and (key=? key "left") (not (eq? direction 'right)))
+       (list snake 'left (third state) (fourth state))]
+      [(and (key=? key "right") (not (eq? direction 'left)))
+       (list snake 'right (third state) (fourth state))]
       [else state])))
 
 ; Stopp-Bedingung: Beendet das Spiel, wenn die Schlange aus dem Spielfeld läuft,
@@ -118,9 +124,7 @@
 (define (exit state)
   (let ([snake (first state)]
         [score (fourth state)])
-    (or (out-of-bounds? (first snake))  ; Schlange außerhalb des Spielfelds
-        (collision? snake)              ; Schlange kollidiert mit sich selbst
-        (>= score 10))))                ; Punktestand erreicht oder überschritten 10 Punkte
+    (or (collision? snake))))           ; Punktestand erreicht oder überschritten 10 Punkte
 
 ; Überprüft, ob die Schlange außerhalb des Spielfelds ist
 (define (out-of-bounds? pos)
