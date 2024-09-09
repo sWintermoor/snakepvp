@@ -79,6 +79,10 @@
               (printf "Position Schlange: ~a\n" segment))
             snake))
 
+; **NEU** Hilfsfunktion: Gibt die Koordinaten des Futters in der Konsole aus
+(define (print-food-coordinates food)
+  (printf "Futter gefressen an Position: ~a\n" food))
+
 ; Bewegt die Schlange basierend auf der aktuellen Richtung
 (define (move-snake snake direction grow?)
   (let ([head (first snake)])
@@ -116,6 +120,11 @@
                        food)]  ; Neues Futter, wenn gegessen
          [new-score (if ate-food? (+ score 1) score)]  ; Punkte erhöhen, wenn Futter gegessen wurde
          [new-snake (move-snake snake direction ate-food?)])  ; Schlange wächst nur, wenn Futter gegessen wurde
+
+    ; Wenn das Futter gegessen wurde, gib seine Koordinaten aus
+    (when ate-food?
+      (print-food-coordinates food))
+      
     (print-snake-coordinates new-snake) ; Ruft Hilfsfunktion für Konsolenausgabe auf
     (list new-snake direction new-food new-score)))
 
