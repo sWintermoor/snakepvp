@@ -1,6 +1,9 @@
 # snake-pvp
 
 
+## Wichtige Links
+
+GoogleDoc für Entwurf: [Dokument](https://docs.google.com/document/d/13wrCPKRJzpxp-4ILPLiJzAn5dTOKmDyd8B49Dxw33-4/edit)
 
 ## Getting started
 
