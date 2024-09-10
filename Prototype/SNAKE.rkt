@@ -73,6 +73,16 @@
                            (draw-snake snake
                                        (draw-grid (empty-scene WIDTH HEIGHT)))))))
 
+; Hilfsfunktion: Gibt die Koordinaten der Schlange in der Konsole aus
+(define (print-snake-coordinates snake)
+  (for-each (lambda (segment)
+              (printf "Position Schlange: ~a\n" segment))
+            snake))
+
+;Hilfsfunktion: Gibt die Koordinaten des Futters in der Konsole aus
+(define (print-food-coordinates food)
+  (printf "Futter gefressen an Position: ~a\n" food))
+
 ; Bewegt die Schlange basierend auf der aktuellen Richtung
 (define (move-snake snake direction grow?)
   (let ([head (first snake)])
@@ -82,12 +92,12 @@
                        [(eq? direction 'left)  (list (modulo (sub1 (first head)) GRID-SIZE) (second head))]
                        [(eq? direction 'right) (list (modulo (add1 (first head)) GRID-SIZE) (second head))])]
            
-                       ; Falls die Schlange wachsen soll, wird der neue Kopf einfach hinzugefügt,
-                       ; ansonsten wird der Rest entsprechend angepasst
-                       [new-snake (if grow?
-                                      (cons new-head snake)  ; Schlange wächst
-                                      (cons new-head (take snake (sub1 (length snake)))))])
-                     new-snake)))
+           ; Falls die Schlange wachsen soll, wird der neue Kopf einfach hinzugefügt,
+           ; ansonsten wird der Rest entsprechend angepasst
+           [new-snake (if grow?
+                          (cons new-head snake)  ; Schlange wächst
+                          (cons new-head (take snake (sub1 (length snake)))))])
+      new-snake)))
 
 ; Berechnet den nächsten Zustand des Spiels nach einem Tick
 (define (tock state)
@@ -95,16 +105,30 @@
          [direction (second state)]
          [food (third state)]
          [score (fourth state)]
-         [ate-food? (equal? (first snake) food)]  ; Prüfen, ob das Futter gegessen wurde
+         
+         ; Berechne den neuen Kopf der Schlange, bevor die Bewegung stattfindet
+         [new-head (cond
+                     [(eq? direction 'up)    (list (first (first snake)) (modulo (sub1 (second (first snake))) GRID-SIZE))]
+                     [(eq? direction 'down)  (list (first (first snake)) (modulo (add1 (second (first snake))) GRID-SIZE))]
+                     [(eq? direction 'left)  (list (modulo (sub1 (first (first snake))) GRID-SIZE) (second (first snake)))]
+                     [(eq? direction 'right) (list (modulo (add1 (first (first snake))) GRID-SIZE) (second (first snake)))])]
+         
+         ; Überprüfe, ob der neue Kopf auf dem Futter ist
+         [ate-food? (equal? new-head food)]
          [new-food (if ate-food?
                        (list (random GRID-SIZE) (random GRID-SIZE))
                        food)]  ; Neues Futter, wenn gegessen
          [new-score (if ate-food? (+ score 1) score)]  ; Punkte erhöhen, wenn Futter gegessen wurde
          [new-snake (move-snake snake direction ate-food?)])  ; Schlange wächst nur, wenn Futter gegessen wurde
+
+    ; Wenn das Futter gegessen wurde, gib seine Koordinaten aus
+    (when ate-food?
+      (print-food-coordinates food))
+      
+    (print-snake-coordinates new-snake) ; Ruft Hilfsfunktion für Konsolenausgabe auf
     (list new-snake direction new-food new-score)))
 
 ; Bewegt die Schlange basierend auf Tasteneingaben
-; Überprüft die vorherige Richtung und erlaubt dementsprechend Richtungswechsel
 (define (move state key)
   (let ([snake (first state)]
         [direction (second state)])
@@ -119,19 +143,10 @@
        (list snake 'right (third state) (fourth state))]
       [else state])))
 
-; Stopp-Bedingung: Beendet das Spiel, wenn die Schlange aus dem Spielfeld läuft,
-; sich selbst berührt oder 10 Punkte erreicht wurden.
+; Stopp-Bedingung: Beendet das Spiel, wenn die Schlange mit sich selbst kollidiert.
 (define (exit state)
-  (let ([snake (first state)]
-        [score (fourth state)])
-    (or (collision? snake))))           ; Punktestand erreicht oder überschritten 10 Punkte
-
-; Überprüft, ob die Schlange außerhalb des Spielfelds ist
-(define (out-of-bounds? pos)
-  (or (< (first pos) 0)
-      (>= (first pos) GRID-SIZE)
-      (< (second pos) 0)
-      (>= (second pos) GRID-SIZE)))
+  (let ([snake (first state)])
+    (collision? snake)))
 
 ; Überprüft, ob die Schlange mit sich selbst kollidiert
 (define (collision? snake)

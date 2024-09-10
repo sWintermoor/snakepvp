@@ -11,22 +11,21 @@
 (define CELL-SIZE 30)            ; Jede Zelle ist 30x30 Pixel groß
 (define WIDTH (* GRID-SIZE CELL-SIZE))  ; Gesamtbreite des Spielfelds
 (define HEIGHT (* GRID-SIZE CELL-SIZE)) ; Gesamthöhe des Spielfelds
+(define GRID-COLOR "black")
 
 
 ; Empfangen von Nachrichten
-(define (receive w m)
-  )
-
-
-
+; Wir brauchen: Snake-Koordinaten, Snake-Colour, Food-Koordinaten, Score
+(define (receive state m)
+  m)
 
 
 ; Funktion zum Zeichnen des Gitternetzes
 (define (draw-grid scene)
   (foldl
    (lambda (i scene)
-     (let ([line-x (line 0 (* HEIGHT 2) "black")]   ; Vertikale Linien
-           [line-y (line (* WIDTH 2) 0 "black")])   ; Horizontale Linien
+     (let ([line-x (line 0 (* HEIGHT 2) GRID-COLOR)]   ; Vertikale Linien
+           [line-y (line (* WIDTH 2) 0 GRID-COLOR)])   ; Horizontale Linien
        (place-image line-x (* i CELL-SIZE) 0
                     (place-image line-y 0 (* i CELL-SIZE) scene))))
    scene
@@ -40,12 +39,12 @@
                (empty-scene WIDTH HEIGHT)))
 
 ; Zeichnet die Schlange
-(define (draw-snake snake scene)
+(define (draw-snake snake snake-color scene)
   (foldl
    (lambda (pos image)
      (let ([x (first pos)]
            [y (second pos)])
-       (place-image (rectangle CELL-SIZE CELL-SIZE "solid" "green") 
+       (place-image (rectangle CELL-SIZE CELL-SIZE "solid" snake-color) 
                     (+ (/ CELL-SIZE 2) (* x CELL-SIZE))
                     (+ (/ CELL-SIZE 2) (* y CELL-SIZE))
                     image)))
@@ -70,11 +69,12 @@
 ; Zeichnet den gesamten Spielzustand
 (define (draw-world state)
   (let ([snake (first state)]
+        [snake-color (second state)]
         [food (third state)]
         [score (fourth state)])
     (draw-score score
                 (draw-food food
-                           (draw-snake snake
+                           (draw-snake snake snake-color
                                        (draw-grid (empty-scene WIDTH HEIGHT)))))))
 
 
