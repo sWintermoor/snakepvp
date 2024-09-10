@@ -143,7 +143,7 @@
 (define (main)
   (big-bang INITIAL-STATE
     [to-draw draw-world]
-    [on-tick tock 0.3]  ; Geschwindigkeit des Spiels (Ticks pro Sekunde)
+    [on-tick tock 0.1]  ; Geschwindigkeit des Spiels (Ticks pro Sekunde)
     [on-key move]
     [stop-when exit]))
 
