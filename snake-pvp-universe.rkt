@@ -8,7 +8,6 @@
 
 ; Konstanten
 (define NUM_PLAYERS 2)
-(define empty_board  '("" "" "" "" "" "" "" "" ""))
 ; Spielfeldparameter
 (define GRID-SIZE 15)            ; 15x15 Felder
 (define CELL-SIZE 30)            ; Jede Zelle ist 30x30 Pixel groß
@@ -28,6 +27,7 @@
 (define UNIVERSE0 (list INITIAL-SNAKES INITIAL-FOOD INITIAL-SCORE))
 (define iworld1 UNIVERSE0) ; TESTING der WELT
 
+(define empty_board UNIVERSE0)
 
 ;;Quick accessors for the universe
 (define (current_worlds univ)
@@ -145,8 +145,6 @@
       [(and (key=? a-key "down") (not (eq? snake1dir 'up)))  (list (list(list snake1pos) 'downs snake1col) (list (list snake2pos) snake2dir snake2col) (second state) (third state))]
       [(and (key=? a-key "down") (not (eq? snake2dir 'up)))  (list (list(list snake1pos) snake1dir snake1col) (list (list snake2pos) 'down snake2col) (second state) (third state))]
       [else state])))
-
-(change UNIVERSE0 "left")
 #|
 (cond
       [(and (key=? a-key "left") (not (eq? direction1 'right)))  (world-go iworld1 a-key)]
