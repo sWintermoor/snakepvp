@@ -1,6 +1,7 @@
 #lang racket
 (require 2htdp/universe)
 (require test-engine/racket-tests)
+
 ; UniverseState is [Listof iworld?]
 ; StopMessage is 'done.
 ; GoMessage is 'it-is-your-turn.
@@ -15,15 +16,17 @@
 (define HEIGHT (* GRID-SIZE CELL-SIZE)) ; Gesamthöhe des Spielfelds
 
 ; Schlange, Initialzustand
-(define INITIAL-SNAKES  (list SNAKE1 SNAKE2))  ; Startet mit nur einem Segment
 (define SNAKE1 (list (list (list 7 7)) 'right 'green))
 (define SNAKE2 (list (list (list 14 14)) 'left 'blue))
-(define INITIAL-FOOD (list (random GRID-SIZE) (random GRID-SIZE)))  ; Das Futter wird zufällig platziert
+(define INITIAL-SNAKES  (list SNAKE1 SNAKE2))  ; Startet mit nur einem Segment
+;(define INITIAL-FOOD (list (random GRID-SIZE) (random GRID-SIZE)))  ; Das Futter wird zufällig platziert
+(define INITIAL-FOOD (list 10 10))
 (define INITIAL-SCORE 0)                  ; Initialer Punktestand
 ;(define INITIAL-BANANAS-EATEN 0)          ; Initiale Anzahl gegessener Bananen
 
 ; Initialer Zustand des Spiels: (Schlange, Richtung, Futter, Banane, Punktestand, Anzahl gegessener Bananen)
 (define UNIVERSE0 (list INITIAL-SNAKES INITIAL-FOOD INITIAL-SCORE))
+(define iworld1 UNIVERSE0) ; TESTING der WELT
 
 
 ;;Quick accessors for the universe
@@ -101,46 +104,88 @@
                   (list (make-mail wrld (list 'wait empty_board)))
                   '())]))
 
-;KeyHandler
-(define (change w a-key)
-  ;(let ([snake (first(first state))]
-  (cond
-    [(and (key=? a-key "left") (not (eq? direction 'right)))  (world-go iworld1 a-key)]
-    [(and (key=? a-key "left") (not (eq? direction 'right)))  (world-go iworld2 a-key)]
-    [(key=? a-key "right") (world-go w +DELTA)]
-    [(= (string-length a-key) 1) w] ; order-free checking
-    [(key=? a-key "up")    (world-go w -DELTA)]
-    [(key=? a-key "down")  (world-go w +DELTA)]
-    [else w]))
 
 ;World-GO
-(define (world-go w key)
-  
+;(define (world-go w key) w)
 
 ; Bewegt die Schlange basierend auf Tasteneingaben
 (define (receive w key)
-  (change w key))
+    (change w key))
 
-  (let ([snake (first(first state))] ; Schlange1
-        [direction (second state)])
+(check-expect (change UNIVERSE0 "left") '(((((7 7))) right green) ((((14 14))) left blue) (10 10) 0))
+(check-expect (change iworld1 "left") '(((((7 7))) right green) ((((14 14))) left blue) (10 10) 0)) ;Test mit falscher Richtung
+(check-expect (receive iworld1 "up") '(((((7 7))) up green) ((((14 14))) left blue) (10 10) 0)) ;Test mit korrekter Eingabe
+;(equal? (change iworld1 "left") '(((((7 7))) right green) ((((14 14))) left blue) (10 10) 0))
+;(equal? (receive iworld1 "up") '(((((7 7))) up green) ((((14 14))) left blue) (10 10) 0)) 
+
+;KeyHandler
+(define (change state a-key)
+  ;(let ([snake (first(first state))]
+  (let* ([snakes (first state)]
+       [snake1 (first(first state))]
+       [snake2 (second(first state))]
+       [snake1pos (first(first(first state)))]
+       [snake1dir (second(first(first state)))]
+       [snake1col (third(first(first state)))]
+       [snake2pos (first(second(first state)))]
+       [snake2dir (second(second(first state)))]
+       [snake2col (third(second(first state)))]
+       [food (second state)]
+       [apple1 (first(second state))]
+       [apple2 (second(second state))]
+       [score (third state)]
+       )
     (cond
-      [(and (key=? key "up") (not (eq? direction 'down)))
-       (list snake 'up (third state) (fourth state) (fifth state) (sixth state))]
-      [(and (key=? key "down") (not (eq? direction 'up)))
-       (list snake 'down (third state) (fourth state) (fifth state) (sixth state))]
-      [(and (key=? key "left") (not (eq? direction 'right)))
-       (list snake 'left (third state) (fourth state) (fifth state) (sixth state))]
-      [(and (key=? key "right") (not (eq? direction 'left)))
-       (list snake 'right (third state) (fourth state) (fifth state) (sixth state))]
+      [(and (key=? a-key "left") (not (eq? snake1dir 'right)))  (list (list(list snake1pos) 'left snake1col) (list (list snake2pos) snake2dir snake2col) (second state) (third state))]
+      [(and (key=? a-key "left") (not (eq? snake2dir 'right)))  (list (list(list snake1pos) snake1dir snake1col) (list (list snake2pos) 'left snake2col) (second state) (third state))]
+      [(and (key=? a-key "right") (not (eq? snake1dir 'left)))  (list (list(list snake1pos) 'right snake1col) (list (list snake2pos) snake2dir snake2col) (second state) (third state))]
+      [(and (key=? a-key "right") (not (eq? snake2dir 'left)))  (list (list(list snake1pos) snake1pos snake1col) (list (list snake2pos) 'right snake2col) (second state) (third state))]
+      [(and (key=? a-key "up") (not (eq? snake1dir 'down)))  (list (list(list snake1pos) 'up snake1col) (list (list snake2pos) snake2dir snake2col) (second state) (third state))]
+      [(and (key=? a-key "up") (not (eq? snake2dir 'down)))  (list (list(list snake1pos) snake1dir snake1col) (list (list snake2pos) 'up snake2col) (second state) (third state))]
+      [(and (key=? a-key "down") (not (eq? snake1dir 'up)))  (list (list(list snake1pos) 'downs snake1col) (list (list snake2pos) snake2dir snake2col) (second state) (third state))]
+      [(and (key=? a-key "down") (not (eq? snake2dir 'up)))  (list (list(list snake1pos) snake1dir snake1col) (list (list snake2pos) 'down snake2col) (second state) (third state))]
       [else state])))
 
+(change UNIVERSE0 "left")
+#|
+(cond
+      [(and (key=? a-key "left") (not (eq? direction1 'right)))  (world-go iworld1 a-key)]
+      [(and (key=? a-key "left") (not (eq? direction2 'right)))  (world-go iworld2 a-key)]
+      [(and (key=? a-key "right") (not (eq? direction1 'left)))  (world-go iworld1 a-key)]
+      [(and (key=? a-key "right") (not (eq? direction2 'left)))  (world-go iworld2 a-key)]
+      [(and (key=? a-key "up") (not (eq? direction1 'down)))  (world-go iworld1 a-key)]
+      [(and (key=? a-key "up") (not (eq? direction2 'down)))  (world-go iworld2 a-key)]
+      [(and (key=? a-key "down") (not (eq? direction1 'up)))  (world-go iworld1 a-key)]
+      [(and (key=? a-key "down") (not (eq? direction2 'up)))  (world-go iworld2 a-key)]
+      [else w])))
+|#
 
 ;;Erschafft ein Universum
 (universe UNIVERSE0
           (on-new add-world)
           ;          (port 9092)
           (on-msg handle-messages))
+;LET
+#|
+(let* ([snakes (first state)]
+       [snake1 (first(first state))]
+       [snake2 (second(first state))]
+       [snake1pos (first(first(first state)))]
+       [snake1dir (second(first(first state)))]
+       [snake1col (third(first(first state)))]
+       [snake2pos (first(second(first state)))]
+       [snake2dir (second(second(first state)))]
+       [snake2col (third(second(first state)))]
+       [food (second state)]
+       [apple1 (first(second state))]
+       [apple2 (second(second state))]
+       [score (third state)]
+       ))
+|#
 
+; Set Universe as List
+
+;(list (list(list snake1pos) snake1dir snake1col) (list (list snake2pos) snake2dir snake2col) (second state) (third state))
 ;_______________________________________________________________________________
 ;Funktionen
 
