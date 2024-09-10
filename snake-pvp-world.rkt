@@ -55,7 +55,25 @@
 (define (draw-food food scene)
   (let ([x (first food)]
         [y (second food)])
-    (place-image (circle GRID-SIZE "solid" "red")
+    (place-image (underlay/xy (ellipse CELL-SIZE (- CELL-SIZE (/ CELL-SIZE 3)) "solid" "red")
+                              (/ CELL-SIZE 2) (- 0 (/ CELL-SIZE 5))
+                              (rotate 160 (isosceles-triangle (/ CELL-SIZE 2) CELL-SIZE "solid" "brown")))
+                 (+ (/ CELL-SIZE 2) (* x CELL-SIZE))
+                 (+ (/ CELL-SIZE 2) (* y CELL-SIZE))
+                 scene)))
+
+; Zeichnet die Banane
+(define (draw-food food scene)
+  (let ([x (first food)]
+        [y (second food)])
+    (place-image (underlay/xy
+                  (overlay/xy (rotate -50 (ellipse (/ CELL-SIZE 2) CELL-SIZE "solid" "yellow"))
+                              0
+                              0
+                              (rotate -50 (ellipse (/ CELL-SIZE 2) CELL-SIZE "outline" "black")))
+                  (/ CELL-SIZE 2)
+                  (- 0 (/ CELL-SIZE 5))
+                  (rotate -40 (rectangle 5 15 "solid" "brown")))
                  (+ (/ CELL-SIZE 2) (* x CELL-SIZE))
                  (+ (/ CELL-SIZE 2) (* y CELL-SIZE))
                  scene)))
@@ -93,8 +111,8 @@
     [register LOCALHOST]))
 
 (launch-many-worlds 
-  (create-world "blue")
-  (create-world "green")
-  )
+ (create-world "blue")
+ (create-world "green")
+ )
 
 
