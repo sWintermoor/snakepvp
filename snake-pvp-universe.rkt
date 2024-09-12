@@ -148,7 +148,7 @@
 (define (next-snake-state snake-input state)
   (let* ([snake_coordinates (snake-coordinates snake-input)]
          [direction (snake-direction snake-input)]
-         [food (third state)]   ; Achtung, ich arbeite hier nicht mit einer Liste
+         [fruits (extract-fruit-type-coordinates state)]  
          [score (snake-score snake-input)]
          
          ; Berechne den neuen Kopf der Schlange, bevor die Bewegung stattfindet
@@ -159,10 +159,7 @@
                      [(eq? direction 'right) (list (modulo (add1 (first (first snake_coordinates))) GRID-SIZE) (second (first snake_coordinates)))])]
          
          ; Überprüfe, ob der neue Kopf auf dem Futter ist
-         [ate-food? (equal? new-head food)]
-         [new-food (if ate-food?
-                       (list (random GRID-SIZE) (random GRID-SIZE))
-                       food)]  ; Neues Futter, wenn gegessen
+         [ate-food? (member new-head fruits)]
          [new-score (if ate-food? (+ score 1) score)]  ; Punkte erhöhen, wenn Futter gegessen wurde
          [new-snake (move-snake snake-input direction ate-food?)])  ; Schlange wächst nur, wenn Futter gegessen wurde
     (snake new-snake (snake-color snake-input) (snake-status snake-input) (snake-direction snake-input) (snake-velocity snake-input) new-score (snake-inventory snake-input)))) ;Inventory muss ausgebessert werden
@@ -181,10 +178,39 @@
            ; Falls die Schlange wachsen soll, wird der neue Kopf einfach hinzugefügt,
            ; ansonsten wird der Rest entsprechend angepasst
            [new-snake (if grow?
-                          (cons new-head snake-input)  ; Schlange wächst
+                          (cons new-head (snake-coordinates snake-input))  ; Schlange wächst
                           (cons new-head (take (snake-coordinates snake-input) (sub1 (length (snake-coordinates snake-input))))))])
       new-snake)))
- 
+
+
+;Berechnet den nächsten Zustand eines Items
+(define (next-fruit-state snake1 snake2 state)
+  (let* ([head1 (first (snake-coordinates snake1))]
+         [head2 (first (snake-coordinates snake2))]
+         [fruits-str (current-fruits state)]
+         [fruits (extract-fruit-type-coordinates state)]
+         [ate-food? (or (member head1 fruits) (member head2 fruits))]
+         [who-ate-food (if ate-food? (if (member head1 fruits) head1 head2) 'rejected)])
+    (if ate-food?
+        (new-fruit fruits-str (item (list-ref fruits (sub1 (index-of fruits who-ate-food))) (first who-ate-food) (second who-ate-food)))
+        (current-fruits state))))
+
+; entfernt die gegessene Frucht und platziert 1-2 neue
+(define (new-fruit fruits fruit)
+  (append (create-fruit (item-type fruit)) (remove fruit fruits)))
+    
+
+(define (create-fruit type)
+  (let ([randnum (random 2)])
+    (if (= randnum 1) (list (item type (random GRID-SIZE) (random GRID-SIZE))) (list (item 'apple (random GRID-SIZE) (random GRID-SIZE))))))
+
+; gibt Frucht als Liste zurück
+(define (extract-fruit-type-coordinates univ)
+  (let ([fruit-list (current-fruits univ)])
+    (foldl (lambda (fruit current-list)
+             (append current-list (list (item-type fruit) (list (item-x fruit) (item-y fruit)))))
+           '()
+           fruit-list)))
 
 ;TickHandler
 (define (tick-handler univ)
@@ -192,7 +218,8 @@
          (let*
             ([snake1 (next-snake-state (first (current-snakes univ)) univ)]
              [snake2 (next-snake-state (second (current-snakes univ)) univ)]
-             [univ* (list (current-worlds univ) (list snake1 snake2) (current-fruits univ) (timer univ))]) ;hier next-Funktionen implementieren, wie next-snakes, next-fruits und next-timer
+             [fruits (next-fruit-state snake1 snake2 univ)]
+             [univ* (list (current-worlds univ) (list snake1 snake2) fruits (timer univ))]) ;hier next-Funktionen implementieren, wie next-snakes, next-fruits und next-timer
          (make-bundle univ*
                       (list (make-mail (first(current-worlds univ)) (information-to-draw univ*))
                             (make-mail (second(current-worlds univ)) (information-to-draw univ*)))
