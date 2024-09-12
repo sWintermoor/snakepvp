@@ -156,8 +156,5 @@
     [register LOCALHOST]))
 
 (launch-many-worlds 
- (create-world "blue")
- (create-world "green"))
-
-
- 
+ (create-world "green")
+ (create-world "blue"))
