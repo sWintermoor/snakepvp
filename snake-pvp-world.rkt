@@ -2,9 +2,26 @@
 (require 2htdp/universe)
 (require 2htdp/image)
 (require test-engine/racket-tests)
+
+; Verbesserungsvorschläge: Anstelle von first, second und so weiter lieber aussagekräftigere Funktionen definieren.
+
+; WorldState is (Snakes Food Score)
+
+; Snakes is
+
+; Food is
+
+; Score is a Number
+
 ; world
 
-(define WORLD0 '())
+; Structs
+(define-struct item [type x y] #:prefab)
+(define-struct snake [coordinates color status direction velocity score inventory] #:prefab)
+(define-struct world [snakes items timer] #:prefab)
+
+; Startzustand der Welt
+(define WORLD0 (world '() '() 300)) ;die Werte sind potenziell irrelevant
 
 ; Spielfeldparameter
 (define GRID-SIZE 15)            ; 15x15 Felder
@@ -13,14 +30,28 @@
 (define HEIGHT (* GRID-SIZE CELL-SIZE)) ; Gesamthöhe des Spielfelds
 (define GRID-COLOR "black")
 
+(define FOOD-COLOR "red") ;Food-Color muss weg, anstelle dessen müssen wir type von item nutzen
+
+(define NUM_PLAYERS 2)
+
 
 ; Empfangen von Nachrichten
-; Wir brauchen: Snake-Koordinaten, Snake-Colour, Food-Koordinaten, Score
-(define (receive state m)
-  m)
+; Wir brauchen: Snakes (x, y, c) Food-Koordinaten, Score
+#|(check-expect ((receive '('('(3 3 "blue") '(3 4 "blue")) '('(7 5 "green") '(7 6 "green"))) '( 1 1) 9)
+               '('('('(3 4 "blue") '(3 5 "blue")) '('(7 6 "green") '(7 7 "green"))) '( 1 1) 9))
+              '('('('(3 4 "blue") '(3 5 "blue")) '('(7 6 "green") '(7 7 "green"))) '( 1 1) 9))|#
+
+(define (receive w m)
+  (let
+      ([snakes (first m)]
+       [items (second m)]
+       [timer (third m)])
+    (world snakes items timer)))
 
 
 ; Funktion zum Zeichnen des Gitternetzes
+
+
 (define (draw-grid scene)
   (foldl
    (lambda (i scene)
@@ -39,12 +70,12 @@
                (empty-scene WIDTH HEIGHT)))
 
 ; Zeichnet die Schlange
-(define (draw-snake snake snake-color scene)
+(define (draw-snake snake color status scene)
   (foldl
    (lambda (pos image)
      (let ([x (first pos)]
            [y (second pos)])
-       (place-image (rectangle CELL-SIZE CELL-SIZE "solid" snake-color) 
+       (place-image (rectangle CELL-SIZE CELL-SIZE status color) 
                     (+ (/ CELL-SIZE 2) (* x CELL-SIZE))
                     (+ (/ CELL-SIZE 2) (* y CELL-SIZE))
                     image)))
@@ -53,47 +84,61 @@
 
 ; Zeichnet das Futter
 (define (draw-food food scene)
-  (let ([x (first food)]
-        [y (second food)])
-    (place-image (underlay/xy (ellipse CELL-SIZE (- CELL-SIZE (/ CELL-SIZE 3)) "solid" "red")
-                              (/ CELL-SIZE 2) (- 0 (/ CELL-SIZE 5))
-                              (rotate 160 (isosceles-triangle (/ CELL-SIZE 2) CELL-SIZE "solid" "brown")))
+  
+  (let ([x (second food)]
+        [y (third food)])
+    (place-image (circle GRID-SIZE "solid" FOOD-COLOR) ;Food-Color muss weg, anstelle dessen müssen wir type von item nutzen
                  (+ (/ CELL-SIZE 2) (* x CELL-SIZE))
                  (+ (/ CELL-SIZE 2) (* y CELL-SIZE))
                  scene)))
 
-; Zeichnet die Banane
-(define (draw-food food scene)
-  (let ([x (first food)]
-        [y (second food)])
-    (place-image (underlay/xy
-                  (overlay/xy (rotate -50 (ellipse (/ CELL-SIZE 2) CELL-SIZE "solid" "yellow"))
-                              0
-                              0
-                              (rotate -50 (ellipse (/ CELL-SIZE 2) CELL-SIZE "outline" "black")))
-                  (/ CELL-SIZE 2)
-                  (- 0 (/ CELL-SIZE 5))
-                  (rotate -40 (rectangle 5 15 "solid" "brown")))
+; Zeichnet das Futter und weitere Items
+(define (draw-foods foods scene)
+  
+  (foldl
+   (lambda (fruit image)
+     (let ([x (item-x fruit)]
+        [y (item-y fruit)]
+        [type (item-type fruit)])
+    (cond
+      [(eq? type 'apple)  (place-image (circle GRID-SIZE "solid" "red")
                  (+ (/ CELL-SIZE 2) (* x CELL-SIZE))
                  (+ (/ CELL-SIZE 2) (* y CELL-SIZE))
-                 scene)))
+                 image)]
+      [(eq? type 'banana)  (place-image (circle GRID-SIZE "solid" "yellow")
+                 (+ (/ CELL-SIZE 2) (* x CELL-SIZE))
+                 (+ (/ CELL-SIZE 2) (* y CELL-SIZE))
+                 image)]
+    )))
+   scene
+   foods))
 
 ; Zeichnet den Punktestand
-(define (draw-score score scene)
-  (place-image (text (format "Score: ~a" score) 20 "blue")
-               (+ CELL-SIZE 10) (/ CELL-SIZE 2)
+(define (draw-score score1 score2 scene)
+  (place-image (text (format "Score-P1: ~a\nScore-P2: ~s" score1 score2) 20 "blue")
+               (+ CELL-SIZE 25) (/ CELL-SIZE 1.5)
                scene))
 
 ; Zeichnet den gesamten Spielzustand
-(define (draw-world state)
-  (let ([snake (first state)]
-        [snake-color (second state)]
-        [food (third state)]
-        [score (fourth state)])
-    (draw-score score
-                (draw-food food
-                           (draw-snake snake snake-color
-                                       (draw-grid (empty-scene WIDTH HEIGHT)))))))
+(define (draw-world w)
+  (cond
+    [(= (length (world-snakes w)) NUM_PLAYERS)
+     (let ([snake1 (snake-coordinates (first (world-snakes w)))]
+           [snake2 (snake-coordinates (second (world-snakes w)))]
+           [color1 (snake-color (first (world-snakes w)))] 
+           [color2 (snake-color (second (world-snakes w)))]
+           [status1 (snake-status (first (world-snakes w)))]
+           [status2 (snake-status (first (world-snakes w)))]
+           [score1 (snake-score (first (world-snakes w)))]
+           [score2 (snake-score (second (world-snakes w)))]
+           [foods (world-items w)]) ;zeichnet alle Items in der Liste, aber als roter Kreis (so)
+       (draw-score score1 score2
+                   (draw-foods foods 
+                              (draw-snake snake2 color2 status2 ;Schlange wird mit Farbe gezeichnet
+                                          (draw-snake snake1 color1 status1
+                                                      (draw-grid (empty-scene WIDTH HEIGHT)))))))]
+    [else (overlay (text "Waiting... \n\nUniverse started?" 20 "red") (empty-scene WIDTH HEIGHT))]
+    ))
 
 
 ; Versenden der Tastatureingabe
@@ -112,7 +157,7 @@
 
 (launch-many-worlds 
  (create-world "blue")
- (create-world "green")
- )
+ (create-world "green"))
 
 
+ 
