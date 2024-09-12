@@ -159,9 +159,9 @@
                      [(eq? direction 'right) (list (modulo (add1 (first (first snake_coordinates))) GRID-SIZE) (second (first snake_coordinates)))])]
          
          ; Überprüfe, ob der neue Kopf auf dem Futter ist
-         [ate-food? (member new-head fruits)]
-         [new-score (if ate-food? (+ score 1) score)]  ; Punkte erhöhen, wenn Futter gegessen wurde
-         [new-snake (move-snake snake-input direction ate-food?)])  ; Schlange wächst nur, wenn Futter gegessen wurde
+         [ate-apple? (and (member new-head fruits) (eq? 'apple (list-ref fruits (sub1 (index-of fruits new-head)))))]
+         [new-score (if ate-apple? (+ score 1) score)]  ; Punkte erhöhen, wenn Futter gegessen wurde
+         [new-snake (move-snake snake-input direction ate-apple?)])  ; Schlange wächst nur, wenn Futter gegessen wurde
     (snake new-snake (snake-color snake-input) (snake-status snake-input) (snake-direction snake-input) (snake-velocity snake-input) new-score (snake-inventory snake-input)))) ;Inventory muss ausgebessert werden
 
 
@@ -201,8 +201,8 @@
     
 
 (define (create-fruit type)
-  (let ([randnum (random 2)])
-    (if (= randnum 1) (list (item type (random GRID-SIZE) (random GRID-SIZE))) (list (item 'apple (random GRID-SIZE) (random GRID-SIZE))))))
+  (let ([randnum (random 3)]) ; Zufallszahl 1 oder 0 (k.A. wie)
+    (if (= randnum 1) (list (item type (random GRID-SIZE) (random GRID-SIZE))) (list (item type (random GRID-SIZE) (random GRID-SIZE)) (item type (random GRID-SIZE) (random GRID-SIZE))))))
 
 ; gibt Frucht als Liste zurück
 (define (extract-fruit-type-coordinates univ)
