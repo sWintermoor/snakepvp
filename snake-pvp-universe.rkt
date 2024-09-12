@@ -2,6 +2,213 @@
 (require 2htdp/universe)
 (require test-engine/racket-tests)
 
+; Struct-Elemente
+(define-struct item [type x y] #:prefab)
+(define-struct snake [coordinates color status direction velocity score inventory] #:prefab)
+
+; Startzustand des Universe
+(define LIST-WORLDS-INITIAL '())
+(define LIST-SNAKES-INITIAL '())
+(define LIST-FRUITS-INITIAL '())
+(define TIMER-INITIAL 300)
+
+(define SNAKE1 (snake (list (list 2 1) (list 2 2)) "green" "solid" 'right 1 0 '(0 0)))
+(define SNAKE2 (snake (list (list 13 14) (list 14 14)) "blue" "solid" 'left 1 0 '(0 0)))
+(define FRUIT1 (item 'apple 10 10))
+
+(define UNIVERSE (list LIST-WORLDS-INITIAL (list SNAKE1 SNAKE2) (list FRUIT1) TIMER-INITIAL))
+
+;; Maximale Anzahl an Spieler
+(define NUM_PLAYERS 2)
+
+; Konstanten für das Spielfeld
+(define GRID-SIZE 15)            ; 15x15 Felder
+(define CELL-SIZE 30)            ; Jede Zelle ist 30x30 Pixel groß
+(define WIDTH (* GRID-SIZE CELL-SIZE))  ; Gesamtbreite des Spielfelds
+(define HEIGHT (* GRID-SIZE CELL-SIZE)) ; Gesamthöhe des Spielfelds
+
+
+; Gibt eine Liste der iWorlds aus
+(define (current-worlds univ)
+  (first univ))
+
+; Gibt eine Liste der Schlangen aus
+(define (current-snakes univ)
+  (second univ))
+
+; Gibt eine Liste der Früchte aus
+(define (current-fruits univ)
+  (third univ))
+
+; Gibt den Timer aus
+(define (timer univ)
+  (fourth univ))
+
+
+; Hilfsfunktion, die alle nötigen Informationen für die Welten in eine Liste verpackt (Snakes, Fruits, Timer)
+(define (information-to-draw univ)
+  (list (current-snakes univ) (current-fruits univ) (timer univ)))
+
+
+;(define UNIVERSE (myUniverse (list SNAKE1 SNAKE2) '() 300 'play))
+
+  
+;(define UNIV (myUniverse (append (myUniverse-snakes univ) (list WORLD0))))
+
+
+
+#|
+(define (add-world univ wrld)
+  (local ((define UNIV (myUniverse (append (myUniverse-worlds univ) (list wrld)) (myUniverse-items univ) (myUniverse-timer univ))))
+    (make-bundle UNIV
+                 (list (make-mail (first(myUniverse-worlds UNIV)) 'myMessage))
+                 '())))
+
+|#
+
+;;Fügt eine neue Welt hinzu 
+(define (add-world univ wrld)
+  (cond 
+    ;;Maximale Anzahl an Spielern erreicht
+    ;; --> Weise diese Welt ab
+    [(= (length (current-worlds univ)) NUM_PLAYERS)
+     (make-bundle univ
+                  (list (make-mail wrld 'rejected))
+                  '())]
+
+    #|;;Maximale Anzahl an Spielern mit dieser Welt erreicht
+    ;; --> Füge die Welt zu den bekannten hinzu
+    ;; --> Starte das Spiel
+    [(= (length (current-worlds univ)) (- NUM_PLAYERS 1))
+     (local ((define UNIV (list (append (current-worlds univ) (list wrld)) (current-snakes univ) (current-fruits univ) (timer univ))))
+       (make-bundle UNIV
+                    (list (make-mail wrld (information-to-draw univ)))
+                    '()))]|#
+
+         
+    ;;Maximale Anzahl an Spielern noch nicht erreicht
+    ;; --> Füge die Welt zu den bekannten hinzu
+    [(< (length (current-worlds univ)) NUM_PLAYERS)
+     (local ((define UNIV (list (append (current-worlds univ) (list wrld)) (current-snakes univ) (current-fruits univ) (timer univ))))
+       (make-bundle UNIV
+                    (list (make-mail wrld (information-to-draw univ)))
+                    '()))]
+    ))
+
+
+; Hilfsfunktion: Gibt die Empfangenden Daten des Keyhandlers aus Konsole aus
+(define (print-received-key world key)
+  (printf "Debug: Received WorldData: ~a\n Key:~s \n" world key)
+  world)
+
+(define (detect-key snake-input a-key snake_direction)
+  (snake (snake-coordinates snake-input) (snake-color snake-input) (snake-status snake-input)
+         (cond
+           [(and (key=? a-key "left") (not (eq? snake_direction 'right))) 'left]
+           [(and (key=? a-key "right") (not (eq? snake_direction 'left))) 'right]
+           [(and (key=? a-key "up") (not (eq? snake_direction 'down))) 'up]
+           [(and (key=? a-key "down") (not (eq? snake_direction 'up))) 'down]
+           [else snake_direction]
+          )
+         (snake-velocity snake-input) (snake-score snake-input) (snake-inventory snake-input)))
+
+;KeyHandler
+
+(define (change univ wrld a-key)
+  (let* (
+         [worldname (iworld-name wrld)]
+         [snakes (second univ)]
+         [snake1 (first snakes)]
+         [snake2 (second snakes)]
+         [direction1 (snake-direction snake1)]
+         [direction2 (snake-direction snake2)]
+         [food (third univ)])
+         
+    (cond
+      [(eq? worldname (iworld-name (first (current-worlds univ))))
+       (let ([new-univ (list (current-worlds univ) (list (detect-key snake1 a-key direction1) snake2) (current-fruits univ) (timer univ))])
+         (printf "list1change ~a  \n" new-univ)
+         new-univ)]
+      [(eq? worldname (iworld-name (second (current-worlds univ))))
+       (let ([new-univ (list (current-worlds univ) (list snake1 (detect-key snake2 a-key direction2)) (current-fruits univ) (timer univ))])
+         (printf "list2change ~a \n" new-univ)
+         new-univ)]
+      [else
+       (printf "skip ~a \n" univ)
+       univ])))
+
+
+; Message-Handler
+(define (handle-messages univ wrld m)
+  (print-received-key wrld m)
+  (change univ wrld m))
+
+
+; Berechnet den nächsten Zustand einer Schlange
+(define (next-snake-state snake-input state)
+  (let* ([snake_coordinates (snake-coordinates snake-input)]
+         [direction (snake-direction snake-input)]
+         [food (third state)]   ; Achtung, ich arbeite hier nicht mit einer Liste
+         [score (snake-score snake-input)]
+         
+         ; Berechne den neuen Kopf der Schlange, bevor die Bewegung stattfindet
+         [new-head (cond
+                     [(eq? direction 'up)    (list (first (first snake_coordinates)) (modulo (sub1 (second (first snake_coordinates))) GRID-SIZE))]
+                     [(eq? direction 'down)  (list (first (first snake_coordinates)) (modulo (add1 (second (first snake_coordinates))) GRID-SIZE))]
+                     [(eq? direction 'left)  (list (modulo (sub1 (first (first snake_coordinates))) GRID-SIZE) (second (first snake_coordinates)))]
+                     [(eq? direction 'right) (list (modulo (add1 (first (first snake_coordinates))) GRID-SIZE) (second (first snake_coordinates)))])]
+         
+         ; Überprüfe, ob der neue Kopf auf dem Futter ist
+         [ate-food? (equal? new-head food)]
+         [new-food (if ate-food?
+                       (list (random GRID-SIZE) (random GRID-SIZE))
+                       food)]  ; Neues Futter, wenn gegessen
+         [new-score (if ate-food? (+ score 1) score)]  ; Punkte erhöhen, wenn Futter gegessen wurde
+         [new-snake (move-snake snake-input direction ate-food?)])  ; Schlange wächst nur, wenn Futter gegessen wurde
+    (snake new-snake (snake-color snake-input) (snake-status snake-input) (snake-direction snake-input) (snake-velocity snake-input) new-score (snake-inventory snake-input)))) ;Inventory muss ausgebessert werden
+
+
+
+; Bewegt die Schlange basierend auf der aktuellen Richtung
+(define (move-snake snake-input direction grow?)
+  (let ([head (first (snake-coordinates snake-input))])
+    (let* ([new-head (cond
+                       [(eq? direction 'up)    (list (first head) (modulo (sub1 (second head)) GRID-SIZE))]
+                       [(eq? direction 'down)  (list (first head) (modulo (add1 (second head)) GRID-SIZE))]
+                       [(eq? direction 'left)  (list (modulo (sub1 (first head)) GRID-SIZE) (second head))]
+                       [(eq? direction 'right) (list (modulo (add1 (first head)) GRID-SIZE) (second head))])]
+           
+           ; Falls die Schlange wachsen soll, wird der neue Kopf einfach hinzugefügt,
+           ; ansonsten wird der Rest entsprechend angepasst
+           [new-snake (if grow?
+                          (cons new-head snake-input)  ; Schlange wächst
+                          (cons new-head (take (snake-coordinates snake-input) (sub1 (length (snake-coordinates snake-input))))))])
+      new-snake)))
+ 
+
+;TickHandler
+(define (tick-handler univ)
+  (cond [(= (length (current-worlds univ)) NUM_PLAYERS)
+         (let*
+            ([snake1 (next-snake-state (first (current-snakes univ)) univ)]
+             [snake2 (next-snake-state (second (current-snakes univ)) univ)]
+             [univ* (list (current-worlds univ) (list snake1 snake2) (current-fruits univ) (timer univ))]) ;hier next-Funktionen implementieren, wie next-snakes, next-fruits und next-timer
+         (make-bundle univ*
+                      (list (make-mail (first(current-worlds univ)) (information-to-draw univ*))
+                            (make-mail (second(current-worlds univ)) (information-to-draw univ*)))
+                      '()))
+         ]
+        [else univ]
+        ))
+
+
+;;Erschafft ein Universum
+(universe UNIVERSE
+          (on-new add-world)
+          (on-msg handle-messages)
+          (on-tick tick-handler 0.3))
+
+#|
 ; UniverseState is [Listof iworld?]
 ; StopMessage is 'done.
 ; GoMessage is 'it-is-your-turn.
@@ -184,9 +391,14 @@
 ; Set Universe as List
 
 ;(list (list(list snake1pos) snake1dir snake1col) (list (list snake2pos) snake2dir snake2col) (second state) (third state))
+
+
+|#
+
 ;_______________________________________________________________________________
 ;Funktionen
 
+#|
 ; Hilfsfunktion: Gibt die Koordinaten der Schlange in der Konsole aus
 (define (print-snake-coordinates snake)
   (for-each (lambda (segment)
@@ -280,3 +492,5 @@
   (let ([head (first snake)]
         [tail (rest snake)])
     (member head tail)))
+|#
+
