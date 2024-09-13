@@ -10,7 +10,7 @@
 (define LIST-WORLDS-INITIAL '())
 (define LIST-SNAKES-INITIAL '())
 (define LIST-FRUITS-INITIAL '())
-(define TIMER-INITIAL 1800)
+(define TIMER-INITIAL 1080)
 (define TICK-VALUE 1/6)
 
 (define SNAKE1 (snake (list (list 1 0) (list 0 0)) "green" "solid" 'right 1 0 0))
@@ -66,6 +66,9 @@
 (define (loose-mode univ)
   (list (current-snakes univ) (current-fruits univ) (timer univ) LOOSE))
 
+(define (tie-mode univ)
+  (list (current-snakes univ) (current-fruits univ) (timer univ) TIE))
+
 ; Hilfsfunktion fürs Ausgeben der Schlangen
 (define (first-snake univ)
   (first (current-snakes univ)))
@@ -116,8 +119,10 @@
            [(and (key=? a-key "up") (not (eq? snake_direction 'down))) 'up]
            [(and (key=? a-key "down") (not (eq? snake_direction 'up))) 'down]
            [else snake_direction]
-          )
+           )
          (snake-velocity snake-input) (snake-score snake-input) (snake-banana snake-input)))
+
+
 
 ;KeyHandler
 
@@ -250,20 +255,46 @@
                ; Überprüfen, wer mit wem kollidiert ist
                (cond
                  [(and (check-collision (second-snake univ) (first-snake univ)) (check-collision (first-snake univ) (second-snake univ))) (make-bundle univ (list (make-mail (first(current-worlds univ)) (loose-mode univ))
-                                    (make-mail (second(current-worlds univ)) (loose-mode univ))) '())]
+                                                                                                                                                                  (make-mail (second(current-worlds univ)) (loose-mode univ))) '())]
                  [(check-collision (first-snake univ) (second-snake univ)) (make-bundle univ (list (make-mail (first(current-worlds univ)) (loose-mode univ))
-                                    (make-mail (second(current-worlds univ)) (win-mode univ))) '())]
+                                                                                                   (make-mail (second(current-worlds univ)) (win-mode univ))) '())]
                  [(check-collision (second-snake univ) (first-snake univ)) (make-bundle univ (list (make-mail (first(current-worlds univ)) (win-mode univ))
-                                    (make-mail (second(current-worlds univ)) (loose-mode univ))) '())]
+                                                                                                   (make-mail (second(current-worlds univ)) (loose-mode univ))) '())]
                  [(check-self-collision (first-snake univ)) (make-bundle univ (list (make-mail (first(current-worlds univ)) (loose-mode univ))
-                                    (make-mail (second(current-worlds univ)) (win-mode univ))) '())]
+                                                                                    (make-mail (second(current-worlds univ)) (win-mode univ))) '())]
                  [(check-self-collision (second-snake univ)) (make-bundle univ (list (make-mail (first(current-worlds univ)) (win-mode univ))
-                                    (make-mail (second(current-worlds univ)) (loose-mode univ))) '())]
+                                                                                     (make-mail (second(current-worlds univ)) (loose-mode univ))) '())]
                  )
                ]
+              [(<= (timer univ) 6) (cond
+                                     [(let*(
+                                            [snakes (second univ)]
+                                            [snake1 (first snakes)]
+                                            [snake2 (second snakes)]
+                                            [score1 (snake-score snake1)]
+                                            [score2 (snake-score snake2)])
+                                        (= score1 score2)) (make-bundle univ (list (make-mail (first(current-worlds univ)) (tie-mode univ))
+                                                                                   (make-mail (second(current-worlds univ)) (tie-mode univ))) '())]
+                                     [(let*(
+                                            [snakes (second univ)]
+                                            [snake1 (first snakes)]
+                                            [snake2 (second snakes)]
+                                            [score1 (snake-score snake1)]
+                                            [score2 (snake-score snake2)])
+                                        (> score1 score2)) (make-bundle univ (list (make-mail (first(current-worlds univ)) (win-mode univ))
+                                                                                   (make-mail (second(current-worlds univ)) (loose-mode univ))) '())]
+                                     [(let*(
+                                            [snakes (second univ)]
+                                            [snake1 (first snakes)]
+                                            [snake2 (second snakes)]
+                                            [score1 (snake-score snake1)]
+                                            [score2 (snake-score snake2)])
+                                        (< score1 score2)) (make-bundle univ (list (make-mail (first(current-worlds univ)) (loose-mode univ))
+                                                                                   (make-mail (second(current-worlds univ)) (win-mode univ))) '())]
+                                     )]
               [else
 
-               (if (eq? (check-all-collisions (first-snake univ) (second-snake univ)) #t) (printf "Kollision") (printf ""))
+               ;(if (eq? (check-all-collisions (first-snake univ) (second-snake univ)) #t) (printf "Kollision") (printf "")); Konselenausgabe zum debugging
          
                (let*
                    ([snake1 (next-snake-state (first-snake univ) univ)]
