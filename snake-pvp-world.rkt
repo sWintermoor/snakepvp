@@ -15,11 +15,11 @@
 (define WORLD0 (world '() '() 300 "waiting")) ; Startzustand, Werte sind potenziell irrelevant
 
 ; Spielfeldparameter
-(define GRID-SIZE 15)            ; 15x15 Felder
+(define GRID-SIZE 35)            ; 15x15 Felder
 (define CELL-SIZE 30)            ; Jede Zelle ist 30x30 Pixel groß
 (define WIDTH (* GRID-SIZE CELL-SIZE))  ; Gesamtbreite des Spielfelds
 (define HEIGHT (* GRID-SIZE CELL-SIZE)) ; Gesamthöhe des Spielfelds
-(define EXTRA-HEIGHT 100)        ; Extra Platz für Timer, Banana-Counter und Scores
+(define EXTRA-HEIGHT 75)        ; Extra Platz für Timer, Banana-Counter und Scores
 (define TOTAL-HEIGHT (+ HEIGHT EXTRA-HEIGHT)) ; Gesamthöhe inklusive zusätzlichem Platz
 
 ; Empfangen von Nachrichten
@@ -81,23 +81,16 @@
 
 ; Zeichnet den Timer (links oben unter dem Spielfeld)
 (define (draw-timer timer scene)
-  (place-image (text (format "Time: ~a" timer) 20 "black")
-               10 ; Links platziert
-               (- TOTAL-HEIGHT 90) ; Position unter dem Spielfeld
-               scene))
-
-; Zeichnet den Bananen-Zähler (rechts oben unter dem Spielfeld)
-(define (draw-banana bananacount scene)
-  (place-image (text (format "Banana: ~a" bananacount) 20 "black")
-               (- WIDTH 80) ; Rechts platziert
-               (- TOTAL-HEIGHT 90) ; Position unter dem Spielfeld
+  (place-image (text (format "Remaining Playtime: ~a" timer) 20 "black")
+               (/ WIDTH 2) ; Zentriert
+               (- TOTAL-HEIGHT 60) ; Position unter dem Spielfeld
                scene))
 
 ; Zeichnet die Spieler-Scores (zentriert unter dem Timer und dem Bananen-Zähler)
-(define (draw-score score1 score2 scene)
-  (place-image (text (format "Score-P1: ~a  |  Score-P2: ~a" score1 score2) 20 "blue")
+(define (draw-score score1 score2 bananacount1 bananacount2 scene)
+  (place-image (text (format "     Score-P1: ~a  |  Score-P2: ~a\nBananen-P1: ~a  |  Bananen-P2: ~a" score1 score2 bananacount1 bananacount2) 20 "blue")
                (/ WIDTH 2) ; Zentriert
-               (- TOTAL-HEIGHT 50) ; Position unter dem Timer und Bananen-Zähler
+               (- TOTAL-HEIGHT 25) ; Position unter dem Timer und Bananen-Zähler
                scene))
 
 ; Zeichnet den gesamten Spielzustand
@@ -114,14 +107,14 @@
            [score2 (snake-score (second (world-snakes w)))]
            [timer (world-timer w)]
            [foods (world-items w)]
-           [bananacount (snake-banana (first (world-snakes w)))])
-       (draw-score score1 score2
+           [bananacount1 (snake-banana (first (world-snakes w)))]
+           [bananacount2 (snake-banana (second (world-snakes w)))])
+       (draw-score score1 score2 bananacount1 bananacount2
                    (draw-timer timer
-                               (draw-banana bananacount
-                                            (draw-snake snake2 color2 status2
-                                                        (draw-snake snake1 color1 status1
-                                                                    (draw-foods foods
-                                                                                (draw-grid (empty-scene WIDTH TOTAL-HEIGHT)))))))))]
+                               (draw-snake snake2 color2 status2
+                                           (draw-snake snake1 color1 status1
+                                                       (draw-foods foods
+                                                                   (draw-grid (empty-scene WIDTH TOTAL-HEIGHT))))))))]
     [(string=? (world-status w) "waiting")
      (overlay (text "Waiting... \n\nUniverse started?" 20 "orange") (empty-scene WIDTH TOTAL-HEIGHT))]
     [(string=? (world-status w) "loose")
