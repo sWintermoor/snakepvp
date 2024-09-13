@@ -14,7 +14,7 @@
 (define TICK-VALUE 1/6)
 
 (define SNAKE1 (snake (list (list 1 0) (list 0 0)) "green" "solid" 'right 1 0 0))
-(define SNAKE2 (snake (list (list 33 34) (list 34 34)) "blue" "solid" 'left 1 0 0))
+(define SNAKE2 (snake (list (list 23 24) (list 24 24)) "blue" "solid" 'left 1 0 0))
 (define FRUIT1 (item 'apple 18 17))
 
 (define UNIVERSE (list LIST-WORLDS-INITIAL (list SNAKE1 SNAKE2) (list FRUIT1) TIMER-INITIAL))
@@ -23,7 +23,7 @@
 (define NUM_PLAYERS 2)
 
 ; Konstanten für das Spielfeld
-(define GRID-SIZE 35)            ; 15x15 Felder
+(define GRID-SIZE 25)            ; 15x15 Felder
 (define CELL-SIZE 30)            ; Jede Zelle ist 30x30 Pixel groß
 (define WIDTH (* GRID-SIZE CELL-SIZE))  ; Gesamtbreite des Spielfelds
 (define HEIGHT (* GRID-SIZE CELL-SIZE)) ; Gesamthöhe des Spielfelds

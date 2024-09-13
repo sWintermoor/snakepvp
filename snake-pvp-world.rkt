@@ -15,7 +15,7 @@
 (define WORLD0 (world '() '() 300 "waiting")) ; Startzustand, Werte sind potenziell irrelevant
 
 ; Spielfeldparameter
-(define GRID-SIZE 35)            ; 15x15 Felder
+(define GRID-SIZE 25)            ; 15x15 Felder
 (define CELL-SIZE 30)            ; Jede Zelle ist 30x30 Pixel groß
 (define WIDTH (* GRID-SIZE CELL-SIZE))  ; Gesamtbreite des Spielfelds
 (define HEIGHT (* GRID-SIZE CELL-SIZE)) ; Gesamthöhe des Spielfelds
@@ -80,7 +80,7 @@
                                                       (rotate 160 (isosceles-triangle (/ CELL-SIZE 2) CELL-SIZE "solid" "brown")))
                                          (+ (/ CELL-SIZE 2) (* x CELL-SIZE))
                                          (+ (/ CELL-SIZE 2) (* y CELL-SIZE))
-                                         scene)
+                                         image)
                             ]
          [(eq? type 'banana) (place-image
                               (overlay/xy
@@ -93,7 +93,7 @@
                                (rotate -40 (rectangle 5 15 "solid" "brown")))
                               (+ (/ CELL-SIZE 2) (* x CELL-SIZE))
                               (+ (/ CELL-SIZE 2) (* y CELL-SIZE))
-                              scene)
+                              image)
                              ])))
    scene
    foods))
@@ -135,15 +135,15 @@
                                                        (draw-foods foods
                                                                    (draw-grid (empty-scene WIDTH TOTAL-HEIGHT))))))))]
     [(string=? (world-status w) "waiting")
-     (overlay (text "Waiting... \n\nUniverse started?" 20 "orange") (empty-scene WIDTH TOTAL-HEIGHT))]
+     (overlay (text "Waiting... \n\nUniverse started?" 30 "orange") (empty-scene WIDTH TOTAL-HEIGHT))]
     [(string=? (world-status w) "loose")
-     (overlay (text "You have lost" 20 "red") (empty-scene WIDTH TOTAL-HEIGHT))]
+     (overlay (text "You have lost" 30 "red") (empty-scene WIDTH TOTAL-HEIGHT))]
     [(string=? (world-status w) "win")
-     (overlay (text "You have won" 20 "green") (empty-scene WIDTH TOTAL-HEIGHT))]
+     (overlay (text "You have won" 30 "green") (empty-scene WIDTH TOTAL-HEIGHT))]
     [(string=? (world-status w) "tie")
-     (overlay (text "Its a Tie!" 20 "orange") (empty-scene WIDTH TOTAL-HEIGHT))]
+     (overlay (text "Its a Tie!" 30 "orange") (empty-scene WIDTH TOTAL-HEIGHT))]
     [else
-     (overlay (text "rejected" 20 "blue") (empty-scene WIDTH TOTAL-HEIGHT))]))
+     (overlay (text "rejected" 30 "blue") (empty-scene WIDTH TOTAL-HEIGHT))]))
 
 ; Tastatureingabe
 (define (key-handler w key)
@@ -162,5 +162,5 @@
 
 ; Mehrere Welten starten
 (launch-many-worlds 
- (create-world "a")
- (create-world "b"))
+ (create-world "Player A")
+ (create-world "Player B"))
