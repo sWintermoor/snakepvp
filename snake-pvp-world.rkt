@@ -24,7 +24,7 @@
 (define WORLD0 (world '() '() 300 "waiting")) ;die Werte sind potenziell irrelevant
 
 ; Spielfeldparameter
-(define GRID-SIZE 15)            ; 15x15 Felder
+(define GRID-SIZE 35)            ; 15x15 Felder
 (define CELL-SIZE 30)            ; Jede Zelle ist 30x30 Pixel groß
 (define WIDTH (* GRID-SIZE CELL-SIZE))  ; Gesamtbreite des Spielfelds
 (define HEIGHT (* GRID-SIZE CELL-SIZE)) ; Gesamthöhe des Spielfelds
