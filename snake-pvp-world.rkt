@@ -105,9 +105,9 @@
    foods))
 
 ; Zeichnet den Punktestand
-(define (draw-score score1 score2 scene)
-  (place-image (text (format "Score-P1: ~a\nScore-P2: ~s" score1 score2) 20 "blue")
-               (+ CELL-SIZE 25) (/ CELL-SIZE 1.5)
+(define (draw-score score1 score2 time scene)
+  (place-image (text (format "Score-P1: ~a\nScore-P2: ~a\nTime: ~a" score1 score2 time) 20 "blue")
+               (+ CELL-SIZE 30) (/ CELL-SIZE 0.5)
                scene))
 
 ; Zeichnet den gesamten Spielzustand
@@ -123,8 +123,9 @@
            [status2 (snake-status (first (world-snakes w)))]
            [score1 (snake-score (first (world-snakes w)))]
            [score2 (snake-score (second (world-snakes w)))]
+           [time (world-timer w)]
            [foods (world-items w)]) ;zeichnet alle Items in der Liste, aber als roter Kreis (so)
-       (draw-score score1 score2 
+       (draw-score score1 score2 time
                    (draw-snake snake2 color2 status2 ;Schlange wird mit Farbe gezeichnet
                                (draw-snake snake1 color1 status1
                                            (draw-foods foods

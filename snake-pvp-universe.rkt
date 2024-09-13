@@ -4,16 +4,17 @@
 
 ; Struct-Elemente
 (define-struct item [type x y] #:prefab)
-(define-struct snake [coordinates color status direction velocity score inventory] #:prefab)
+(define-struct snake [coordinates color status direction velocity score banana] #:prefab)
 
 ; Startzustand des Universe
 (define LIST-WORLDS-INITIAL '())
 (define LIST-SNAKES-INITIAL '())
 (define LIST-FRUITS-INITIAL '())
-(define TIMER-INITIAL 300)
+(define TIMER-INITIAL 1800)
+(define TICK-VALUE 1/6)
 
-(define SNAKE1 (snake (list (list 2 1) (list 2 2)) "green" "solid" 'right 1 0 '(0 0)))
-(define SNAKE2 (snake (list (list 33 34) (list 34 34)) "blue" "solid" 'left 1 0 '(0 0)))
+(define SNAKE1 (snake (list (list 1 0) (list 0 0)) "green" "solid" 'right 1 0 0))
+(define SNAKE2 (snake (list (list 33 34) (list 34 34)) "blue" "solid" 'left 1 0 0))
 (define FRUIT1 (item 'apple 18 17))
 
 (define UNIVERSE (list LIST-WORLDS-INITIAL (list SNAKE1 SNAKE2) (list FRUIT1) TIMER-INITIAL))
@@ -115,7 +116,7 @@
            [(and (key=? a-key "down") (not (eq? snake_direction 'up))) 'down]
            [else snake_direction]
           )
-         (snake-velocity snake-input) (snake-score snake-input) (snake-inventory snake-input)))
+         (snake-velocity snake-input) (snake-score snake-input) (snake-banana snake-input)))
 
 ;KeyHandler
 
@@ -167,7 +168,7 @@
          [ate-apple? (and (member new-head fruits) (eq? 'apple (list-ref fruits (sub1 (index-of fruits new-head)))))]
          [new-score (if ate-apple? (+ score 1) score)]  ; Punkte erhöhen, wenn Futter gegessen wurde
          [new-snake (move-snake snake-input direction ate-apple?)])  ; Schlange wächst nur, wenn Futter gegessen wurde
-    (snake new-snake (snake-color snake-input) (snake-status snake-input) (snake-direction snake-input) (snake-velocity snake-input) new-score (snake-inventory snake-input)))) ;Inventory muss ausgebessert werden
+    (snake new-snake (snake-color snake-input) (snake-status snake-input) (snake-direction snake-input) (snake-velocity snake-input) new-score (snake-banana snake-input)))) ;Inventory muss ausgebessert werden
 
 
 
@@ -264,7 +265,8 @@
                    ([snake1 (next-snake-state (first-snake univ) univ)]
                     [snake2 (next-snake-state (second-snake univ) univ)]
                     [fruits (next-fruit-state snake1 snake2 univ)]
-                    [univ* (list (current-worlds univ) (list snake1 snake2) fruits (timer univ))]) ;hier next-Funktionen implementieren, wie next-snakes, next-fruits und next-timer
+                    [time (timer univ)]
+                    [univ* (list (current-worlds univ) (list snake1 snake2) fruits (sub1 time))]) ;hier next-Funktionen implementieren, wie next-snakes, next-fruits und next-timer
 
                  (make-bundle univ*
                               (list (make-mail (first(current-worlds univ)) (information-to-draw univ*))
@@ -306,7 +308,7 @@
 (universe UNIVERSE
           (on-new add-world)
           (on-msg handle-messages)
-          (on-tick tick-handler 0.15))
+          (on-tick tick-handler TICK-VALUE))
 
 
 
