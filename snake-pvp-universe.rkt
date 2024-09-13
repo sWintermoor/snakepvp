@@ -156,6 +156,7 @@
          [direction (snake-direction snake-input)]
          [fruits (extract-fruit-type-coordinates (current-fruits state))]  
          [score (snake-score snake-input)]
+         [banana (snake-banana snake-input)]
          
          ; Berechne den neuen Kopf der Schlange, bevor die Bewegung stattfindet
          [new-head (cond
@@ -166,9 +167,11 @@
          
          ; Überprüfe, ob der neue Kopf auf dem Futter ist
          [ate-apple? (and (member new-head fruits) (eq? 'apple (list-ref fruits (sub1 (index-of fruits new-head)))))]
-         [new-score (if ate-apple? (+ score 1) score)]  ; Punkte erhöhen, wenn Futter gegessen wurde
+         [ate-banana? (and (member new-head fruits) (eq? 'banana (list-ref fruits (sub1 (index-of fruits new-head)))))]
+         [new-score (if ate-apple? (add1 score) score)]  ; Punkte erhöhen, wenn Futter gegessen wurde
+         [new-banana (if ate-banana? (add1 banana) banana)]
          [new-snake (move-snake snake-input direction ate-apple?)])  ; Schlange wächst nur, wenn Futter gegessen wurde
-    (snake new-snake (snake-color snake-input) (snake-status snake-input) (snake-direction snake-input) (snake-velocity snake-input) new-score (snake-banana snake-input)))) ;Inventory muss ausgebessert werden
+    (snake new-snake (snake-color snake-input) (snake-status snake-input) (snake-direction snake-input) (snake-velocity snake-input) new-score new-banana))) ;Inventory muss ausgebessert werden
 
 
 
