@@ -140,6 +140,8 @@
      (overlay (text "You have lost" 20 "red") (empty-scene WIDTH TOTAL-HEIGHT))]
     [(string=? (world-status w) "win")
      (overlay (text "You have won" 20 "green") (empty-scene WIDTH TOTAL-HEIGHT))]
+    [(string=? (world-status w) "tie")
+     (overlay (text "Its a Tie!" 20 "orange") (empty-scene WIDTH TOTAL-HEIGHT))]
     [else
      (overlay (text "rejected" 20 "blue") (empty-scene WIDTH TOTAL-HEIGHT))]))
 

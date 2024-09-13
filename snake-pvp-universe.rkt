@@ -33,6 +33,7 @@
 (define WIN "win")
 (define LOOSE "loose")
 (define REJECTED "rejected")
+(define TIE "tie")
 
 
 ; Gibt eine Liste der iWorlds aus
