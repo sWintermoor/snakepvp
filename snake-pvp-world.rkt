@@ -75,14 +75,26 @@
            [y (item-y fruit)]
            [type (item-type fruit)])
        (cond
-         [(eq? type 'apple) (place-image (circle (/ CELL-SIZE 2) "solid" "crimson")
+         [(eq? type 'apple) (place-image (underlay/xy (ellipse CELL-SIZE (- CELL-SIZE (/ CELL-SIZE 3)) "solid" "crimson")
+                                                      (/ CELL-SIZE 2) (- 0 (/ CELL-SIZE 5))
+                                                      (rotate 160 (isosceles-triangle (/ CELL-SIZE 2) CELL-SIZE "solid" "brown")))
                                          (+ (/ CELL-SIZE 2) (* x CELL-SIZE))
                                          (+ (/ CELL-SIZE 2) (* y CELL-SIZE))
-                                         image)]
-         [(eq? type 'banana) (place-image (circle (/ CELL-SIZE 2) "solid" "gold")
-                                          (+ (/ CELL-SIZE 2) (* x CELL-SIZE))
-                                          (+ (/ CELL-SIZE 2) (* y CELL-SIZE))
-                                          image)])))
+                                         scene)
+                            ]
+         [(eq? type 'banana) (place-image
+                              (overlay/xy
+                               (overlay/xy (rotate -50 (ellipse (/ CELL-SIZE 2) CELL-SIZE "solid" "gold"))
+                                           0
+                                           0
+                                           (rotate -50 (ellipse (/ CELL-SIZE 2) CELL-SIZE "outline" "black")))
+                               (/ CELL-SIZE 2)
+                               (- 0 (/ CELL-SIZE 5))
+                               (rotate -40 (rectangle 5 15 "solid" "brown")))
+                              (+ (/ CELL-SIZE 2) (* x CELL-SIZE))
+                              (+ (/ CELL-SIZE 2) (* y CELL-SIZE))
+                              scene)
+                             ])))
    scene
    foods))
 
