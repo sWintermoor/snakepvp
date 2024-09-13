@@ -75,11 +75,11 @@
            [y (item-y fruit)]
            [type (item-type fruit)])
        (cond
-         [(eq? type 'apple) (place-image (circle (/ CELL-SIZE 2) "solid" "red")
+         [(eq? type 'apple) (place-image (circle (/ CELL-SIZE 2) "solid" "crimson")
                                          (+ (/ CELL-SIZE 2) (* x CELL-SIZE))
                                          (+ (/ CELL-SIZE 2) (* y CELL-SIZE))
                                          image)]
-         [(eq? type 'banana) (place-image (circle (/ CELL-SIZE 2) "solid" "yellow")
+         [(eq? type 'banana) (place-image (circle (/ CELL-SIZE 2) "solid" "gold")
                                           (+ (/ CELL-SIZE 2) (* x CELL-SIZE))
                                           (+ (/ CELL-SIZE 2) (* y CELL-SIZE))
                                           image)])))
