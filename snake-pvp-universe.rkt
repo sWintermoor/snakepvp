@@ -13,8 +13,8 @@
 (define TIMER-INITIAL 1080)
 (define TICK-VALUE 1/6)
 
-(define SNAKE1 (snake (list (list 1 0) (list 0 0)) "green" "solid" 'right 1 0 0))
-(define SNAKE2 (snake (list (list 23 24) (list 24 24)) "blue" "solid" 'left 1 0 0))
+(define SNAKE1 (snake (list (list 1 0) (list 0 0)) "Yellow Green" "solid" 'right 1 0 0))
+(define SNAKE2 (snake (list (list 23 24) (list 24 24)) "navy" "solid" 'left 1 0 0))
 (define FRUIT1 (item 'apple 18 17))
 
 (define UNIVERSE (list LIST-WORLDS-INITIAL (list SNAKE1 SNAKE2) (list FRUIT1) TIMER-INITIAL))

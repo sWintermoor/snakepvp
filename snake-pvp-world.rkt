@@ -137,9 +137,9 @@
     [(string=? (world-status w) "waiting")
      (overlay (text "Waiting... \n\nUniverse started?" 30 "orange") (empty-scene WIDTH TOTAL-HEIGHT))]
     [(string=? (world-status w) "loose")
-     (overlay (text "You have lost" 30 "red") (empty-scene WIDTH TOTAL-HEIGHT))]
+     (overlay (text "You have lost" 30 "crimson") (empty-scene WIDTH TOTAL-HEIGHT))]
     [(string=? (world-status w) "win")
-     (overlay (text "You have won" 30 "green") (empty-scene WIDTH TOTAL-HEIGHT))]
+     (overlay (text "You have won" 30 "lime green") (empty-scene WIDTH TOTAL-HEIGHT))]
     [(string=? (world-status w) "tie")
      (overlay (text "Its a Tie!" 30 "orange") (empty-scene WIDTH TOTAL-HEIGHT))]
     [else
