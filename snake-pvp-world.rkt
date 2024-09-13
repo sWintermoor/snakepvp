@@ -13,15 +13,15 @@
 
 ; Score is a Number
 
-; world
+
 
 ; Structs
 (define-struct item [type x y] #:prefab)
 (define-struct snake [coordinates color status direction velocity score inventory] #:prefab)
-(define-struct world [snakes items timer] #:prefab)
+(define-struct world [snakes items timer status] #:prefab) ;status: waiting, playing, win, loose
 
 ; Startzustand der Welt
-(define WORLD0 (world '() '() 300)) ;die Werte sind potenziell irrelevant
+(define WORLD0 (world '() '() 300 "waiting")) ;die Werte sind potenziell irrelevant
 
 ; Spielfeldparameter
 (define GRID-SIZE 15)            ; 15x15 Felder
@@ -45,8 +45,9 @@
   (let
       ([snakes (first m)]
        [items (second m)]
-       [timer (third m)])
-    (world snakes items timer)))
+       [timer (third m)]
+       [world_status (fourth m)])
+    (world snakes items timer world_status)))
 
 
 ; Funktion zum Zeichnen des Gitternetzes
@@ -82,16 +83,6 @@
    scene
    snake))
 
-; Zeichnet das Futter
-(define (draw-food food scene)
-  
-  (let ([x (second food)]
-        [y (third food)])
-    (place-image (circle GRID-SIZE "solid" FOOD-COLOR) ;Food-Color muss weg, anstelle dessen müssen wir type von item nutzen
-                 (+ (/ CELL-SIZE 2) (* x CELL-SIZE))
-                 (+ (/ CELL-SIZE 2) (* y CELL-SIZE))
-                 scene)))
-
 ; Zeichnet das Futter und weitere Items
 (define (draw-foods foods scene)
   
@@ -101,11 +92,11 @@
         [y (item-y fruit)]
         [type (item-type fruit)])
     (cond
-      [(eq? type 'apple)  (place-image (circle GRID-SIZE "solid" "red")
+      [(eq? type 'apple)  (place-image (circle (/ CELL-SIZE 2) "solid" "red")
                  (+ (/ CELL-SIZE 2) (* x CELL-SIZE))
                  (+ (/ CELL-SIZE 2) (* y CELL-SIZE))
                  image)]
-      [(eq? type 'banana)  (place-image (circle GRID-SIZE "solid" "yellow")
+      [(eq? type 'banana)  (place-image (circle (/ CELL-SIZE 2) "solid" "yellow")
                  (+ (/ CELL-SIZE 2) (* x CELL-SIZE))
                  (+ (/ CELL-SIZE 2) (* y CELL-SIZE))
                  image)]
@@ -121,8 +112,9 @@
 
 ; Zeichnet den gesamten Spielzustand
 (define (draw-world w)
-  (cond
-    [(= (length (world-snakes w)) NUM_PLAYERS)
+  (cond 
+    [(string=? (world-status w) "playing")
+     ;(= (length (world-snakes w)) NUM_PLAYERS)
      (let ([snake1 (snake-coordinates (first (world-snakes w)))]
            [snake2 (snake-coordinates (second (world-snakes w)))]
            [color1 (snake-color (first (world-snakes w)))] 
@@ -132,18 +124,24 @@
            [score1 (snake-score (first (world-snakes w)))]
            [score2 (snake-score (second (world-snakes w)))]
            [foods (world-items w)]) ;zeichnet alle Items in der Liste, aber als roter Kreis (so)
-       (draw-score score1 score2
-                   (draw-foods foods 
-                              (draw-snake snake2 color2 status2 ;Schlange wird mit Farbe gezeichnet
-                                          (draw-snake snake1 color1 status1
-                                                      (draw-grid (empty-scene WIDTH HEIGHT)))))))]
-    [else (overlay (text "Waiting... \n\nUniverse started?" 20 "red") (empty-scene WIDTH HEIGHT))]
+       (draw-score score1 score2 
+                   (draw-snake snake2 color2 status2 ;Schlange wird mit Farbe gezeichnet
+                               (draw-snake snake1 color1 status1
+                                           (draw-foods foods
+                                                       (draw-grid (empty-scene WIDTH HEIGHT)))))))]
+    [(string=? (world-status w) "waiting") (overlay (text "Waiting... \n\nUniverse started?" 20 "orange") (empty-scene WIDTH HEIGHT))] ;Eine bessere Methode als "string=?" finden?
+    [(string=? (world-status w) "loose") (overlay (text "You have lost" 20 "red") (empty-scene WIDTH HEIGHT))]
+    [(string=? (world-status w) "win") (overlay (text "You have won" 20 "green") (empty-scene WIDTH HEIGHT))]
+    [else (overlay (text "rejected" 20 "blue") (empty-scene WIDTH HEIGHT))]
     ))
 
 
 ; Versenden der Tastatureingabe
 (define (key-handler w key)
-  (make-package w key))
+  (make-package w
+  (cond
+    [(string=? (world-status w) "playing") key]
+    [else '()])))
 
 
 ; Starte das Spiel
@@ -156,5 +154,5 @@
     [register LOCALHOST]))
 
 (launch-many-worlds 
- (create-world "green")
- (create-world "blue"))
+ (create-world "a")
+ (create-world "b"))
