@@ -26,9 +26,16 @@
 (define (receive w m)
   (let ([snakes (first m)]
         [items (second m)]
-        [timer (third m)]
+        [timer (seconds-to-minutes (floor (/ (third m) 6)))]
         [world_status (fourth m)])
     (world snakes items timer world_status)))
+
+(define (seconds-to-minutes seconds)
+  (let ([minutes (quotient seconds 60)]
+        [remaining-seconds (modulo seconds 60)])
+    (format "~a:~s" minutes remaining-seconds)))
+    
+    
 
 ; Funktion zum Zeichnen des Gitternetzes
 (define (draw-grid scene)
