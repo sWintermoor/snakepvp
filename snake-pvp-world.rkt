@@ -140,8 +140,7 @@
 (define (key-handler w key)
   (make-package w
   (cond
-    [(string=? (world-status w) "playing") key]
-    [else '()])))
+    [(string=? (world-status w) "playing") key]))) ; evtl ist Fallunterscheidung unnötig
 
 
 ; Starte das Spiel
