@@ -158,6 +158,9 @@
     [to-draw draw-world]
     [on-key key-handler]
     [name worldname]
+;   [state #t]
+;   [register "192.168.1.15"]
+;   [port 9092]
     [register LOCALHOST]))
 
 ; Mehrere Welten starten

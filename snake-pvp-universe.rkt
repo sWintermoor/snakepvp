@@ -342,6 +342,7 @@
 ;;Erschafft ein Universum
 (universe UNIVERSE
           (on-new add-world)
+;         (port 9092)
           (on-msg handle-messages)
           (on-tick tick-handler TICK-VALUE))
 
