@@ -2,91 +2,77 @@
 (require 2htdp/universe)
 (require test-engine/racket-tests)
 
-; Struct-Elemente
-(define-struct item [type x y] #:prefab)
-(define-struct snake [coordinates color status direction velocity score banana] #:prefab)
+; Definiert Strukturen für Items und Schlangen
+(define-struct item [type x y] #:prefab)               ; Ein Item hat einen Typ und Koordinaten
+(define-struct snake [coordinates color status direction velocity score banana] #:prefab) ; Eine Schlange hat Koordinaten, Farbe, Status, Richtung, Geschwindigkeit, Punktestand und "Bananen" als Inventar
 
-; Startzustand des Universe
-(define LIST-WORLDS-INITIAL '())
-(define LIST-SNAKES-INITIAL '())
-(define LIST-FRUITS-INITIAL '())
-(define TIMER-INITIAL 1080)
-(define TICK-VALUE 1/6)
+; Initiale Listen für Welten, Schlangen, Früchte und den Timer
+(define LIST-WORLDS-INITIAL '())                       ; Liste der Welten (zunächst leer)
+(define LIST-SNAKES-INITIAL '())                       ; Liste der Schlangen (zunächst leer)
+(define LIST-FRUITS-INITIAL '())                       ; Liste der Früchte (zunächst leer)
+(define TIMER-INITIAL 1080)                            ; Initialer Timerwert
+(define TICK-VALUE 1/6)                                ; Zeitwert für Ticks
 
-(define SNAKE1 (snake (list (list 1 0) (list 0 0)) "Yellow Green" "solid" 'right 1 0 0))
-(define SNAKE2 (snake (list (list 23 24) (list 24 24)) "navy" "solid" 'left 1 0 0))
-(define FRUIT1 (item 'apple 18 17))
+; Initiale Schlangen und Früchte
+(define SNAKE1 (snake (list (list 1 0) (list 0 0)) "Yellow Green" "solid" 'right 1 0 0)) ; Erste Schlange
+(define SNAKE2 (snake (list (list 23 24) (list 24 24)) "navy" "solid" 'left 1 0 0))      ; Zweite Schlange
+(define FRUIT1 (item 'apple 18 17))                   ; Erste Frucht (Apfel)
 
+; Initiales Universum, das Welten, Schlangen, Früchte und den Timer enthält
 (define UNIVERSE (list LIST-WORLDS-INITIAL (list SNAKE1 SNAKE2) (list FRUIT1) TIMER-INITIAL))
 
-;; Maximale Anzahl an Spieler
-(define NUM_PLAYERS 2)
+;; Maximale Anzahl an Spielern
+(define NUM_PLAYERS 2)                                ; Zwei Spieler möglich
 
 ; Konstanten für das Spielfeld
-(define GRID-SIZE 25)            ; 15x15 Felder
-(define CELL-SIZE 30)            ; Jede Zelle ist 30x30 Pixel groß
-(define WIDTH (* GRID-SIZE CELL-SIZE))  ; Gesamtbreite des Spielfelds
-(define HEIGHT (* GRID-SIZE CELL-SIZE)) ; Gesamthöhe des Spielfelds
+(define GRID-SIZE 25)                                 ; Spielfeld hat 25x25 Felder
+(define CELL-SIZE 30)                                 ; Jede Zelle ist 30x30 Pixel groß
+(define WIDTH (* GRID-SIZE CELL-SIZE))                ; Gesamtbreite des Spielfelds
+(define HEIGHT (* GRID-SIZE CELL-SIZE))               ; Gesamthöhe des Spielfelds
 
-(define PLAYING "playing")
-(define WAITING "waiting")
-(define WIN "win")
-(define LOOSE "loose")
-(define REJECTED "rejected")
-(define TIE "tie")
+; Spielstatus
+(define PLAYING "playing")                            ; Status: Spiel läuft
+(define WAITING "waiting")                            ; Status: Warten auf Spieler
+(define WIN "win")                                    ; Status: Gewonnen
+(define LOOSE "loose")                                ; Status: Verloren
+(define REJECTED "rejected")                          ; Status: Abgelehnt
+(define TIE "tie")                                    ; Status: Unentschieden
 
+; Funktionen, um Teile des Universums abzurufen
+(define (current-worlds univ) (first univ))            ; Gibt die aktuellen Welten zurück
+(define (current-snakes univ) (second univ))           ; Gibt die aktuellen Schlangen zurück
+(define (current-fruits univ) (third univ))            ; Gibt die aktuellen Früchte zurück
+(define (timer univ) (fourth univ))                    ; Gibt den Timerwert zurück
 
-; Gibt eine Liste der iWorlds aus
-(define (current-worlds univ)
-  (first univ))
-
-; Gibt eine Liste der Schlangen aus
-(define (current-snakes univ)
-  (second univ))
-
-; Gibt eine Liste der Früchte aus
-(define (current-fruits univ)
-  (third univ))
-
-; Gibt den Timer aus
-(define (timer univ)
-  (fourth univ))
-
-
-; Hilfsfunktion, die alle nötigen Informationen für die Welten in eine Liste verpackt (Snakes, Fruits, Timer)
+; Funktion zur Bereitstellung der zu zeichnenden Information basierend auf dem Universum
 (define (information-to-draw univ)
   (list (current-snakes univ) (current-fruits univ) (timer univ) PLAYING))
 
+; Verschiedene Spielmodi
 (define (waiting-mode univ)
   (list (current-snakes univ) (current-fruits univ) (timer univ) WAITING))
-
 (define (win-mode univ)
   (list (current-snakes univ) (current-fruits univ) (timer univ) WIN))
-
 (define (loose-mode univ)
   (list (current-snakes univ) (current-fruits univ) (timer univ) LOOSE))
-
 (define (tie-mode univ)
   (list (current-snakes univ) (current-fruits univ) (timer univ) TIE))
 
-; Hilfsfunktion fürs Ausgeben der Schlangen
-(define (first-snake univ)
-  (first (current-snakes univ)))
+; Hilfsfunktionen zum Abrufen der ersten und zweiten Schlange
+(define (first-snake univ) (first (current-snakes univ)))
+(define (second-snake univ) (second (current-snakes univ)))
 
-(define (second-snake univ)
-  (second (current-snakes univ)))
-
-;;Fügt eine neue Welt hinzu 
+;; Fügt eine neue Welt hinzu
 (define (add-world univ wrld)
   (cond 
-    ;;Maximale Anzahl an Spielern erreicht
+    ;; Maximale Anzahl an Spielern erreicht
     ;; --> Weise diese Welt ab
     [(= (length (current-worlds univ)) NUM_PLAYERS)
      (make-bundle univ
-                  (list (make-mail wrld '('() '() 0 REJECTED))) ;Weltzustand mit ablehnendem Zustand
+                  (list (make-mail wrld '('() '() 0 REJECTED))) ; Weltzustand mit ablehnendem Zustand
                   '())]
 
-    ;;Maximale Anzahl an Spielern mit dieser Welt erreicht
+    ;; Maximale Anzahl an Spielern mit dieser Welt erreicht
     ;; --> Füge die Welt zu den bekannten hinzu
     ;; --> Starte das Spiel
     [(= (length (current-worlds univ)) (- NUM_PLAYERS 1))
@@ -95,22 +81,20 @@
                     (list (make-mail wrld (information-to-draw univ)))
                     '()))]
 
-         
-    ;;Maximale Anzahl an Spielern noch nicht erreicht
+    ;; Maximale Anzahl an Spielern noch nicht erreicht
     ;; --> Füge die Welt zu den bekannten hinzu
     [(= (length (current-worlds univ)) (- NUM_PLAYERS 2))
      (local ((define UNIV (list (append (current-worlds univ) (list wrld)) (current-snakes univ) (current-fruits univ) (timer univ))))
        (make-bundle UNIV
                     (list (make-mail wrld (waiting-mode univ)))
-                    '()))]
-    ))
+                    '()))]))
 
-
-; Hilfsfunktion: Gibt die Empfangenden Daten des Keyhandlers aus Konsole aus
+; Hilfsfunktion: Gibt die empfangenen Daten des Keyhandlers in der Konsole aus
 (define (print-received-key world key)
   (printf "Debug: Received WorldData: ~a\n Key:~s \n" world key)
   world)
 
+; Verarbeitet Tastatureingaben und passt die Richtung der Schlange an
 (define (detect-key snake-input a-key snake_direction)
   (snake (snake-coordinates snake-input) (snake-color snake-input) (snake-status snake-input)
          (cond
@@ -118,17 +102,12 @@
            [(and (key=? a-key "right") (not (eq? snake_direction 'left))) 'right]
            [(and (key=? a-key "up") (not (eq? snake_direction 'down))) 'up]
            [(and (key=? a-key "down") (not (eq? snake_direction 'up))) 'down]
-           [else snake_direction]
-           )
+           [else snake_direction])
          (snake-velocity snake-input) (snake-score snake-input) (snake-banana snake-input)))
 
-
-
-;KeyHandler
-
+;; Verarbeitet Tastatureingaben für das Universum und aktualisiert die Schlangen
 (define (change univ wrld a-key)
-  (let* (
-         [worldname (iworld-name wrld)]
+  (let* ([worldname (iworld-name wrld)]
          [snakes (second univ)]
          [snake1 (first snakes)]
          [snake2 (second snakes)]
@@ -137,6 +116,7 @@
          [food (third univ)])
          
     (cond
+      ;; Prüft, ob die erste oder zweite Schlange die Eingabe erhalten hat
       [(eq? worldname (iworld-name (first (current-worlds univ))))
        (let ([new-univ (list (current-worlds univ) (list (detect-key snake1 a-key direction1) snake2) (current-fruits univ) (timer univ))])
          (printf "list1change ~a  \n" new-univ)
@@ -149,8 +129,7 @@
        (printf "skip ~a \n" univ)
        univ])))
 
-
-; Message-Handler
+; Verarbeitet Nachrichten im Universum und ruft den Keyhandler auf
 (define (handle-messages univ wrld m)
   (print-received-key wrld m)
   (change univ wrld m))
@@ -214,7 +193,7 @@
                                     (second who-ate-food)) forbidden)
         (current-fruits state))))
 
-; entfernt die gegessene Frucht und platziert 1-2 neue
+; Entfernt die gegessene Frucht und platziert 1-2 neue
 (define (new-fruit fruits fruit forbidden-fields)
   (append (create-fruit fruits (item-type fruit) forbidden-fields) (remove fruit fruits)))
     
@@ -232,13 +211,13 @@
                          (list (item 'apple x1 y1) (item 'banana x2 y2)))])
     (list-ref fruit-choices randnum)))
 
-; verhindert das Spawnen auf der Schlange und auf Früchten (in der World müssen Früchte zuerst gezeichnet werden)
+; Verhindert das Spawnen auf der Schlange und auf Früchten (in der World müssen Früchte zuerst gezeichnet werden)
 (define (correct-random fruits coordinates forbidden-fields)
   (let ([ext (extract-fruit-type-coordinates fruits)])
     (if (or (member coordinates ext) (member coordinates forbidden-fields)) (correct-random fruits (list (random GRID-SIZE) (random GRID-SIZE)) forbidden-fields) coordinates)))
 
 
-; gibt Frucht als Liste zurück
+; Gibt Frucht als Liste zurück
 (define (extract-fruit-type-coordinates fruit-list)
   (foldl (lambda (fruit current-list)
            (append current-list (list (item-type fruit) (list (item-x fruit) (item-y fruit)))))
@@ -311,8 +290,9 @@
         [else univ]
         ))
 
-;CollisionDetection
+; Funktionen zur Kollisionsprüfung, Tick-Handler und das Erstellen neuer Früchte bleiben unverändert
 ;SNAKES->Boolean
+
 ; Prüft, ob der Kopf der ersten Schlange in den Koordinaten der zweiten Schlange vorkommt
 (define (check-collision snake1 snake2)
   (let ([head1 (first (snake-coordinates snake1))]   ; Kopf der ersten Schlange
@@ -339,10 +319,10 @@
 
 
 
-;;Erschafft ein Universum
+;; Erschafft das Universum mit den entsprechenden Handlern
 (universe UNIVERSE
           (on-new add-world)
-;         (port 9092)
+          ;(port 9092)
           (on-msg handle-messages)
           (on-tick tick-handler TICK-VALUE))
 
