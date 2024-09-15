@@ -12,7 +12,7 @@
 (define-struct world [snakes items timer status] #:prefab) ; Weltzustand mit Schlangen, Items, Timer und Spielstatus (waiting, playing, win, loose)
 
 ; Startzustand der Welt
-(define WORLD0 (world '() '() 300 "waiting")) ; Leerer Startzustand, initiale Werte sind potenziell irrelevant
+(define WORLD (world '() '() 300 "waiting")) ; Leerer Startzustand, initiale Werte sind potenziell irrelevant
 
 ; Spielfeldparameter
 (define GRID-SIZE 25)            ; Spielfeldgröße: 25x25 Zellen
@@ -154,7 +154,7 @@
 
 ; Funktion zum Starten des Spiels
 (define (create-world worldname)
-  (big-bang WORLD0
+  (big-bang WORLD
     [on-receive receive]                      ; Empfängt Nachrichten und aktualisiert den Weltzustand
     [to-draw draw-world]                      ; Zeichnet den aktuellen Weltzustand
     [on-key key-handler]                      ; Verarbeitet Tastatureingaben

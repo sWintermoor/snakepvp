@@ -2,6 +2,12 @@
 (require 2htdp/universe)
 (require test-engine/racket-tests)
 
+; Konstanten für das Spielfeld
+(define GRID-SIZE 25)                                 ; Spielfeld hat 25x25 Felder
+(define CELL-SIZE 30)                                 ; Jede Zelle ist 30x30 Pixel groß
+(define WIDTH (* GRID-SIZE CELL-SIZE))                ; Gesamtbreite des Spielfelds
+(define HEIGHT (* GRID-SIZE CELL-SIZE))               ; Gesamthöhe des Spielfelds
+
 ; Definiert Strukturen für Items und Schlangen
 (define-struct item [type x y] #:prefab)               ; Ein Item hat einen Typ und Koordinaten
 (define-struct snake [coordinates color status direction velocity score banana] #:prefab) ; Eine Schlange hat Koordinaten, Farbe, Status, Richtung, Geschwindigkeit, Punktestand und "Bananen" als Inventar
@@ -15,8 +21,8 @@
 
 ; Initiale Schlangen und Früchte
 (define SNAKE1 (snake (list (list 1 0) (list 0 0)) "Yellow Green" "solid" 'right 1 0 0)) ; Erste Schlange
-(define SNAKE2 (snake (list (list 23 24) (list 24 24)) "navy" "solid" 'left 1 0 0))      ; Zweite Schlange
-(define FRUIT1 (item 'apple 18 17))                   ; Erste Frucht (Apfel)
+(define SNAKE2 (snake (list (list (- GRID-SIZE 2) (- GRID-SIZE 1)) (list (- GRID-SIZE 1) (- GRID-SIZE 1))) "navy" "solid" 'left 1 0 0))      ; Zweite Schlange
+(define FRUIT1 (item 'apple 5 5))                   ; Erste Frucht (Apfel)
 
 ; Initiales Universum, das Welten, Schlangen, Früchte und den Timer enthält
 (define UNIVERSE (list LIST-WORLDS-INITIAL (list SNAKE1 SNAKE2) (list FRUIT1) TIMER-INITIAL))
@@ -24,11 +30,6 @@
 ;; Maximale Anzahl an Spielern
 (define NUM_PLAYERS 2)                                ; Zwei Spieler möglich
 
-; Konstanten für das Spielfeld
-(define GRID-SIZE 25)                                 ; Spielfeld hat 25x25 Felder
-(define CELL-SIZE 30)                                 ; Jede Zelle ist 30x30 Pixel groß
-(define WIDTH (* GRID-SIZE CELL-SIZE))                ; Gesamtbreite des Spielfelds
-(define HEIGHT (* GRID-SIZE CELL-SIZE))               ; Gesamthöhe des Spielfelds
 
 ; Spielstatus
 (define PLAYING "playing")                            ; Status: Spiel läuft
