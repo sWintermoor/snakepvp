@@ -3,20 +3,8 @@
 (require 2htdp/image)
 (require test-engine/racket-tests)
 
-; Eine Scene is ein Image, das grundlegend aus einem weißen Rechteck mit schwarzen Rändern besteht.
-; Interpretation: Die Spielumgebung
-
-; Ein WorldState ist ein Struct bestehend aus einer Liste von snakes, einer Liste von items, einem timer und einem status
-; Interpretation: Der WorldState besteht aus den graphischen Elementen und dem aktuellen Spielzustand.
-
-; Color ist ein String.
-; Interpretation: Ein String, welcher eine Farbe beschreibt.
-
-
-
-; Ein item ist ein Struct aus 
-
-; Ein snake ist ein Struct, welcher aus c
+; WorldState is (Snakes Food Score)
+; Verbesserungsvorschläge: Anstelle von first, second und so weiter lieber aussagekräftigere Funktionen definieren.
 
 ; Structs: Definition der Strukturen für Items (Futter), Schlangen und den Weltzustand
 (define-struct item [type x y] #:prefab)   ; item repräsentiert Futter- oder andere Objekte
@@ -34,7 +22,6 @@
 (define EXTRA-HEIGHT 75)         ; Extra Platz für Timer, Banana-Counter und Scores unter dem Spielfeld
 (define TOTAL-HEIGHT (+ HEIGHT EXTRA-HEIGHT)) ; Gesamthöhe inklusive extra Platz
 
-; receive: WorldState S-expression -> WorldState
 ; Empfangen von Nachrichten (Weltstatus aktualisieren)
 (define (receive w m)
   (let ([snakes (first m)]                  ; Neue Schlangenpositionen
@@ -43,15 +30,14 @@
         [world_status (fourth m)])          ; Aktualisiere den Spielstatus
     (world snakes items timer world_status)))
 
-; seconds-to-minutes: Number -> String 
-; Funktion zur Umwandlung von Sekunden in Minuten. Ausgabe in "Minuten:Sekunden" Format
+; Funktion zur Umwandlung von Sekunden in Minuten
 (define (seconds-to-minutes seconds)
   (let ([minutes (quotient seconds 60)]     ; Berechne Minuten
         [remaining-seconds (modulo seconds 60)]) ; Berechne verbleibende Sekunden
     (format "~a:~s" minutes remaining-seconds))) ; Formatierung der Ausgabe im "Minuten:Sekunden" Format
     
-; draw-grid: Scene -> Scene  
-; Funktion zum Zeichnen des Gitternetzes auf eine gegebene Szene 
+
+; Funktion zum Zeichnen des Gitternetzes
 (define (draw-grid scene)
   (foldl
    (lambda (i scene)
@@ -62,7 +48,12 @@
    scene
    (range (+ 1 GRID-SIZE))))  ; Zeichnet das Gitter mit allen Linien inklusive Rand
 
-; draw-snake: snake Color Status Scene -> Scene
+; Zeichnet eine Zelle mit einer bestimmten Farbe
+(define (draw-cell x y color)
+  (place-image (rectangle CELL-SIZE CELL-SIZE "solid" color) ; Rechteck für die Zelle
+               (* x CELL-SIZE) (* y CELL-SIZE)               ; Position auf dem Spielfeld
+               (empty-scene WIDTH HEIGHT)))                  ; Leerbildschirm als Hintergrund
+
 ; Zeichnet die Schlange auf das Spielfeld
 (define (draw-snake snake color status scene)
   (foldl
@@ -76,7 +67,6 @@
    scene
    snake))
 
-; draw-foods: List-of-strings Scene -> Scene
 ; Zeichnet die Futteritems auf das Spielfeld
 (define (draw-foods foods scene)
   (foldl
@@ -109,7 +99,6 @@
    scene
    foods))
 
-; draw-timer: Number Scene -> Scene
 ; Zeichnet den Timer (links oben unter dem Spielfeld)
 (define (draw-timer timer scene)
   (place-image (text (format "Remaining Playtime: ~a" timer) 20 "black") ; Text für den Timer
@@ -117,7 +106,6 @@
                (- TOTAL-HEIGHT 60)             ; Positioniert unter dem Spielfeld
                scene))
 
-; draw-score Number Number Number Number Scene -> Scene
 ; Zeichnet die Spieler-Scores und den Banana-Counter unter dem Timer
 (define (draw-score score1 score2 bananacount1 bananacount2 scene)
   (place-image (text (format "     Score-P1: ~a  |  Score-P2: ~a\nBananen-P1: ~a  |  Bananen-P2: ~a" score1 score2 bananacount1 bananacount2) 20 "blue")
@@ -125,7 +113,6 @@
                (- TOTAL-HEIGHT 25)             ; Position direkt unter dem Timer
                scene))
 
-; draw-world: WorldState -> Scene
 ; Zeichnet den gesamten Spielzustand
 (define (draw-world w)
   (cond 
@@ -159,14 +146,12 @@
     [else                                      ; Wenn der Status unbekannt ist
      (overlay (text "rejected" 30 "blue") (empty-scene WIDTH TOTAL-HEIGHT))]))
 
-; key-handler: WorldState KeyEvent -> WorldState
 ; Funktion zur Verarbeitung der Tastatureingabe
 (define (key-handler w key)
   (make-package w
                 (cond
                   [(string=? (world-status w) "playing") key]))) ; Verarbeite Tastatureingaben nur, wenn das Spiel läuft
 
-; create-world: String -> WorldState
 ; Funktion zum Starten des Spiels
 (define (create-world worldname)
   (big-bang WORLD
