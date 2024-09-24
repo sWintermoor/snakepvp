@@ -23,7 +23,7 @@
 ; Interpretation: Beschreibt eine Farbe.
 
 ; SnakeStatus ist ein String.
-; Interpretation: Beschreibt den Zustand der Schlange
+; Interpretation: Beschreibt den Zustand der Schlange.
 
 ; Direction ist ein String.
 ; Interpretation: Beschreibt Bewegungsrichtung der Schlange.
@@ -147,7 +147,7 @@
 ; detect-key: snake KeyEvent Direction -> snake
 ; Verarbeitet Tastatureingaben und passt die Richtung der Schlange an
 (define (detect-key snake-input a-key snake_direction)
-  (snake (snake-coordinates snake-input) (snake-color snake-input) (snake-status snake-input)
+  (snake (snake-coordinates snake-input) (snake-color snake-input) (snake-snakeStatus snake-input)
          (cond
            [(and (key=? a-key "left") (not (eq? snake_direction 'right))) 'left]
            [(and (key=? a-key "right") (not (eq? snake_direction 'left))) 'right]
@@ -207,7 +207,7 @@
          [new-score (if ate-apple? (add1 score) score)]  ; Punkte erhöhen, wenn Futter gegessen wurde
          [new-banana (if ate-banana? (add1 banana) banana)]
          [new-snake (move-snake snake-input direction ate-apple?)])  ; Schlange wächst nur, wenn Futter gegessen wurde
-    (snake new-snake (snake-color snake-input) (snake-status snake-input) (snake-direction snake-input) (snake-velocity snake-input) new-score new-banana))) ;Inventory muss ausgebessert werden
+    (snake new-snake (snake-color snake-input) (snake-snakeStatus snake-input) (snake-direction snake-input) (snake-velocity snake-input) new-score new-banana))) ;Inventory muss ausgebessert werden
 
 
 
