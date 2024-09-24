@@ -6,22 +6,57 @@
 ; Eine Scene is ein Image, das grundlegend aus einem weißen Rechteck mit schwarzen Rändern besteht.
 ; Interpretation: Die Spielumgebung
 
-; Ein WorldState ist ein Struct bestehend aus einer Liste von snakes, einer Liste von items, einem timer und einem status
-; Interpretation: Der WorldState besteht aus den graphischen Elementen und dem aktuellen Spielzustand.
+; Ein WorldState ist eine world.
+; Interpretation: Der aktuelle Spielzustand.
+
+; Eine world ist ein Struct bestehend aus einer Liste von snakes, einer Liste von items, einem Timer und einem Status.
+; Interpretation: Die Gesamtheit aller Elemente, die das Spiel ausmachen.
+
+; Ein snake ist ein Struct bestehend aus Coordinates, Color, SnakeStatus, Direction, Velocity, Score und Banana.
+; Interpretation: Die Gesamtheit aller Elemente, die eine Schlange im Spiel definieren.
+
+; Ein item ist ein Struct aus Type, x-Coordinate und y-Coordinate.
+; Interpreation: Item im Spiel.
+
+; Timer ist eine Number.
+; Interpretation: Vergangene Zeit seit Spielbeginn.
+
+; WorldStatus ist ein String.
+; Interpretation: Spielstatus, zu unterscheiden zwischen "waiting", "playing", "win" und "loose".
+
+; Coordinates ist eine Listof (Number, Number).
+; Interpretation: Eine Liste von (x, y)-Koordinaten.
 
 ; Color ist ein String.
-; Interpretation: Ein String, welcher eine Farbe beschreibt.
+; Interpretation: Beschreibt eine Farbe.
 
+; SNAKESTATUS MUSS ENTFERNT WERDEN
 
+; Direction ist ein String.
+; Interpretation: Beschreibt Bewegungsrichtung der Schlange.
 
-; Ein item ist ein Struct aus 
+; Velocity ist ein String.
+; Interpretation: Beschreibt Geschwindigkeit der Schlange.
 
-; Ein snake ist ein Struct, welcher aus c
+; Score ist eine Number.
+; Interpretaion: Gibt die länge der gegebenen Schlange wieder.
+
+; Banana ist eine Number.
+; Interpretation: Die Anzahl an gegessenen Bananen.
+
+; Type ist ein String.
+; Interpretation: Beschreibt den Typ des Items. Unterschieden wird zwischen "apple" und "banana".
+
+; x-Coordinate ist eine Number.
+; Interpretation: Die x-Koordinate im Spiel.
+
+; y-Coordinate ist eine Number.
+; Interpretation: Die y-Koordinate im Spiel.
 
 ; Structs: Definition der Strukturen für Items (Futter), Schlangen und den Weltzustand
-(define-struct item [type x y] #:prefab)   ; item repräsentiert Futter- oder andere Objekte
-(define-struct snake [coordinates color status direction velocity score banana] #:prefab) ; Schlange mit ihren Eigenschaften
-(define-struct world [snakes items timer status] #:prefab) ; Weltzustand mit Schlangen, Items, Timer und Spielstatus (waiting, playing, win, loose)
+(define-struct item [type x-coordinate y-coordinate] #:prefab)   ; item repräsentiert Futter- oder andere Objekte
+(define-struct snake [coordinates color snakeStatus direction velocity score banana] #:prefab) ; Schlange mit ihren Eigenschaften
+(define-struct world [snakes items timer worldStatus] #:prefab) ; Weltzustand mit Schlangen, Items, Timer und Spielstatus (waiting, playing, win, loose)
 
 ; Startzustand der Welt
 (define WORLD (world '() '() 300 "waiting")) ; Leerer Startzustand, initiale Werte sind potenziell irrelevant
@@ -76,13 +111,13 @@
    scene
    snake))
 
-; draw-foods: List-of-strings Scene -> Scene
+; draw-foods: [Listof String] Scene -> Scene
 ; Zeichnet die Futteritems auf das Spielfeld
 (define (draw-foods foods scene)
   (foldl
    (lambda (fruit image)
-     (let ([x (item-x fruit)]                  ; X-Position des Items
-           [y (item-y fruit)]                  ; Y-Position des Items
+     (let ([x (item-x-coordinate fruit)]                  ; X-Position des Items
+           [y (item-y-coordinate fruit)]                  ; Y-Position des Items
            [type (item-type fruit)])           ; Typ des Items (z.B. Apfel oder Banane)
        (cond
          [(eq? type 'apple)                    ; Zeichne Apfel-Item
@@ -129,13 +164,13 @@
 ; Zeichnet den gesamten Spielzustand
 (define (draw-world w)
   (cond 
-    [(string=? (world-status w) "playing")     ; Wenn der Spielstatus "playing" ist
+    [(string=? (world-worldStatus w) "playing")     ; Wenn der Spielstatus "playing" ist
      (let ([snake1 (snake-coordinates (first (world-snakes w)))] ; Erste Schlange
            [snake2 (snake-coordinates (second (world-snakes w)))] ; Zweite Schlange
            [color1 (snake-color (first (world-snakes w)))] ; Farbe der ersten Schlange
            [color2 (snake-color (second (world-snakes w)))] ; Farbe der zweiten Schlange
-           [status1 (snake-status (first (world-snakes w)))] ;
-           [status2 (snake-status (second (world-snakes w)))] ;
+           [status1 (snake-snakeStatus (first (world-snakes w)))] ;
+           [status2 (snake-snakeStatus (second (world-snakes w)))] ;
            [score1 (snake-score (first (world-snakes w)))] ; Länge der ersten Schlange
            [score2 (snake-score (second (world-snakes w)))] ;Länge der zweiten Schlange
            [timer (world-timer w)] ; übrige Zeit
@@ -148,13 +183,13 @@
                                            (draw-snake snake1 color1 status1
                                                        (draw-foods foods
                                                                    (draw-grid (empty-scene WIDTH TOTAL-HEIGHT))))))))]
-    [(string=? (world-status w) "waiting")     ; Wenn der Status "waiting" ist
+    [(string=? (world-worldStatus w) "waiting")     ; Wenn der Status "waiting" ist
      (overlay (text "Waiting... \n\nUniverse started?" 30 "orange") (empty-scene WIDTH TOTAL-HEIGHT))]
-    [(string=? (world-status w) "loose")       ; Wenn der Status "loose" ist
+    [(string=? (world-worldStatus w) "loose")       ; Wenn der Status "loose" ist
      (overlay (text "You have lost" 30 "crimson") (empty-scene WIDTH TOTAL-HEIGHT))]
-    [(string=? (world-status w) "win")         ; Wenn der Status "win" ist
+    [(string=? (world-worldStatus w) "win")         ; Wenn der Status "win" ist
      (overlay (text "You have won" 30 "lime green") (empty-scene WIDTH TOTAL-HEIGHT))]
-    [(string=? (world-status w) "tie")         ; Wenn der Status "tie" ist
+    [(string=? (world-worldStatus w) "tie")         ; Wenn der Status "tie" ist
      (overlay (text "Its a Tie!" 30 "orange") (empty-scene WIDTH TOTAL-HEIGHT))]
     [else                                      ; Wenn der Status unbekannt ist
      (overlay (text "rejected" 30 "blue") (empty-scene WIDTH TOTAL-HEIGHT))]))
@@ -164,7 +199,7 @@
 (define (key-handler w key)
   (make-package w
                 (cond
-                  [(string=? (world-status w) "playing") key]))) ; Verarbeite Tastatureingaben nur, wenn das Spiel läuft
+                  [(string=? (world-worldStatus w) "playing") key]))) ; Verarbeite Tastatureingaben nur, wenn das Spiel läuft
 
 ; create-world: String -> WorldState
 ; Funktion zum Starten des Spiels

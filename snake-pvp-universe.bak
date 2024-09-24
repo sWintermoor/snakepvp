@@ -2,15 +2,6 @@
 (require 2htdp/universe)
 (require test-engine/racket-tests)
 
-; SNAKESTATUS MUSS ENTFERNT WERDEN
-
-; Ein UniverseState ist eine Liste aus [Listof iworld?] [List of snake] 
-; Interpretation: Der aktuelle Serverzustand
-
-
-
-
-
 ; Konstanten für das Spielfeld
 (define GRID-SIZE 25)                                 ; Spielfeld hat 25x25 Felder
 (define CELL-SIZE 30)                                 ; Jede Zelle ist 30x30 Pixel groß
@@ -31,10 +22,10 @@
 ; Initiale Schlangen und Früchte
 (define SNAKE1 (snake (list (list 1 0) (list 0 0)) "Yellow Green" "solid" 'right 1 0 0)) ; Erste Schlange
 (define SNAKE2 (snake (list (list (- GRID-SIZE 2) (- GRID-SIZE 1)) (list (- GRID-SIZE 1) (- GRID-SIZE 1))) "navy" "solid" 'left 1 0 0))      ; Zweite Schlange
-(define ITEM1 (item 'apple 5 5))                   ; Erste Frucht (Apfel)
+(define FRUIT1 (item 'apple 5 5))                   ; Erste Frucht (Apfel)
 
 ; Initiales Universum, das Welten, Schlangen, Früchte und den Timer enthält
-(define UNIVERSE (list LIST-WORLDS-INITIAL (list SNAKE1 SNAKE2) (list ITEM1) TIMER-INITIAL))
+(define UNIVERSE (list LIST-WORLDS-INITIAL (list SNAKE1 SNAKE2) (list FRUIT1) TIMER-INITIAL))
 
 ;; Maximale Anzahl an Spielern
 (define NUM_PLAYERS 2)                                ; Zwei Spieler möglich
