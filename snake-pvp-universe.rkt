@@ -22,7 +22,8 @@
 ; Color ist ein String.
 ; Interpretation: Beschreibt eine Farbe.
 
-; SNAKESTATUS MUSS ENTFERNT WERDEN
+; SnakeStatus ist ein String.
+; Interpretation: Beschreibt den Zustand der Schlange
 
 ; Direction ist ein String.
 ; Interpretation: Beschreibt Bewegungsrichtung der Schlange.
@@ -48,7 +49,7 @@
 
 ; Definiert Strukturen für Items und Schlangen
 (define-struct item [type x y] #:prefab)               ; Ein Item hat einen Typ und Koordinaten
-(define-struct snake [coordinates color status direction velocity score banana] #:prefab) ; Eine Schlange hat Koordinaten, Farbe, Status, Richtung, Geschwindigkeit, Punktestand und "Bananen" als Inventar
+(define-struct snake [coordinates color snakeStatus direction velocity score banana] #:prefab) ; Eine Schlange hat Koordinaten, Farbe, Status, Richtung, Geschwindigkeit, Punktestand und "Bananen" als Inventar
 
 ; Konstanten für das Spielfeld
 (define GRID-SIZE 25)                                 ; Spielfeld hat 25x25 Felder

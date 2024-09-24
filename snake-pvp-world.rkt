@@ -30,7 +30,8 @@
 ; Color ist ein String.
 ; Interpretation: Beschreibt eine Farbe.
 
-; SNAKESTATUS MUSS ENTFERNT WERDEN
+; SnakeStatus ist ein String.
+; Interpretation: Beschreibt den Zustand der Schlange
 
 ; Direction ist ein String.
 ; Interpretation: Beschreibt Bewegungsrichtung der Schlange.
