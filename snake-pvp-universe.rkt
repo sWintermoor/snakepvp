@@ -46,6 +46,9 @@
 ; y-Coordinate ist eine Number.
 ; Interpretation: Die y-Koordinate im Spiel.
 
+; Game-Status ist eine Liste aus [Listof snake], [Listof item], Timer und String
+; Interpretation: Der Spielstatus einer Welt. 
+
 
 ; Definiert Strukturen für Items und Schlangen
 (define-struct item [type x y] #:prefab)               ; Ein Item hat einen Typ und Koordinaten
@@ -61,7 +64,7 @@
 (define LIST-WORLDS-INITIAL '())                       ; Liste der Welten (zunächst leer)
 (define LIST-SNAKES-INITIAL '())                       ; Liste der Schlangen (zunächst leer)
 (define LIST-FRUITS-INITIAL '())                       ; Liste der Früchte (zunächst leer)
-(define TIMER-INITIAL 1080)                            ; Initialer Timerwert
+(define TIMER-INITIAL 1080)                            ; Initialer Timerwert (Umrechnug: Sekunden = Eingabe * TICK-VALUE)
 (define TICK-VALUE 1/6)                                ; Zeitwert für Ticks
 
 ; Initiale Schlangen und Früchte
@@ -110,6 +113,11 @@
 ; Hilfsfunktionen zum Abrufen der ersten und zweiten Schlange
 (define (first-snake univ) (first (current-snakes univ)))
 (define (second-snake univ) (second (current-snakes univ)))
+
+; UniverseState -> Score
+; Hilfsfunktionen zum Abrufen des Scores der ersten Schlange und des Scores der zweiten Schlange
+(define (first-snake-score univ) (snake-score (first-snake univ)))
+(define (second-snake-score univ) (snake-score (second-snake univ)))
 
 ; add-world: UniverseState iworld? -> UniverseState
 ; Fügt eine neue Welt hinzu
@@ -281,63 +289,39 @@
          '()
          fruit-list))
 
+
 ; tick-handler: UniverseState -> UniverseState
-; TickHandler
+; Wird mit jedem Tick aufgerufen. Beendet das Spiel oder setzt neuen Spielzustand.
 (define (tick-handler univ)
   (cond [(= (length (current-worlds univ)) NUM_PLAYERS)
 
          ; Überprüfen, ob es Kollisionen gab
          (cond[(eq? (check-all-collisions (first-snake univ) (second-snake univ)) #t)
-               ; Überprüfen, wer mit wem kollidiert ist
+               ; Überprüfen, wer mit wem kollidiert ist und Endergebnis setzen
                (cond
-                 [(and (check-collision (second-snake univ) (first-snake univ)) (check-collision (first-snake univ) (second-snake univ))) (make-bundle univ (list (make-mail (first(current-worlds univ)) (loose-mode univ))
-                                                                                                                                                                  (make-mail (second(current-worlds univ)) (loose-mode univ))) '())]
-                 [(check-collision (first-snake univ) (second-snake univ)) (make-bundle univ (list (make-mail (first(current-worlds univ)) (loose-mode univ))
-                                                                                                   (make-mail (second(current-worlds univ)) (win-mode univ))) '())]
-                 [(check-collision (second-snake univ) (first-snake univ)) (make-bundle univ (list (make-mail (first(current-worlds univ)) (win-mode univ))
-                                                                                                   (make-mail (second(current-worlds univ)) (loose-mode univ))) '())]
-                 [(check-self-collision (first-snake univ)) (make-bundle univ (list (make-mail (first(current-worlds univ)) (loose-mode univ))
-                                                                                    (make-mail (second(current-worlds univ)) (win-mode univ))) '())]
-                 [(check-self-collision (second-snake univ)) (make-bundle univ (list (make-mail (first(current-worlds univ)) (win-mode univ))
-                                                                                     (make-mail (second(current-worlds univ)) (loose-mode univ))) '())]
+                 [(and (check-collision (second-snake univ) (first-snake univ)) (check-collision (first-snake univ) (second-snake univ))) (set-final-score tie-mode tie-mode univ)]
+                 [(check-collision (first-snake univ) (second-snake univ)) (set-final-score loose-mode win-mode univ)]
+                 [(check-collision (second-snake univ) (first-snake univ)) (set-final-score win-mode loose-mode univ)]
+                 [(check-self-collision (first-snake univ)) (set-final-score loose-mode win-mode univ)]
+                 [(check-self-collision (second-snake univ)) (set-final-score win-mode loose-mode univ)]
                  )
                ]
-              [(<= (timer univ) 6) (cond
-                                     [(let*(
-                                            [snakes (second univ)]
-                                            [snake1 (first snakes)]
-                                            [snake2 (second snakes)]
-                                            [score1 (snake-score snake1)]
-                                            [score2 (snake-score snake2)])
-                                        (= score1 score2)) (make-bundle univ (list (make-mail (first(current-worlds univ)) (tie-mode univ))
-                                                                                   (make-mail (second(current-worlds univ)) (tie-mode univ))) '())]
-                                     [(let*(
-                                            [snakes (second univ)]
-                                            [snake1 (first snakes)]
-                                            [snake2 (second snakes)]
-                                            [score1 (snake-score snake1)]
-                                            [score2 (snake-score snake2)])
-                                        (> score1 score2)) (make-bundle univ (list (make-mail (first(current-worlds univ)) (win-mode univ))
-                                                                                   (make-mail (second(current-worlds univ)) (loose-mode univ))) '())]
-                                     [(let*(
-                                            [snakes (second univ)]
-                                            [snake1 (first snakes)]
-                                            [snake2 (second snakes)]
-                                            [score1 (snake-score snake1)]
-                                            [score2 (snake-score snake2)])
-                                        (< score1 score2)) (make-bundle univ (list (make-mail (first(current-worlds univ)) (loose-mode univ))
-                                                                                   (make-mail (second(current-worlds univ)) (win-mode univ))) '())]
-                                     )]
+              ; Überprüfen, ob die Spielzeit abgelaufen ist.
+              [(<= (timer univ) 6)
+               ; Die Scores der beiden Schlangen vergleichen und das entsprechende Endergebnis setzen.
+               (cond
+                                    [(= (first-snake-score univ) (second-snake-score univ)) (set-final-score tie-mode tie-mode univ)]
+                                    [(> (first-snake-score univ) (second-snake-score univ)) (set-final-score win-mode loose-mode univ)]
+                                    [(< (first-snake-score univ) (second-snake-score univ)) (set-final-score loose-mode win-mode univ)])
+               ]
               [else
-
-               ;(if (eq? (check-all-collisions (first-snake univ) (second-snake univ)) #t) (printf "Kollision") (printf "")); Konselenausgabe zum debugging
-         
+               ; Neuen Spielzustand setzen
                (let*
                    ([snake1 (next-snake-state (first-snake univ) univ)]
                     [snake2 (next-snake-state (second-snake univ) univ)]
                     [fruits (next-fruit-state snake1 snake2 univ)]
                     [time (timer univ)]
-                    [univ* (list (current-worlds univ) (list snake1 snake2) fruits (sub1 time))]) ;hier next-Funktionen implementieren, wie next-snakes, next-fruits und next-timer
+                    [univ* (list (current-worlds univ) (list snake1 snake2) fruits (sub1 time))]) 
 
                  (make-bundle univ*
                               (list (make-mail (first(current-worlds univ)) (information-to-draw univ*))
@@ -346,6 +330,13 @@
                ])]
         [else univ]
         ))
+
+
+; set-final-score: Game-Status Game-Status UniverseState -> bundle
+; Setzt das Endergebnis
+(define (set-final-score mode-wrld1 mode-wrld2 univ)
+  (make-bundle univ (list (make-mail (first(current-worlds univ)) (mode-wrld1 univ))
+                    (make-mail (second(current-worlds univ)) (mode-wrld2 univ))) '()))
 
 ; check-collision: snake snake -> Boolean
 ; Prüft, ob der Kopf der ersten Schlange in den Koordinaten der zweiten Schlange vorkommt
