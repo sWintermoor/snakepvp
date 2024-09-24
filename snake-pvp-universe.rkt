@@ -4,22 +4,57 @@
 
 ; SNAKESTATUS MUSS ENTFERNT WERDEN
 
-; Ein UniverseState ist eine Liste aus [Listof iworld?] [List of snake] 
+; Ein UniverseState ist eine Liste aus [Listof iworld?], [List of snake], [Listof item] und Timer.
 ; Interpretation: Der aktuelle Serverzustand
 
+; Ein snake ist ein Struct bestehend aus Coordinates, Color, SnakeStatus, Direction, Velocity, Score und Banana.
+; Interpretation: Die Gesamtheit aller Elemente, die eine Schlange im Spiel definieren.
+
+; Ein item ist ein Struct aus Type, x-Coordinate und y-Coordinate.
+; Interpreation: Item im Spiel.
+
+; Timer ist eine Number.
+; Interpretation: Vergangene Zeit seit Spielbeginn.
+
+; Coordinates ist eine Listof (Number, Number).
+; Interpretation: Eine Liste von (x, y)-Koordinaten.
+
+; Color ist ein String.
+; Interpretation: Beschreibt eine Farbe.
+
+; SNAKESTATUS MUSS ENTFERNT WERDEN
+
+; Direction ist ein String.
+; Interpretation: Beschreibt Bewegungsrichtung der Schlange.
+
+; Velocity ist ein String.
+; Interpretation: Beschreibt Geschwindigkeit der Schlange.
+
+; Score ist eine Number.
+; Interpretaion: Gibt die länge der gegebenen Schlange wieder.
+
+; Banana ist eine Number.
+; Interpretation: Die Anzahl an gegessenen Bananen.
+
+; Type ist ein String.
+; Interpretation: Beschreibt den Typ des Items. Unterschieden wird zwischen "apple" und "banana".
+
+; x-Coordinate ist eine Number.
+; Interpretation: Die x-Koordinate im Spiel.
+
+; y-Coordinate ist eine Number.
+; Interpretation: Die y-Koordinate im Spiel.
 
 
-
+; Definiert Strukturen für Items und Schlangen
+(define-struct item [type x y] #:prefab)               ; Ein Item hat einen Typ und Koordinaten
+(define-struct snake [coordinates color status direction velocity score banana] #:prefab) ; Eine Schlange hat Koordinaten, Farbe, Status, Richtung, Geschwindigkeit, Punktestand und "Bananen" als Inventar
 
 ; Konstanten für das Spielfeld
 (define GRID-SIZE 25)                                 ; Spielfeld hat 25x25 Felder
 (define CELL-SIZE 30)                                 ; Jede Zelle ist 30x30 Pixel groß
 (define WIDTH (* GRID-SIZE CELL-SIZE))                ; Gesamtbreite des Spielfelds
 (define HEIGHT (* GRID-SIZE CELL-SIZE))               ; Gesamthöhe des Spielfelds
-
-; Definiert Strukturen für Items und Schlangen
-(define-struct item [type x y] #:prefab)               ; Ein Item hat einen Typ und Koordinaten
-(define-struct snake [coordinates color status direction velocity score banana] #:prefab) ; Eine Schlange hat Koordinaten, Farbe, Status, Richtung, Geschwindigkeit, Punktestand und "Bananen" als Inventar
 
 ; Initiale Listen für Welten, Schlangen, Früchte und den Timer
 (define LIST-WORLDS-INITIAL '())                       ; Liste der Welten (zunächst leer)
@@ -31,10 +66,10 @@
 ; Initiale Schlangen und Früchte
 (define SNAKE1 (snake (list (list 1 0) (list 0 0)) "Yellow Green" "solid" 'right 1 0 0)) ; Erste Schlange
 (define SNAKE2 (snake (list (list (- GRID-SIZE 2) (- GRID-SIZE 1)) (list (- GRID-SIZE 1) (- GRID-SIZE 1))) "navy" "solid" 'left 1 0 0))      ; Zweite Schlange
-(define ITEM1 (item 'apple 5 5))                   ; Erste Frucht (Apfel)
+(define FRUIT1 (item 'apple 5 5))                   ; Erste Frucht (Apfel)
 
 ; Initiales Universum, das Welten, Schlangen, Früchte und den Timer enthält
-(define UNIVERSE (list LIST-WORLDS-INITIAL (list SNAKE1 SNAKE2) (list ITEM1) TIMER-INITIAL))
+(define UNIVERSE (list LIST-WORLDS-INITIAL (list SNAKE1 SNAKE2) (list FRUIT1) TIMER-INITIAL))
 
 ;; Maximale Anzahl an Spielern
 (define NUM_PLAYERS 2)                                ; Zwei Spieler möglich
@@ -49,17 +84,19 @@
 (define TIE "tie")                                    ; Status: Unentschieden
 
 ; Funktionen, um Teile des Universums abzurufen
-(define (current-worlds univ) (first univ))            ; Gibt die aktuellen Welten zurück
-(define (current-snakes univ) (second univ))           ; Gibt die aktuellen Schlangen zurück
-(define (current-fruits univ) (third univ))            ; Gibt die aktuellen Früchte zurück
-(define (timer univ) (fourth univ))                    ; Gibt den Timerwert zurück
+(define (current-worlds univ) (first univ))            ; UniverseState -> Listof iworld?; Gibt die aktuellen Welten zurück
+(define (current-snakes univ) (second univ))           ; UniverseState -> List of snake; Gibt die aktuellen Schlangen zurück
+(define (current-fruits univ) (third univ))            ; UniverseState -> List of item; Gibt die aktuellen Früchte zurück
+(define (timer univ) (fourth univ))                    ; UniverseState -> Timer; Gibt den Timerwert zurück
 
+; information-to-draw: UniverseState -> [Listof snake] [Listof item] Timer
 ; Funktion zur Bereitstellung der zu zeichnenden Information basierend auf dem Universum
 (define (information-to-draw univ)
   (list (current-snakes univ) (current-fruits univ) (timer univ) PLAYING))
 
+; UniverseState -> [Listof snake] [Listof item] Timer String
 ; Verschiedene Spielmodi
-(define (waiting-mode univ)
+(define (waiting-mode univ)                                                   
   (list (current-snakes univ) (current-fruits univ) (timer univ) WAITING))
 (define (win-mode univ)
   (list (current-snakes univ) (current-fruits univ) (timer univ) WIN))
@@ -68,42 +105,45 @@
 (define (tie-mode univ)
   (list (current-snakes univ) (current-fruits univ) (timer univ) TIE))
 
+; UniverseState -> snake
 ; Hilfsfunktionen zum Abrufen der ersten und zweiten Schlange
 (define (first-snake univ) (first (current-snakes univ)))
 (define (second-snake univ) (second (current-snakes univ)))
 
-;; Fügt eine neue Welt hinzu
+; add-world: UniverseState iworld? -> UniverseState
+; Fügt eine neue Welt hinzu
 (define (add-world univ wrld)
   (cond 
-    ;; Maximale Anzahl an Spielern erreicht
-    ;; --> Weise diese Welt ab
+    ; Maximale Anzahl an Spielern erreicht
+    ; --> Weise diese Welt ab
     [(= (length (current-worlds univ)) NUM_PLAYERS)
      (make-bundle univ
                   (list (make-mail wrld '('() '() 0 REJECTED))) ; Weltzustand mit ablehnendem Zustand
                   '())]
 
-    ;; Maximale Anzahl an Spielern mit dieser Welt erreicht
-    ;; --> Füge die Welt zu den bekannten hinzu
-    ;; --> Starte das Spiel
+    ; Maximale Anzahl an Spielern mit dieser Welt erreicht
+    ; --> Füge die Welt zu den bekannten hinzu
+    ; --> Starte das Spiel
     [(= (length (current-worlds univ)) (- NUM_PLAYERS 1))
      (local ((define UNIV (list (append (current-worlds univ) (list wrld)) (current-snakes univ) (current-fruits univ) (timer univ))))
        (make-bundle UNIV
                     (list (make-mail wrld (information-to-draw univ)))
                     '()))]
 
-    ;; Maximale Anzahl an Spielern noch nicht erreicht
-    ;; --> Füge die Welt zu den bekannten hinzu
+    ; Maximale Anzahl an Spielern noch nicht erreicht
+    ; --> Füge die Welt zu den bekannten hinzu
     [(= (length (current-worlds univ)) (- NUM_PLAYERS 2))
      (local ((define UNIV (list (append (current-worlds univ) (list wrld)) (current-snakes univ) (current-fruits univ) (timer univ))))
        (make-bundle UNIV
                     (list (make-mail wrld (waiting-mode univ)))
                     '()))]))
 
-; Hilfsfunktion: Gibt die empfangenen Daten des Keyhandlers in der Konsole aus
+#|; Hilfsfunktion: Gibt die empfangenen Daten des Keyhandlers in der Konsole aus
 (define (print-received-key world key)
   (printf "Debug: Received WorldData: ~a\n Key:~s \n" world key)
-  world)
+  world)|#
 
+; detect-key: snake KeyEvent Direction -> snake
 ; Verarbeitet Tastatureingaben und passt die Richtung der Schlange an
 (define (detect-key snake-input a-key snake_direction)
   (snake (snake-coordinates snake-input) (snake-color snake-input) (snake-status snake-input)
@@ -115,8 +155,9 @@
            [else snake_direction])
          (snake-velocity snake-input) (snake-score snake-input) (snake-banana snake-input)))
 
-;; Verarbeitet Tastatureingaben für das Universum und aktualisiert die Schlangen
-(define (change univ wrld a-key)
+; key-handler: UniverseState iworld? KeyEvent -> UniverseState
+; Verarbeitet Tastatureingaben für das Universum und aktualisiert die Schlangen
+(define (key-handler univ wrld a-key)
   (let* ([worldname (iworld-name wrld)]
          [snakes (second univ)]
          [snake1 (first snakes)]
@@ -126,30 +167,29 @@
          [food (third univ)])
          
     (cond
-      ;; Prüft, ob die erste oder zweite Schlange die Eingabe erhalten hat
+      ; Prüft, ob die erste oder zweite Schlange die Eingabe erhalten hat
       [(eq? worldname (iworld-name (first (current-worlds univ))))
        (let ([new-univ (list (current-worlds univ) (list (detect-key snake1 a-key direction1) snake2) (current-fruits univ) (timer univ))])
-         (printf "list1change ~a  \n" new-univ)
          new-univ)]
       [(eq? worldname (iworld-name (second (current-worlds univ))))
        (let ([new-univ (list (current-worlds univ) (list snake1 (detect-key snake2 a-key direction2)) (current-fruits univ) (timer univ))])
-         (printf "list2change ~a \n" new-univ)
          new-univ)]
       [else
-       (printf "skip ~a \n" univ)
        univ])))
 
+; handle-messages: UniverseState iworld? S-expression -> UniverseState
 ; Verarbeitet Nachrichten im Universum und ruft den Keyhandler auf
 (define (handle-messages univ wrld m)
-  (print-received-key wrld m)
-  (change univ wrld m))
+  ;(print-received-key wrld m)
+  (key-handler univ wrld m))
 
 
+; next-snake-state: snake -> snake
 ; Berechnet den nächsten Zustand einer Schlange
-(define (next-snake-state snake-input state)
+(define (next-snake-state snake-input univ)
   (let* ([snake_coordinates (snake-coordinates snake-input)]
          [direction (snake-direction snake-input)]
-         [fruits (extract-fruit-type-coordinates (current-fruits state))]  
+         [fruits (extract-fruit-type-coordinates (current-fruits univ))]  
          [score (snake-score snake-input)]
          [banana (snake-banana snake-input)]
          
@@ -170,6 +210,7 @@
 
 
 
+; move-snake: snake Direction Boolean -> snake
 ; Bewegt die Schlange basierend auf der aktuellen Richtung
 (define (move-snake snake-input direction grow?)
   (let ([head (first (snake-coordinates snake-input))])
@@ -187,12 +228,13 @@
       new-snake)))
 
 
-;Berechnet den nächsten Zustand eines Items
-(define (next-fruit-state snake1 snake2 state)
+; next-fruit-state: snake snake UniverseState -> Listof item 
+; Berechnet den nächsten Zustand eines Items
+(define (next-fruit-state snake1 snake2 univ)
   (let* ([head1 (first (snake-coordinates snake1))]
          [head2 (first (snake-coordinates snake2))]
-         [fruits-str (current-fruits state)]
-         [fruits (extract-fruit-type-coordinates (current-fruits state))] ;fruits als Liste
+         [fruits-str (current-fruits univ)]
+         [fruits (extract-fruit-type-coordinates (current-fruits univ))] ;fruits als Liste
          [forbidden (append (snake-coordinates snake1)
                             (snake-coordinates snake2))] ;verbietet die Felder der Schlange und das Feld direkt vor dem Kopf
          [ate-food? (or (member head1 fruits) (member head2 fruits))]
@@ -201,13 +243,15 @@
         (new-fruit fruits-str (item (list-ref fruits (sub1 (index-of fruits who-ate-food)))
                                     (first who-ate-food)
                                     (second who-ate-food)) forbidden)
-        (current-fruits state))))
+        (current-fruits univ))))
 
-; Entfernt die gegessene Frucht und platziert 1-2 neue
+; new-fruit: [Listof item] item Coordinates -> Listof item
+; Entfernt die gegessene Frucht und platziert 1-2 Neue
 (define (new-fruit fruits fruit forbidden-fields)
   (append (create-fruit fruits (item-type fruit) forbidden-fields) (remove fruit fruits)))
     
-
+; create-fruit: [Listof item] Type Coordinates -> Listof item
+; Erstellt 1-2 neue Früchte
 (define (create-fruit fruits type forbidden-fields)
   (let* ([randnum (random 4)]
          [x1 (first (correct-random fruits (list (random GRID-SIZE) (random GRID-SIZE)) forbidden-fields))]
@@ -221,21 +265,23 @@
                          (list (item 'apple x1 y1) (item 'banana x2 y2)))])
     (list-ref fruit-choices randnum)))
 
-; Verhindert das Spawnen auf der Schlange und auf Früchten (in der World müssen Früchte zuerst gezeichnet werden)
+; correct-random: [Listof item] (x-Coordinate, y-Coordinate) Coordinates -> (x-Coordinate, y-Coordinate)
+; Verhindert das Spawnen von neuen Früchten auf der Schlange und auf Früchten (in der World müssen Früchte zuerst gezeichnet werden)
 (define (correct-random fruits coordinates forbidden-fields)
   (let ([ext (extract-fruit-type-coordinates fruits)])
     (if (or (member coordinates ext) (member coordinates forbidden-fields)) (correct-random fruits (list (random GRID-SIZE) (random GRID-SIZE)) forbidden-fields) coordinates)))
 
 
-; Gibt Frucht als Liste zurück
+; extract-fruit-type-coordinates: [Listof item] -> Listof (Type, x-Coordinate, y-Coordinate)
+; Wandelt struct-Struktur von [Listof item] in Listenstruktur um.
 (define (extract-fruit-type-coordinates fruit-list)
   (foldl (lambda (fruit current-list)
            (append current-list (list (item-type fruit) (list (item-x fruit) (item-y fruit)))))
          '()
          fruit-list))
 
-
-;TickHandler
+; tick-handler: UniverseState -> UniverseState
+; TickHandler
 (define (tick-handler univ)
   (cond [(= (length (current-worlds univ)) NUM_PLAYERS)
 
@@ -300,26 +346,27 @@
         [else univ]
         ))
 
-; Funktionen zur Kollisionsprüfung, Tick-Handler und das Erstellen neuer Früchte bleiben unverändert
-;SNAKES->Boolean
-
+; check-collision: snake snake -> Boolean
 ; Prüft, ob der Kopf der ersten Schlange in den Koordinaten der zweiten Schlange vorkommt
 (define (check-collision snake1 snake2)
   (let ([head1 (first (snake-coordinates snake1))]   ; Kopf der ersten Schlange
         [body2 (snake-coordinates snake2)])           ; Körper der zweiten Schlange
     (not (false? (member head1 body2)))))  ; Wenn der Kopf der ersten Schlange in den Koordinaten der zweiten Schlange auftaucht, gibt es eine Kollision
 
+; check-snake-collision: snake snake -> Boolean
 ; Prüft, ob die beiden Schlangen kollidieren
 (define (check-snake-collisions snake1 snake2)
   (or (check-collision snake1 snake2)   ; Prüft, ob snake1 mit snake2 kollidiert
       (check-collision snake2 snake1))) ; Prüft, ob snake2 mit snake1 kollidiert
 
+; check-self-collision: snake -> Boolean
 ; Prüft, ob eine Schlange mit sich selbst kollidiert (Selbstkollision)
 (define (check-self-collision snake)
   (let ([head (first (snake-coordinates snake))]     ; Kopf der Schlange
         [body (rest (snake-coordinates snake))])     ; Restlicher Körper der Schlange
     (not (false? (member head body)))))  ; Wenn der Kopf im Körper auftaucht, gibt es eine Selbstkollision
 
+; check-all-collisions: snake snake -> Boolean
 ; Überprüft, ob eine der beiden Schlangen kollidiert (entweder mit der anderen oder mit sich selbst)
 (define (check-all-collisions snake1 snake2)
   (or (check-snake-collisions snake1 snake2)  ; Kollidieren die beiden Schlangen miteinander?

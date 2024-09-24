@@ -53,6 +53,7 @@
 ; y-Coordinate ist eine Number.
 ; Interpretation: Die y-Koordinate im Spiel.
 
+
 ; Structs: Definition der Strukturen für Items (Futter), Schlangen und den Weltzustand
 (define-struct item [type x-coordinate y-coordinate] #:prefab)   ; item repräsentiert Futter- oder andere Objekte
 (define-struct snake [coordinates color snakeStatus direction velocity score banana] #:prefab) ; Schlange mit ihren Eigenschaften
@@ -152,7 +153,7 @@
                (- TOTAL-HEIGHT 60)             ; Positioniert unter dem Spielfeld
                scene))
 
-; draw-score Number Number Number Number Scene -> Scene
+; draw-score: Number Number Number Number Scene -> Scene
 ; Zeichnet die Spieler-Scores und den Banana-Counter unter dem Timer
 (define (draw-score score1 score2 bananacount1 bananacount2 scene)
   (place-image (text (format "     Score-P1: ~a  |  Score-P2: ~a\nBananen-P1: ~a  |  Bananen-P2: ~a" score1 score2 bananacount1 bananacount2) 20 "blue")
