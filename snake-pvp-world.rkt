@@ -201,9 +201,7 @@
 ; key-handler: WorldState KeyEvent -> WorldState
 ; Funktion zur Verarbeitung der Tastatureingabe
 (define (key-handler w key)
-  (make-package w
-                (cond
-                  [(string=? (world-worldStatus w) "playing") key]))) ; Verarbeite Tastatureingaben nur, wenn das Spiel läuft
+  (make-package w key))
 
 ; create-world: String -> WorldState
 ; Funktion zum Starten des Spiels
@@ -219,6 +217,6 @@
     [register LOCALHOST]))                    ; Lokalhost als Standard
 
 ; Startet mehrere Welten (für Multiplayer)
-#|(launch-many-worlds 
+(launch-many-worlds 
  (create-world "Player A")
- (create-world "Player B"))|#
+ (create-world "Player B"))

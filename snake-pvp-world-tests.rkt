@@ -1,13 +1,11 @@
 #lang racket
 (require test-engine/racket-tests)
+(require 2htdp/image)
+(require 2htdp/universe)
 (require "snake-pvp-world.rkt")
 
-; Regressionstests für snake-pvp-world
-
-; Structs: Definition der Strukturen für Items (Futter), Schlangen und den Weltzustand
-(define-struct item [type x-coordinate y-coordinate] #:prefab)   ; item repräsentiert Futter- oder andere Objekte
-(define-struct snake [coordinates color snakeStatus direction velocity score banana] #:prefab) ; Schlange mit ihren Eigenschaften
-(define-struct world [snakes items timer worldStatus] #:prefab) ; Weltzustand mit Schlangen, Items, Timer und Spielstatus (waiting, playing, win, loose)
+; Testscenes
+(define SCENE1 (empty-scene WIDTH TOTAL-HEIGHT))
 
 ; Testschlangen
 (define SNAKE1 (snake '((1 2) (2 2)) "green" "solid" "down" 1 2 2))
@@ -34,5 +32,11 @@
 (check-expect (seconds-to-minutes 200) "3:20")
 (check-expect (seconds-to-minutes 0) "0:0")
 
+; Methoden, die zur Visualisierung dienen, werden nicht geprüft
+
+; key-handler: WorldState KeyEvent -> WorldState
+; Funktion zur Verarbeitung der Tastatureingabe
+(check-expect (key-handler WORLD2 "up") (make-package WORLD2 "up"))
+(check-expect (key-handler WORLD2 "a") "a")
 
 (test)

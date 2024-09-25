@@ -1,6 +1,6 @@
 #lang racket
 (require 2htdp/universe)
-(require test-engine/racket-tests)
+(require)
 
 (provide (all-defined-out))
 
@@ -93,7 +93,7 @@
 (define (current-fruits univ) (third univ))            ; UniverseState -> List of item; Gibt die aktuellen Früchte zurück
 (define (timer univ) (fourth univ))                    ; UniverseState -> Timer; Gibt den Timerwert zurück
 
-; information-to-draw: UniverseState -> (List [Listof snake] [Listof item] Timer)
+; information-to-draw: UniverseState -> (List [Listof snake] [Listof item] Timer String)
 ; Funktion zur Bereitstellung der zu zeichnenden Information basierend auf dem Universum
 (define (information-to-draw univ)
   (list (current-snakes univ) (current-fruits univ) (timer univ) PLAYING))
@@ -188,7 +188,7 @@
   (key-handler univ wrld m))
 
 
-; next-snake-state: snake -> snake
+; next-snake-state: snake UniverseState -> snake
 ; Berechnet den nächsten Zustand einer Schlange
 (define (next-snake-state snake-input univ)
   (let* ([snake_coordinates (snake-coordinates snake-input)]
@@ -209,16 +209,16 @@
          [ate-banana? (and (member new-head fruits) (eq? 'banana (list-ref fruits (sub1 (index-of fruits new-head)))))]
          [new-score (if ate-apple? (add1 score) score)]  ; Punkte erhöhen, wenn Futter gegessen wurde
          [new-banana (if ate-banana? (add1 banana) banana)]
-         [new-snake (move-snake snake-input direction ate-apple?)])  ; Schlange wächst nur, wenn Futter gegessen wurde
-    (snake new-snake (snake-color snake-input) (snake-snakeStatus snake-input) (snake-direction snake-input) (snake-velocity snake-input) new-score new-banana))) ;Inventory muss ausgebessert werden
+         [new-snake-coordinates (move-snake snake-input direction ate-apple?)])  ; Schlange wächst nur, wenn Futter gegessen wurde
+    (snake new-snake-coordinates (snake-color snake-input) (snake-snakeStatus snake-input) (snake-direction snake-input) (snake-velocity snake-input) new-score new-banana))) ;Inventory muss ausgebessert werden
 
 
 
-; move-snake: snake Direction Boolean -> snake
+; move-snake: snake Direction Boolean -> Coordinates
 ; Bewegt die Schlange basierend auf der aktuellen Richtung
 (define (move-snake snake-input direction grow?)
   (let ([head (first (snake-coordinates snake-input))])
-    (let* ([new-head (cond
+    (let* ([new-head-coordinates (cond
                        [(eq? direction 'up)    (list (first head) (modulo (sub1 (second head)) GRID-SIZE))]
                        [(eq? direction 'down)  (list (first head) (modulo (add1 (second head)) GRID-SIZE))]
                        [(eq? direction 'left)  (list (modulo (sub1 (first head)) GRID-SIZE) (second head))]
@@ -226,13 +226,13 @@
            
            ; Falls die Schlange wachsen soll, wird der neue Kopf einfach hinzugefügt,
            ; ansonsten wird der Rest entsprechend angepasst
-           [new-snake (if grow?
-                          (cons new-head (snake-coordinates snake-input))  ; Schlange wächst
-                          (cons new-head (take (snake-coordinates snake-input) (sub1 (length (snake-coordinates snake-input))))))])
-      new-snake)))
+           [new-snake-coordinates (if grow?
+                          (cons new-head-coordinates (snake-coordinates snake-input))  ; Schlange wächst
+                          (cons new-head-coordinates (take (snake-coordinates snake-input) (sub1 (length (snake-coordinates snake-input))))))])
+      new-snake-coordinates)))
 
 
-; next-fruit-state: snake snake UniverseState -> Listof item 
+; next-fruit-state: snake snake UniverseState -> [Listof item]
 ; Berechnet den nächsten Zustand eines Items
 (define (next-fruit-state snake1 snake2 univ)
   (let* ([head1 (first (snake-coordinates snake1))]
@@ -371,7 +371,7 @@
             (on-msg handle-messages)
             (on-tick tick-handler TICK-VALUE)))
 
-;(server-run)
+(server-run)
 
 
 
