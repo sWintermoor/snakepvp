@@ -2,7 +2,7 @@
 (require 2htdp/universe)
 (require test-engine/racket-tests)
 
-; SNAKESTATUS MUSS ENTFERNT WERDEN
+(provide (all-defined-out))
 
 ; Ein UniverseState ist eine Liste aus [Listof iworld?], [List of snake], [Listof item] und Timer.
 ; Interpretation: Der aktuelle Serverzustand
@@ -93,12 +93,12 @@
 (define (current-fruits univ) (third univ))            ; UniverseState -> List of item; Gibt die aktuellen Früchte zurück
 (define (timer univ) (fourth univ))                    ; UniverseState -> Timer; Gibt den Timerwert zurück
 
-; information-to-draw: UniverseState -> [Listof snake] [Listof item] Timer
+; information-to-draw: UniverseState -> (List [Listof snake] [Listof item] Timer)
 ; Funktion zur Bereitstellung der zu zeichnenden Information basierend auf dem Universum
 (define (information-to-draw univ)
   (list (current-snakes univ) (current-fruits univ) (timer univ) PLAYING))
 
-; UniverseState -> [Listof snake] [Listof item] Timer String
+; UniverseState -> (List [Listof snake] [Listof item] Timer String)
 ; Verschiedene Spielmodi
 (define (waiting-mode univ)                                                   
   (list (current-snakes univ) (current-fruits univ) (timer univ) WAITING))
@@ -146,11 +146,6 @@
        (make-bundle UNIV
                     (list (make-mail wrld (waiting-mode univ)))
                     '()))]))
-
-#|; Hilfsfunktion: Gibt die empfangenen Daten des Keyhandlers in der Konsole aus
-(define (print-received-key world key)
-  (printf "Debug: Received WorldData: ~a\n Key:~s \n" world key)
-  world)|#
 
 ; detect-key: snake KeyEvent Direction -> snake
 ; Verarbeitet Tastatureingaben und passt die Richtung der Schlange an
@@ -254,12 +249,12 @@
                                     (second who-ate-food)) forbidden)
         (current-fruits univ))))
 
-; new-fruit: [Listof item] item Coordinates -> Listof item
+; new-fruit: [Listof item] item Coordinates -> [Listof item]
 ; Entfernt die gegessene Frucht und platziert 1-2 Neue
 (define (new-fruit fruits fruit forbidden-fields)
   (append (create-fruit fruits (item-type fruit) forbidden-fields) (remove fruit fruits)))
     
-; create-fruit: [Listof item] Type Coordinates -> Listof item
+; create-fruit: [Listof item] Type Coordinates -> [Listof item]
 ; Erstellt 1-2 neue Früchte
 (define (create-fruit fruits type forbidden-fields)
   (let* ([randnum (random 4)]
@@ -274,14 +269,14 @@
                          (list (item 'apple x1 y1) (item 'banana x2 y2)))])
     (list-ref fruit-choices randnum)))
 
-; correct-random: [Listof item] (x-Coordinate, y-Coordinate) Coordinates -> (x-Coordinate, y-Coordinate)
+; correct-random: [Listof item] (List x-Coordinate y-Coordinate) Coordinates -> (List x-Coordinate y-Coordinate)
 ; Verhindert das Spawnen von neuen Früchten auf der Schlange und auf Früchten (in der World müssen Früchte zuerst gezeichnet werden)
 (define (correct-random fruits coordinates forbidden-fields)
   (let ([ext (extract-fruit-type-coordinates fruits)])
     (if (or (member coordinates ext) (member coordinates forbidden-fields)) (correct-random fruits (list (random GRID-SIZE) (random GRID-SIZE)) forbidden-fields) coordinates)))
 
 
-; extract-fruit-type-coordinates: [Listof item] -> Listof (Type, x-Coordinate, y-Coordinate)
+; extract-fruit-type-coordinates: [Listof item] -> [Listof (List Type x-Coordinate y-Coordinate)]
 ; Wandelt struct-Struktur von [Listof item] in Listenstruktur um.
 (define (extract-fruit-type-coordinates fruit-list)
   (foldl (lambda (fruit current-list)
@@ -369,11 +364,14 @@
 
 
 ;; Erschafft das Universum mit den entsprechenden Handlern
-(universe UNIVERSE
-          (on-new add-world)
-          ;(port 9092)
-          (on-msg handle-messages)
-          (on-tick tick-handler TICK-VALUE))
+(define (server-run)
+  (universe UNIVERSE
+            (on-new add-world)
+            ;(port 9092)
+            (on-msg handle-messages)
+            (on-tick tick-handler TICK-VALUE)))
+
+;(server-run)
 
 
 

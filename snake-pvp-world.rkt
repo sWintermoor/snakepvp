@@ -3,6 +3,8 @@
 (require 2htdp/image)
 (require test-engine/racket-tests)
 
+(provide (all-defined-out))
+
 ; Eine Scene is ein Image, das grundlegend aus einem weißen Rechteck mit schwarzen Rändern besteht.
 ; Interpretation: Die Spielumgebung
 
@@ -61,7 +63,7 @@
 (define-struct world [snakes items timer worldStatus] #:prefab) ; Weltzustand mit Schlangen, Items, Timer und Spielstatus (waiting, playing, win, loose)
 
 ; Startzustand der Welt
-(define WORLD (world '() '() 300 "waiting")) ; Leerer Startzustand, initiale Werte sind potenziell irrelevant
+(define WORLD (world '() '() "3:00" "waiting")) ; Leerer Startzustand, initiale Werte sind potenziell irrelevant
 
 ; Spielfeldparameter
 (define GRID-SIZE 25)            ; Spielfeldgröße: 25x25 Zellen
@@ -217,6 +219,6 @@
     [register LOCALHOST]))                    ; Lokalhost als Standard
 
 ; Startet mehrere Welten (für Multiplayer)
-(launch-many-worlds 
+#|(launch-many-worlds 
  (create-world "Player A")
- (create-world "Player B"))
+ (create-world "Player B"))|#
