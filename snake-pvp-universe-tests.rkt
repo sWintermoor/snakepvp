@@ -3,11 +3,11 @@
 (require "snake-pvp-universe.rkt")
 
 ; Testschlangen
-(define SNAKE1 (snake '((1 2) (2 2)) "green" "solid" 'down 1 2 2))
-(define SNAKE2 (snake '((7 8) (8 8) (9 8)) "blue" "solid" 'left 1 3 2))
-(define SNAKE3 (snake '((4 5) (3 5)) "green" "solid" 'right 1 2 2))
-(define SNAKE4 (snake '((3 5) (3 4) (3 3)) "blue" "solid" 'down 1 3 4))
-(define SNAKE5 (snake '((1 1) (1 2) (2 2) (2 1) (1 1)) "blue" "solid" 'down 1 5 4))
+(define SNAKE1 (snake '((1 2) (2 2)) "green" 0 'down 1 2 2))
+(define SNAKE2 (snake '((7 8) (8 8) (9 8)) "blue" 0 'left 1 3 2))
+(define SNAKE3 (snake '((4 5) (3 5)) "green" 0 'right 1 2 2))
+(define SNAKE4 (snake '((3 5) (3 4) (3 3)) "blue" 0 'down 1 3 4))
+(define SNAKE5 (snake '((1 1) (1 2) (2 2) (2 1) (1 1)) "blue" 0 'down 1 5 4))
 
 ; Testfrüchte
 (define FRUIT1 (item 'apple 5 5))
@@ -58,9 +58,29 @@
 ; add-world wird nicht getestet, weil man eine iworld als Eingabe benötigt.
 
 ; detect-key: snake KeyEvent Direction -> snake
-; Verarbeitet Tastatureingaben und passt die Richtung der Schlange an
+; Verarbeitet Tastatureingaben
 (check-expect (detect-key SNAKE1 "left" (snake-direction SNAKE1))
-              (snake (snake-coordinates SNAKE1) (snake-color SNAKE1) (snake-snakeStatus SNAKE1) 'left (snake-velocity SNAKE1) (snake-score SNAKE1) (snake-banana SNAKE1)))
+              (snake (snake-coordinates SNAKE1) (snake-color SNAKE1) (snake-velocity-duration SNAKE1) 'left (snake-velocity SNAKE1) (snake-score SNAKE1) (snake-banana SNAKE1)))
+(check-expect (detect-key SNAKE1 " " (snake-direction SNAKE1))
+              (snake (snake-coordinates SNAKE1) (snake-color SNAKE1) 15 (snake-direction SNAKE1) 2 (snake-score SNAKE1) 1))
+(check-expect (detect-key SNAKE1 "a" (snake-direction SNAKE1))
+                          SNAKE1)
+
+; activate-booster: snake -> snake
+; Erhöht ggf. Geschwindigkeit der Schlange
+(check-expect (activate-booster SNAKE1)
+              (snake (snake-coordinates SNAKE1) (snake-color SNAKE1) 15 (snake-direction SNAKE1) 2 (snake-score SNAKE1) 1))
+
+; change-velocity: snake Velocity-Duration Velocity Banana -> snake
+; Passt Geschwindigkeit der Schlange an.
+(check-expect (change-velocity SNAKE1 15 2 1)
+              (snake (snake-coordinates SNAKE1) (snake-color SNAKE1) 15 (snake-direction SNAKE1) 
+         2 (snake-score SNAKE1) 1))
+
+; change-direction: snake Direction -> snake
+; Passt Richtung der Schlange an.
+(check-expect (change-direction SNAKE1 'right)
+              (snake (snake-coordinates SNAKE1) (snake-color SNAKE1) (snake-velocity-duration SNAKE1) 'right (snake-velocity SNAKE1) (snake-score SNAKE1) (snake-banana SNAKE1)))
 
 ; key-handler wird nicht getestet, weil man eine iworld als Eingabe benötigt.
 
@@ -69,9 +89,9 @@
 ; next-snake-state: snake UniverseState -> snake
 ; Berechnet den nächsten Zustand einer Schlange
 (check-expect (next-snake-state SNAKE2 UNIVERSE1)
-              (snake '((6 8) (7 8) (8 8)) (snake-color SNAKE2) (snake-snakeStatus SNAKE2) (snake-direction SNAKE2) (snake-velocity SNAKE2) (snake-score SNAKE2) (snake-banana SNAKE2)))
+              (snake '((6 8) (7 8) (8 8)) (snake-color SNAKE2) (snake-velocity-duration SNAKE2) (snake-direction SNAKE2) (snake-velocity SNAKE2) (snake-score SNAKE2) (snake-banana SNAKE2)))
 (check-expect (next-snake-state SNAKE3 UNIVERSE2)
-              (snake '((5 5) (4 5) (3 5)) (snake-color SNAKE3) (snake-snakeStatus SNAKE3) (snake-direction SNAKE3) (snake-velocity SNAKE3) 3 (snake-banana SNAKE3)))
+              (snake '((5 5) (4 5) (3 5)) (snake-color SNAKE3) (snake-velocity-duration SNAKE3) (snake-direction SNAKE3) (snake-velocity SNAKE3) 3 (snake-banana SNAKE3)))
 
 ; move-snake: snake Direction Boolean -> Coordinates
 ; Bewegt die Schlange basierend auf der aktuellen Richtung

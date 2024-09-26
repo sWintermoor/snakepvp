@@ -32,8 +32,8 @@
 ; Color ist ein String.
 ; Interpretation: Beschreibt eine Farbe.
 
-; SnakeStatus ist ein String.
-; Interpretation: Beschreibt den Zustand der Schlange
+; Velocity-Duration ist eine Number.
+; Interpretation: Beschreibt wie lange sich die Schlange im Hochgeschwindigkeitsmodus aufhalten wird.
 
 ; Direction ist ein String.
 ; Interpretation: Beschreibt Bewegungsrichtung der Schlange.
@@ -59,7 +59,7 @@
 
 ; Structs: Definition der Strukturen für Items (Futter), Schlangen und den Weltzustand
 (define-struct item [type x-coordinate y-coordinate] #:prefab)   ; item repräsentiert Futter- oder andere Objekte
-(define-struct snake [coordinates color snakeStatus direction velocity score banana] #:prefab) ; Schlange mit ihren Eigenschaften
+(define-struct snake [coordinates color velocity-duration direction velocity score banana] #:prefab) ; Schlange mit ihren Eigenschaften
 (define-struct world [snakes items timer worldStatus] #:prefab) ; Weltzustand mit Schlangen, Items, Timer und Spielstatus (waiting, playing, win, loose)
 
 ; Startzustand der Welt
@@ -173,8 +173,8 @@
            [snake2 (snake-coordinates (second (world-snakes w)))] ; Zweite Schlange
            [color1 (snake-color (first (world-snakes w)))] ; Farbe der ersten Schlange
            [color2 (snake-color (second (world-snakes w)))] ; Farbe der zweiten Schlange
-           [status1 (snake-snakeStatus (first (world-snakes w)))] ;
-           [status2 (snake-snakeStatus (second (world-snakes w)))] ;
+           [status1 (snake-velocity-duration (first (world-snakes w)))] ;
+           [status2 (snake-velocity-duration (second (world-snakes w)))] ;
            [score1 (snake-score (first (world-snakes w)))] ; Länge der ersten Schlange
            [score2 (snake-score (second (world-snakes w)))] ;Länge der zweiten Schlange
            [timer (world-timer w)] ; übrige Zeit
@@ -217,6 +217,6 @@
     [register LOCALHOST]))                    ; Lokalhost als Standard
 
 ; Startet mehrere Welten (für Multiplayer)
-(launch-many-worlds 
+#|(launch-many-worlds 
  (create-world "Player A")
- (create-world "Player B"))
+ (create-world "Player B"))|#

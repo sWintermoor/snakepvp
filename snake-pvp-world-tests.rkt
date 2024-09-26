@@ -37,6 +37,6 @@
 ; key-handler: WorldState KeyEvent -> WorldState
 ; Funktion zur Verarbeitung der Tastatureingabe
 (check-expect (key-handler WORLD2 "up") (make-package WORLD2 "up"))
-(check-expect (key-handler WORLD2 "a") "a")
+(check-expect (key-handler WORLD2 "a") (make-package WORLD2 "a"))
 
 (test)

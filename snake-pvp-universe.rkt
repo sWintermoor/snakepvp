@@ -22,8 +22,8 @@
 ; Color ist ein String.
 ; Interpretation: Beschreibt eine Farbe.
 
-; SnakeStatus ist ein String.
-; Interpretation: Beschreibt den Zustand der Schlange.
+; Velocity-Duration ist eine Number.
+; Interpretation: Beschreibt wie lange sich die Schlange im Hochgeschwindigkeitsmodus aufhalten wird.
 
 ; Direction ist ein String.
 ; Interpretation: Beschreibt Bewegungsrichtung der Schlange.
@@ -52,7 +52,7 @@
 
 ; Definiert Strukturen für Items und Schlangen
 (define-struct item [type x y] #:prefab)               ; Ein Item hat einen Typ und Koordinaten
-(define-struct snake [coordinates color snakeStatus direction velocity score banana] #:prefab) ; Eine Schlange hat Koordinaten, Farbe, Status, Richtung, Geschwindigkeit, Punktestand und "Bananen" als Inventar
+(define-struct snake [coordinates color velocity-duration direction velocity score banana] #:prefab) ; Eine Schlange hat Koordinaten, Farbe, Status, Richtung, Geschwindigkeit, Punktestand und "Bananen" als Inventar
 
 ; Konstanten für das Spielfeld
 (define GRID-SIZE 25)                                 ; Spielfeld hat 25x25 Felder
@@ -60,16 +60,24 @@
 (define WIDTH (* GRID-SIZE CELL-SIZE))                ; Gesamtbreite des Spielfelds
 (define HEIGHT (* GRID-SIZE CELL-SIZE))               ; Gesamthöhe des Spielfelds
 
-; Initiale Listen für Welten, Schlangen, Früchte und den Timer
+; Initiale Listen und Werte für Welten, Schlangen, Früchte und den Timer
 (define LIST-WORLDS-INITIAL '())                       ; Liste der Welten (zunächst leer)
 (define LIST-SNAKES-INITIAL '())                       ; Liste der Schlangen (zunächst leer)
 (define LIST-FRUITS-INITIAL '())                       ; Liste der Früchte (zunächst leer)
 (define TIMER-INITIAL 1080)                            ; Initialer Timerwert (Umrechnug: Sekunden = Eingabe * TICK-VALUE)
 (define TICK-VALUE 1/6)                                ; Zeitwert für Ticks
 
+; Werte für Geschwindigkeit, Geschwindigkeitsdauer, Score und Bananen der Schlangen
+(define VELOCITY-NORMAL 1)
+(define VELOCITY-HIGH 2)
+(define VELOCITY-DURATION-INITIAL 0)
+(define VELOCITY-HIGH-DURATION 15)
+(define SCORE-INITIAL 0)
+(define BANANA-INITIAL 0)
+
 ; Initiale Schlangen und Früchte
-(define SNAKE1 (snake (list (list 1 0) (list 0 0)) "Yellow Green" "solid" 'right 1 0 0)) ; Erste Schlange
-(define SNAKE2 (snake (list (list (- GRID-SIZE 2) (- GRID-SIZE 1)) (list (- GRID-SIZE 1) (- GRID-SIZE 1))) "navy" "solid" 'left 1 0 0))      ; Zweite Schlange
+(define SNAKE1 (snake (list (list 1 0) (list 0 0)) "Yellow Green" VELOCITY-DURATION-INITIAL 'right VELOCITY-NORMAL SCORE-INITIAL BANANA-INITIAL)) ; Erste Schlange
+(define SNAKE2 (snake (list (list (- GRID-SIZE 2) (- GRID-SIZE 1)) (list (- GRID-SIZE 1) (- GRID-SIZE 1))) "navy" VELOCITY-DURATION-INITIAL 'left VELOCITY-NORMAL SCORE-INITIAL BANANA-INITIAL))      ; Zweite Schlange
 (define FRUIT1 (item 'apple 5 5))                   ; Erste Frucht (Apfel)
 
 ; Initiales Universum, das Welten, Schlangen, Früchte und den Timer enthält
@@ -148,16 +156,35 @@
                     '()))]))
 
 ; detect-key: snake KeyEvent Direction -> snake
-; Verarbeitet Tastatureingaben und passt die Richtung der Schlange an
-(define (detect-key snake-input a-key snake_direction)
-  (snake (snake-coordinates snake-input) (snake-color snake-input) (snake-snakeStatus snake-input)
+; Verarbeitet Tastatureingaben
+(define (detect-key snake-input a-key snake-current-direction)
          (cond
-           [(and (key=? a-key "left") (not (eq? snake_direction 'right))) 'left]
-           [(and (key=? a-key "right") (not (eq? snake_direction 'left))) 'right]
-           [(and (key=? a-key "up") (not (eq? snake_direction 'down))) 'up]
-           [(and (key=? a-key "down") (not (eq? snake_direction 'up))) 'down]
-           [else snake_direction])
+           [(key=? a-key " ") (activate-booster snake-input)]
+           [(and (key=? a-key "left") (not (eq? snake-current-direction 'right))) (change-direction snake-input 'left)]
+           [(and (key=? a-key "right") (not (eq? snake-current-direction 'left))) (change-direction snake-input 'right)]
+           [(and (key=? a-key "up") (not (eq? snake-current-direction 'down))) (change-direction snake-input 'up)]
+           [(and (key=? a-key "down") (not (eq? snake-current-direction 'up))) (change-direction snake-input 'down)]
+           [else snake-input]))
+
+; activate-booster: snake -> snake
+; Erhöht ggf. Geschwindigkeit der Schlange
+(define (activate-booster snake-input)
+  (cond
+    [(> (snake-banana snake-input) 0) (change-velocity snake-input (+ (snake-velocity-duration snake-input) VELOCITY-HIGH-DURATION) VELOCITY-HIGH (- (snake-banana snake-input) 1))]
+    [else snake-input]))
+
+; change-velocity: snake Velocity-Duration Velocity Banana -> snake
+; Passt Geschwindigkeit der Schlange an.
+(define (change-velocity snake-input new-velocity-duration new-velocity new-banana)
+  (snake (snake-coordinates snake-input) (snake-color snake-input) new-velocity-duration (snake-direction snake-input) 
+         new-velocity (snake-score snake-input) new-banana))
+
+; change-direction: snake Direction -> snake
+; Passt Richtung der Schlange an.
+(define (change-direction snake-input new-direction)
+  (snake (snake-coordinates snake-input) (snake-color snake-input) (snake-velocity-duration snake-input) new-direction 
          (snake-velocity snake-input) (snake-score snake-input) (snake-banana snake-input)))
+
 
 ; key-handler: UniverseState iworld? KeyEvent -> UniverseState
 ; Verarbeitet Tastatureingaben für das Universum und aktualisiert die Schlangen
@@ -210,7 +237,7 @@
          [new-score (if ate-apple? (add1 score) score)]  ; Punkte erhöhen, wenn Futter gegessen wurde
          [new-banana (if ate-banana? (add1 banana) banana)]
          [new-snake-coordinates (move-snake snake-input direction ate-apple?)])  ; Schlange wächst nur, wenn Futter gegessen wurde
-    (snake new-snake-coordinates (snake-color snake-input) (snake-snakeStatus snake-input) (snake-direction snake-input) (snake-velocity snake-input) new-score new-banana))) ;Inventory muss ausgebessert werden
+    (snake new-snake-coordinates (snake-color snake-input) (snake-velocity-duration snake-input) (snake-direction snake-input) (snake-velocity snake-input) new-score new-banana))) ;Inventory muss ausgebessert werden
 
 
 
@@ -371,7 +398,7 @@
             (on-msg handle-messages)
             (on-tick tick-handler TICK-VALUE)))
 
-(server-run)
+;(server-run)
 
 
 
