@@ -32,7 +32,7 @@
 ; Color ist ein String.
 ; Interpretation: Beschreibt eine Farbe.
 
-; Velocity-Duration ist eine Number.
+; Boost-Duration ist eine Number.
 ; Interpretation: Beschreibt wie lange sich die Schlange im Hochgeschwindigkeitsmodus aufhalten wird.
 
 ; Direction ist ein String.
@@ -59,11 +59,14 @@
 
 ; Structs: Definition der Strukturen für Items (Futter), Schlangen und den Weltzustand
 (define-struct item [type x-coordinate y-coordinate] #:prefab)   ; item repräsentiert Futter- oder andere Objekte
-(define-struct snake [coordinates color velocity-duration direction velocity score banana] #:prefab) ; Schlange mit ihren Eigenschaften
+(define-struct snake [coordinates color boost-duration direction velocity score banana] #:prefab) ; Schlange mit ihren Eigenschaften
 (define-struct world [snakes items timer worldStatus] #:prefab) ; Weltzustand mit Schlangen, Items, Timer und Spielstatus (waiting, playing, win, loose)
 
 ; Startzustand der Welt
 (define WORLD (world '() '() "3:00" "waiting")) ; Leerer Startzustand, initiale Werte sind potenziell irrelevant
+
+; Spielgeschwindigkeit
+(define GAME-SPEED 18)
 
 ; Spielfeldparameter
 (define GRID-SIZE 25)            ; Spielfeldgröße: 25x25 Zellen
@@ -78,7 +81,7 @@
 (define (receive w m)
   (let ([snakes (first m)]                  ; Neue Schlangenpositionen
         [items (second m)]                  ; Neue Items (Futter)
-        [timer (seconds-to-minutes (floor (/ (third m) 6)))] ; Konvertiere Timer in Minuten
+        [timer (seconds-to-minutes (floor (/ (third m) GAME-SPEED)))] ; Konvertiere Timer in Minuten
         [world_status (fourth m)])          ; Aktualisiere den Spielstatus
     (world snakes items timer world_status)))
 

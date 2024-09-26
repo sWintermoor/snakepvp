@@ -22,7 +22,7 @@
 ; Color ist ein String.
 ; Interpretation: Beschreibt eine Farbe.
 
-; Velocity-Duration ist eine Number.
+; Boost-Duration ist eine Number.
 ; Interpretation: Beschreibt wie lange sich die Schlange im Hochgeschwindigkeitsmodus aufhalten wird.
 
 ; Direction ist ein String.
@@ -52,7 +52,7 @@
 
 ; Definiert Strukturen für Items und Schlangen
 (define-struct item [type x y] #:prefab)               ; Ein Item hat einen Typ und Koordinaten
-(define-struct snake [coordinates color velocity-duration direction velocity score banana] #:prefab) ; Eine Schlange hat Koordinaten, Farbe, Status, Richtung, Geschwindigkeit, Punktestand und "Bananen" als Inventar
+(define-struct snake [coordinates color boost-duration direction velocity score banana] #:prefab) ; Eine Schlange hat Koordinaten, Farbe, Status, Richtung, Geschwindigkeit, Punktestand und "Bananen" als Inventar
 
 ; Konstanten für das Spielfeld
 (define GRID-SIZE 25)                                 ; Spielfeld hat 25x25 Felder
@@ -60,24 +60,27 @@
 (define WIDTH (* GRID-SIZE CELL-SIZE))                ; Gesamtbreite des Spielfelds
 (define HEIGHT (* GRID-SIZE CELL-SIZE))               ; Gesamthöhe des Spielfelds
 
+; Spielgeschwindigkeit
+(define GAME-SPEED 18)
+
 ; Initiale Listen und Werte für Welten, Schlangen, Früchte und den Timer
 (define LIST-WORLDS-INITIAL '())                       ; Liste der Welten (zunächst leer)
 (define LIST-SNAKES-INITIAL '())                       ; Liste der Schlangen (zunächst leer)
 (define LIST-FRUITS-INITIAL '())                       ; Liste der Früchte (zunächst leer)
-(define TIMER-INITIAL 1080)                            ; Initialer Timerwert (Umrechnug: Sekunden = Eingabe * TICK-VALUE)
-(define TICK-VALUE 1/6)                                ; Zeitwert für Ticks
+(define TIMER-INITIAL (* 180 GAME-SPEED))              ; Initialer Timerwert (Eingebene Zahl in Sekunden)
+(define TICK-VALUE (/ 1 GAME-SPEED))                   ; Zeitwert für Ticks
 
 ; Werte für Geschwindigkeit, Geschwindigkeitsdauer, Score und Bananen der Schlangen
-(define VELOCITY-NORMAL 1)
-(define VELOCITY-HIGH 2)
-(define VELOCITY-DURATION-INITIAL 0)
-(define VELOCITY-HIGH-DURATION 15)
+(define VELOCITY-NORMAL 3)
+(define BOOST 1)
+(define BOOST-DURATION-INITIAL 0)
+(define BOOST-DURATION 15)
 (define SCORE-INITIAL 0)
 (define BANANA-INITIAL 0)
 
 ; Initiale Schlangen und Früchte
-(define SNAKE1 (snake (list (list 1 0) (list 0 0)) "Yellow Green" VELOCITY-DURATION-INITIAL 'right VELOCITY-NORMAL SCORE-INITIAL BANANA-INITIAL)) ; Erste Schlange
-(define SNAKE2 (snake (list (list (- GRID-SIZE 2) (- GRID-SIZE 1)) (list (- GRID-SIZE 1) (- GRID-SIZE 1))) "navy" VELOCITY-DURATION-INITIAL 'left VELOCITY-NORMAL SCORE-INITIAL BANANA-INITIAL))      ; Zweite Schlange
+(define SNAKE1 (snake (list (list 1 0) (list 0 0)) "Yellow Green" BOOST-DURATION-INITIAL 'right VELOCITY-NORMAL SCORE-INITIAL BANANA-INITIAL)) ; Erste Schlange
+(define SNAKE2 (snake (list (list (- GRID-SIZE 2) (- GRID-SIZE 1)) (list (- GRID-SIZE 1) (- GRID-SIZE 1))) "navy" BOOST-DURATION-INITIAL 'left VELOCITY-NORMAL SCORE-INITIAL BANANA-INITIAL))      ; Zweite Schlange
 (define FRUIT1 (item 'apple 5 5))                   ; Erste Frucht (Apfel)
 
 ; Initiales Universum, das Welten, Schlangen, Früchte und den Timer enthält
@@ -170,10 +173,10 @@
 ; Erhöht ggf. Geschwindigkeit der Schlange
 (define (activate-booster snake-input)
   (cond
-    [(> (snake-banana snake-input) 0) (change-velocity snake-input (+ (snake-velocity-duration snake-input) VELOCITY-HIGH-DURATION) VELOCITY-HIGH (- (snake-banana snake-input) 1))]
+    [(> (snake-banana snake-input) 0) (change-velocity snake-input (+ (snake-boost-duration snake-input) BOOST-DURATION) BOOST (- (snake-banana snake-input) 1))]
     [else snake-input]))
 
-; change-velocity: snake Velocity-Duration Velocity Banana -> snake
+; change-velocity: snake Boost-Duration Velocity Banana -> snake
 ; Passt Geschwindigkeit der Schlange an.
 (define (change-velocity snake-input new-velocity-duration new-velocity new-banana)
   (snake (snake-coordinates snake-input) (snake-color snake-input) new-velocity-duration (snake-direction snake-input) 
@@ -182,7 +185,7 @@
 ; change-direction: snake Direction -> snake
 ; Passt Richtung der Schlange an.
 (define (change-direction snake-input new-direction)
-  (snake (snake-coordinates snake-input) (snake-color snake-input) (snake-velocity-duration snake-input) new-direction 
+  (snake (snake-coordinates snake-input) (snake-color snake-input) (snake-boost-duration snake-input) new-direction 
          (snake-velocity snake-input) (snake-score snake-input) (snake-banana snake-input)))
 
 
@@ -218,6 +221,11 @@
 ; next-snake-state: snake UniverseState -> snake
 ; Berechnet den nächsten Zustand einer Schlange
 (define (next-snake-state snake-input univ)
+  (cond
+    ; Anhand der Geschwindigkeit wird überprüft, ob der neue Zustand der Schlange berechnet werden soll.
+    [(= (modulo (timer univ) (snake-velocity snake-input)) 0)
+     (printf " Timer:~a" (modulo (timer univ) 3))
+     (printf " ~a \n" (snake-velocity snake-input))
   (let* ([snake_coordinates (snake-coordinates snake-input)]
          [direction (snake-direction snake-input)]
          [fruits (extract-fruit-type-coordinates (current-fruits univ))]  
@@ -236,9 +244,11 @@
          [ate-banana? (and (member new-head fruits) (eq? 'banana (list-ref fruits (sub1 (index-of fruits new-head)))))]
          [new-score (if ate-apple? (add1 score) score)]  ; Punkte erhöhen, wenn Futter gegessen wurde
          [new-banana (if ate-banana? (add1 banana) banana)]
-         [new-snake-coordinates (move-snake snake-input direction ate-apple?)])  ; Schlange wächst nur, wenn Futter gegessen wurde
-    (snake new-snake-coordinates (snake-color snake-input) (snake-velocity-duration snake-input) (snake-direction snake-input) (snake-velocity snake-input) new-score new-banana))) ;Inventory muss ausgebessert werden
-
+         [new-snake-coordinates (move-snake snake-input direction ate-apple?)]  ; Schlange wächst nur, wenn Futter gegessen wurde
+         [new-snake-boost-duration (if (> (snake-boost-duration snake-input) 0) (sub1 (snake-boost-duration snake-input)) 0)] ; 
+         [new-snake-velocity (if (> (snake-boost-duration snake-input) 0) BOOST VELOCITY-NORMAL)])
+    (snake new-snake-coordinates (snake-color snake-input) new-snake-boost-duration (snake-direction snake-input) new-snake-velocity new-score new-banana))] ;Inventory muss ausgebessert werden
+    [else snake-input]))
 
 
 ; move-snake: snake Direction Boolean -> Coordinates
@@ -344,7 +354,6 @@
                     [fruits (next-fruit-state snake1 snake2 univ)]
                     [time (timer univ)]
                     [univ* (list (current-worlds univ) (list snake1 snake2) fruits (sub1 time))]) 
-
                  (make-bundle univ*
                               (list (make-mail (first(current-worlds univ)) (information-to-draw univ*))
                                     (make-mail (second(current-worlds univ)) (information-to-draw univ*)))
@@ -352,7 +361,6 @@
                ])]
         [else univ]
         ))
-
 
 ; set-final-score: Game-Status Game-Status UniverseState -> bundle
 ; Setzt das Endergebnis
@@ -386,8 +394,6 @@
   (or (check-snake-collisions snake1 snake2)  ; Kollidieren die beiden Schlangen miteinander?
       (check-self-collision snake1)           ; Kollidiert snake1 mit sich selbst?
       (check-self-collision snake2)))         ; Kollidiert snake2 mit sich selbst?
-
-
 
 
 ;; Erschafft das Universum mit den entsprechenden Handlern
