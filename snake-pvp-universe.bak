@@ -398,7 +398,7 @@
             (on-msg handle-messages)
             (on-tick tick-handler TICK-VALUE)))
 
-(server-run)
+;(server-run)
 
 
 

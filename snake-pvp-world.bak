@@ -103,12 +103,12 @@
 
 ; draw-snake: snake Color Status Scene -> Scene
 ; Zeichnet die Schlange auf das Spielfeld
-(define (draw-snake snake color scene)
+(define (draw-snake snake color status scene)
   (foldl
    (lambda (pos image)
      (let ([x (first pos)]                     ; X-Koordinate des Schlangenkörpers
            [y (second pos)])                   ; Y-Koordinate des Schlangenkörpers
-       (place-image (rectangle CELL-SIZE CELL-SIZE "solid" color) ; Zeichne Rechteck für die Schlangensegmente
+       (place-image (rectangle CELL-SIZE CELL-SIZE status color) ; Zeichne Rechteck für die Schlangensegmente
                     (+ (/ CELL-SIZE 2) (* x CELL-SIZE))          ; Zentriere in der Zelle
                     (+ (/ CELL-SIZE 2) (* y CELL-SIZE))
                     image)))
@@ -173,6 +173,8 @@
            [snake2 (snake-coordinates (second (world-snakes w)))] ; Zweite Schlange
            [color1 (snake-color (first (world-snakes w)))] ; Farbe der ersten Schlange
            [color2 (snake-color (second (world-snakes w)))] ; Farbe der zweiten Schlange
+           [status1 (snake-velocity-duration (first (world-snakes w)))] ;
+           [status2 (snake-velocity-duration (second (world-snakes w)))] ;
            [score1 (snake-score (first (world-snakes w)))] ; Länge der ersten Schlange
            [score2 (snake-score (second (world-snakes w)))] ;Länge der zweiten Schlange
            [timer (world-timer w)] ; übrige Zeit
@@ -181,8 +183,8 @@
            [bananacount2 (snake-banana (second (world-snakes w)))]) ; Zähler Bananen der zweiten Schlange
        (draw-score score1 score2 bananacount1 bananacount2
                    (draw-timer timer
-                               (draw-snake snake2 color2
-                                           (draw-snake snake1 color1
+                               (draw-snake snake2 color2 status2
+                                           (draw-snake snake1 color1 status1
                                                        (draw-foods foods
                                                                    (draw-grid (empty-scene WIDTH TOTAL-HEIGHT))))))))]
     [(string=? (world-worldStatus w) "waiting")     ; Wenn der Status "waiting" ist
@@ -215,6 +217,6 @@
     [register LOCALHOST]))                    ; Lokalhost als Standard
 
 ; Startet mehrere Welten (für Multiplayer)
-(launch-many-worlds 
+#|(launch-many-worlds 
  (create-world "Player A")
- (create-world "Player B"))
+ (create-world "Player B"))|#
