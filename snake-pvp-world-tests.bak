@@ -1,6 +1,0 @@
-#lang racket
-(require test-engine/racket-tests)
-(require snake-pvp-world.rkt)
-
-; Regressionstests für snake-pvp-world
-
