@@ -72,11 +72,12 @@
 (define GAME-SPEED 18)
 
 ; Spielfeldparameter
-(define GRID-SIZE 25)            ; Spielfeldgröße: 25x25 Zellen
-(define CELL-SIZE 30)            ; Jede Zelle ist 30x30 Pixel groß
+(define GAME-SIZE 5)                          ; Spielgröße
+(define GRID-SIZE (* GAME-SIZE 5))            ; Spielfeldgröße: 25x25 Zellen
+(define CELL-SIZE (* GAME-SIZE 6))            ; Jede Zelle ist 30x30 Pixel groß
 (define WIDTH (* GRID-SIZE CELL-SIZE))  ; Gesamtbreite des Spielfelds in Pixeln
 (define HEIGHT (* GRID-SIZE CELL-SIZE)) ; Gesamthöhe des Spielfelds in Pixeln
-(define EXTRA-HEIGHT 75)         ; Extra Platz für Timer, Banana-Counter und Scores unter dem Spielfeld
+(define EXTRA-HEIGHT (* GAME-SIZE 15))         ; Extra Platz für Timer, Banana-Counter und Scores unter dem Spielfeld
 (define TOTAL-HEIGHT (+ HEIGHT EXTRA-HEIGHT)) ; Gesamthöhe inklusive extra Platz
 
 ; receive: WorldState S-expression -> WorldState
@@ -160,25 +161,25 @@
 ; draw-timer: Number Scene -> Scene
 ; Zeichnet den Timer (links oben unter dem Spielfeld)
 (define (draw-timer timer scene)
-  (place-image (text (format "Remaining Playtime: ~a" timer) 20 "black") ; Text für den Timer
+  (place-image (text (format "Remaining Playtime: ~a" timer) (* 4 GAME-SIZE) "black") ; Text für den Timer
                (/ WIDTH 2)                     ; Zentriert auf dem Spielfeld
-               (- TOTAL-HEIGHT 60)             ; Positioniert unter dem Spielfeld
+               (- TOTAL-HEIGHT (* 12 GAME-SIZE))             ; Positioniert unter dem Spielfeld
                scene))
 
 ; draw-score: Number Number Number Number Scene -> Scene
 ; Zeichnet die Spieler-Scores und den Banana-Counter unter dem Timer
 (define (draw-score score1 score2 bananacount1 bananacount2 scene)
-  (place-image (text (format "     Score-P1: ~a  |  Score-P2: ~a\nBananen-P1: ~a  |  Bananen-P2: ~a" score1 score2 bananacount1 bananacount2) 20 "blue")
+  (place-image (text (format "     Score-P1: ~a  |  Score-P2: ~a\nBananen-P1: ~a  |  Bananen-P2: ~a" score1 score2 bananacount1 bananacount2) (* 4 GAME-SIZE) "blue")
                (/ WIDTH 2)                     ; Zentriert unter dem Timer
-               (- TOTAL-HEIGHT 25)             ; Position direkt unter dem Timer
+               (- TOTAL-HEIGHT (* 5 GAME-SIZE))             ; Position direkt unter dem Timer
                scene))
 
 (define (draw-player id snake1 snake2 scene)
-  (place-image (text (format "Player-P~a" id) 28 (cond
+  (place-image (text (format "Player-P~a" id) (* 6 GAME-SIZE) (cond
                                                   [(= id (snake-id snake1)) (snake-color snake1)]
                                                   [(= id (snake-id snake2)) (snake-color snake2)]))
                (/ WIDTH 8)                     ; Zentriert unter dem Timer
-               (- TOTAL-HEIGHT 25)             ; Position direkt unter dem Timer
+               (- TOTAL-HEIGHT (* 5 GAME-SIZE))             ; Position direkt unter dem Timer
                scene))
 
 ; draw-world: WorldState -> Scene

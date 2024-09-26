@@ -57,11 +57,12 @@
 (define-struct item [type x y] #:prefab)               ; Ein Item hat einen Typ und Koordinaten
 (define-struct snake [id coordinates color boost-duration direction velocity score banana] #:prefab) ; Eine Schlange hat Koordinaten, Farbe, Status, Richtung, Geschwindigkeit, Punktestand und "Bananen" als Inventar
 
-; Konstanten für das Spielfeld
-(define GRID-SIZE 25)                                 ; Spielfeld hat 25x25 Felder
-(define CELL-SIZE 30)                                 ; Jede Zelle ist 30x30 Pixel groß
-(define WIDTH (* GRID-SIZE CELL-SIZE))                ; Gesamtbreite des Spielfelds
-(define HEIGHT (* GRID-SIZE CELL-SIZE))               ; Gesamthöhe des Spielfelds
+; Spielfeldparameter
+(define GAME-SIZE 5)                          ; Spielgröße 
+(define GRID-SIZE (* GAME-SIZE 5))            ; Spielfeldgröße: hier 25x25 Zellen
+(define CELL-SIZE (* GAME-SIZE 6))            ; Jede Zelle ist hier 30x30 Pixel groß
+(define WIDTH (* GRID-SIZE CELL-SIZE))  ; Gesamtbreite des Spielfelds in Pixeln
+(define HEIGHT (* GRID-SIZE CELL-SIZE)) ; Gesamthöhe des Spielfelds in Pixeln
 
 ; Spielgeschwindigkeit
 (define GAME-SPEED 18)
