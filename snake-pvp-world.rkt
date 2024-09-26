@@ -26,6 +26,9 @@
 ; WorldStatus ist ein String.
 ; Interpretation: Spielstatus, zu unterscheiden zwischen "waiting", "playing", "win" und "loose".
 
+; ID ist eine Number.
+; Interpretation: Eine eindeutige Kennung der Schlange.
+
 ; Coordinates ist eine Listof (Number, Number).
 ; Interpretation: Eine Liste von (x, y)-Koordinaten.
 
@@ -60,10 +63,10 @@
 ; Structs: Definition der Strukturen für Items (Futter), Schlangen und den Weltzustand
 (define-struct item [type x-coordinate y-coordinate] #:prefab)   ; item repräsentiert Futter- oder andere Objekte
 (define-struct snake [id coordinates color boost-duration direction velocity score banana] #:prefab) ; Schlange mit ihren Eigenschaften
-(define-struct world [snakes items timer worldStatus] #:prefab) ; Weltzustand mit Schlangen, Items, Timer und Spielstatus (waiting, playing, win, loose)
+(define-struct world [id snakes items timer status] #:prefab) ; Weltzustand mit Schlangen, Items, Timer und Spielstatus (waiting, playing, win, loose)
 
 ; Startzustand der Welt
-(define WORLD (world '() '() "3:00" "waiting")) ; Leerer Startzustand, initiale Werte sind potenziell irrelevant
+(define WORLD (world 0 '() '() "0:00" "waiting")) ; Leerer Startzustand, initiale Werte sind irrelevant
 
 ; Spielgeschwindigkeit
 (define GAME-SPEED 18)
@@ -79,11 +82,12 @@
 ; receive: WorldState S-expression -> WorldState
 ; Empfangen von Nachrichten (Weltstatus aktualisieren)
 (define (receive w m)
-  (let ([snakes (first m)]                  ; Neue Schlangenpositionen
-        [items (second m)]                  ; Neue Items (Futter)
-        [timer (seconds-to-minutes (floor (/ (third m) GAME-SPEED)))] ; Konvertiere Timer in Minuten
-        [world_status (fourth m)])          ; Aktualisiere den Spielstatus
-    (world snakes items timer world_status)))
+  (let ([id (first m)]                       ; ID-Zuweisung
+        [snakes (second m)]                  ; Neue Schlangenpositionen
+        [items (third m)]                  ; Neue Items (Futter)
+        [timer (seconds-to-minutes (floor (/ (fourth m) GAME-SPEED)))] ; Konvertiere Timer in Minuten
+        [world-status (fifth m)])          ; Aktualisiere den Spielstatus
+    (world id snakes items timer world-status)))
 
 ; seconds-to-minutes: Number -> String 
 ; Funktion zur Umwandlung von Sekunden in Minuten. Ausgabe in "Minuten:Sekunden" Format
@@ -169,11 +173,13 @@
                (- TOTAL-HEIGHT 25)             ; Position direkt unter dem Timer
                scene))
 
+
+
 ; draw-world: WorldState -> Scene
 ; Zeichnet den gesamten Spielzustand
 (define (draw-world w)
   (cond 
-    [(string=? (world-worldStatus w) "playing")     ; Wenn der Spielstatus "playing" ist
+    [(string=? (world-status w) "playing")     ; Wenn der Spielstatus "playing" ist
      (let ([snake1 (snake-coordinates (first (world-snakes w)))] ; Erste Schlange
            [snake2 (snake-coordinates (second (world-snakes w)))] ; Zweite Schlange
            [color1 (snake-color (first (world-snakes w)))] ; Farbe der ersten Schlange
@@ -190,13 +196,13 @@
                                            (draw-snake snake1 color1
                                                        (draw-foods foods
                                                                    (draw-grid (empty-scene WIDTH TOTAL-HEIGHT))))))))]
-    [(string=? (world-worldStatus w) "waiting")     ; Wenn der Status "waiting" ist
+    [(string=? (world-status w) "waiting")     ; Wenn der Status "waiting" ist
      (overlay (text "Waiting... \n\nUniverse started?" 30 "orange") (empty-scene WIDTH TOTAL-HEIGHT))]
-    [(string=? (world-worldStatus w) "loose")       ; Wenn der Status "loose" ist
+    [(string=? (world-status w) "loose")       ; Wenn der Status "loose" ist
      (overlay (text "You have lost" 30 "crimson") (empty-scene WIDTH TOTAL-HEIGHT))]
-    [(string=? (world-worldStatus w) "win")         ; Wenn der Status "win" ist
+    [(string=? (world-status w) "win")         ; Wenn der Status "win" ist
      (overlay (text "You have won" 30 "lime green") (empty-scene WIDTH TOTAL-HEIGHT))]
-    [(string=? (world-worldStatus w) "tie")         ; Wenn der Status "tie" ist
+    [(string=? (world-status w) "tie")         ; Wenn der Status "tie" ist
      (overlay (text "Its a Tie!" 30 "orange") (empty-scene WIDTH TOTAL-HEIGHT))]
     [else                                      ; Wenn der Status unbekannt ist
      (overlay (text "rejected" 30 "blue") (empty-scene WIDTH TOTAL-HEIGHT))]))

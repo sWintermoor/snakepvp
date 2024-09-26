@@ -16,6 +16,9 @@
 ; Timer ist eine Number.
 ; Interpretation: Vergangene Zeit seit Spielbeginn.
 
+; ID ist eine Number.
+; Interpretation: Eine eindeutige Kennung der Schlange.
+
 ; Coordinates ist eine Listof (Number, Number).
 ; Interpretation: Eine Liste von (x, y)-Koordinaten.
 
@@ -106,21 +109,21 @@
 (define (current-fruits univ) (third univ))            ; UniverseState -> List of item; Gibt die aktuellen Früchte zurück
 (define (timer univ) (fourth univ))                    ; UniverseState -> Timer; Gibt den Timerwert zurück
 
-; information-to-draw: UniverseState -> (List [Listof snake] [Listof item] Timer String)
+; information-to-draw: UniverseState -> (List [Listof snake] [Listof item] Timer String ID)
 ; Funktion zur Bereitstellung der zu zeichnenden Information basierend auf dem Universum
-(define (information-to-draw univ)
-  (list (current-snakes univ) (current-fruits univ) (timer univ) PLAYING))
+(define (information-to-draw univ id)
+  (list id (current-snakes univ) (current-fruits univ) (timer univ) PLAYING))
 
 ; UniverseState -> (List [Listof snake] [Listof item] Timer String)
 ; Verschiedene Spielmodi
-(define (waiting-mode univ)                                                   
-  (list (current-snakes univ) (current-fruits univ) (timer univ) WAITING))
-(define (win-mode univ)
-  (list (current-snakes univ) (current-fruits univ) (timer univ) WIN))
-(define (loose-mode univ)
-  (list (current-snakes univ) (current-fruits univ) (timer univ) LOOSE))
-(define (tie-mode univ)
-  (list (current-snakes univ) (current-fruits univ) (timer univ) TIE))
+(define (waiting-mode univ id)                                                   
+  (list id (current-snakes univ) (current-fruits univ) (timer univ) WAITING))
+(define (win-mode univ id)
+  (list id (current-snakes univ) (current-fruits univ) (timer univ) WIN))
+(define (loose-mode univ id)
+  (list id (current-snakes univ) (current-fruits univ) (timer univ) LOOSE))
+(define (tie-mode univ id)
+  (list id (current-snakes univ) (current-fruits univ) (timer univ) TIE))
 
 ; UniverseState -> snake
 ; Hilfsfunktionen zum Abrufen der ersten und zweiten Schlange
@@ -134,6 +137,8 @@
 
 ; UniverseState -> iworld?
 ; Hilfsfunktion zum Abrufen der ersten und zweiten Welt
+(define (first-world univ) (first (current-worlds univ)))
+(define (second-world univ) (second (current-worlds univ)))
 
 ; add-world: UniverseState iworld? -> UniverseState
 ; Fügt eine neue Welt hinzu
@@ -152,7 +157,7 @@
     [(= (length (current-worlds univ)) (- NUM_PLAYERS 1))
      (local ((define UNIV (list (append (current-worlds univ) (list wrld)) (current-snakes univ) (current-fruits univ) (timer univ))))
        (make-bundle UNIV
-                    (list (make-mail wrld (information-to-draw univ)))
+                    (list (make-mail wrld (information-to-draw univ (length (current-worlds UNIV)))))
                     '()))]
 
     ; Maximale Anzahl an Spielern noch nicht erreicht
@@ -160,7 +165,7 @@
     [(= (length (current-worlds univ)) (- NUM_PLAYERS 2))
      (local ((define UNIV (list (append (current-worlds univ) (list wrld)) (current-snakes univ) (current-fruits univ) (timer univ))))
        (make-bundle UNIV
-                    (list (make-mail wrld (waiting-mode univ)))
+                    (list (make-mail wrld (waiting-mode univ (length (current-worlds UNIV)))))
                     '()))]))
 
 ; detect-key: snake KeyEvent Direction -> snake
@@ -207,10 +212,10 @@
          
     (cond
       ; Prüft, ob die erste oder zweite Schlange die Eingabe erhalten hat
-      [(eq? worldname (iworld-name (first (current-worlds univ))))
+      [(eq? worldname (iworld-name (first-world univ)))
        (let ([new-univ (list (current-worlds univ) (list (detect-key snake1 a-key direction1) snake2) (current-fruits univ) (timer univ))])
          new-univ)]
-      [(eq? worldname (iworld-name (second (current-worlds univ))))
+      [(eq? worldname (iworld-name (second-world univ)))
        (let ([new-univ (list (current-worlds univ) (list snake1 (detect-key snake2 a-key direction2)) (current-fruits univ) (timer univ))])
          new-univ)]
       [else
@@ -358,8 +363,8 @@
                     [time (timer univ)]
                     [univ* (list (current-worlds univ) (list snake1 snake2) fruits (sub1 time))]) 
                  (make-bundle univ*
-                              (list (make-mail (first(current-worlds univ)) (information-to-draw univ*))
-                                    (make-mail (second(current-worlds univ)) (information-to-draw univ*)))
+                              (list (make-mail (first-world univ) (information-to-draw univ* (snake-id (first-snake univ))))
+                                    (make-mail (second-world univ) (information-to-draw univ* (snake-id (second-snake univ)))))
                               '()))
                ])]
         [else univ]
@@ -368,8 +373,8 @@
 ; set-final-score: Game-Status Game-Status UniverseState -> bundle
 ; Setzt das Endergebnis
 (define (set-final-score mode-wrld1 mode-wrld2 univ)
-  (make-bundle univ (list (make-mail (first(current-worlds univ)) (mode-wrld1 univ))
-                    (make-mail (second(current-worlds univ)) (mode-wrld2 univ))) '()))
+  (make-bundle univ (list (make-mail (first-world univ) (mode-wrld1 univ SNAKE-ID1))
+                    (make-mail (second-world univ) (mode-wrld2 univ SNAKE-ID2))) '()))
 
 ; check-collision: snake snake -> Boolean
 ; Prüft, ob der Kopf der ersten Schlange in den Koordinaten der zweiten Schlange vorkommt
