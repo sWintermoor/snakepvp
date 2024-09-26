@@ -90,7 +90,9 @@
 (define (seconds-to-minutes seconds)
   (let ([minutes (quotient seconds 60)]     ; Berechne Minuten
         [remaining-seconds (modulo seconds 60)]) ; Berechne verbleibende Sekunden
-    (format "~a:~s" minutes remaining-seconds))) ; Formatierung der Ausgabe im "Minuten:Sekunden" Format
+        (cond                                      ; Formatierung der Ausgabe im "Minuten:Sekunden" Format
+             [(> remaining-seconds 9) (format "~a:~s" minutes remaining-seconds)]
+             [else (format "~a:0~s" minutes remaining-seconds)]))) 
     
 ; draw-grid: Scene -> Scene  
 ; Funktion zum Zeichnen des Gitternetzes auf eine gegebene Szene 
