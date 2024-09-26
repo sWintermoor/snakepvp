@@ -110,9 +110,9 @@
    scene
    (range (+ 1 GRID-SIZE))))  ; Zeichnet das Gitter mit allen Linien inklusive Rand
 
-; draw-snake: snake Color Status Scene -> Scene
+; draw-snake: Coordinates Color Status Scene -> Scene
 ; Zeichnet die Schlange auf das Spielfeld
-(define (draw-snake snake color scene)
+(define (draw-snake snake-input-coordinates color scene)
   (foldl
    (lambda (pos image)
      (let ([x (first pos)]                     ; X-Koordinate des Schlangenkörpers
@@ -122,7 +122,7 @@
                     (+ (/ CELL-SIZE 2) (* y CELL-SIZE))
                     image)))
    scene
-   snake))
+   snake-input-coordinates))
 
 ; draw-foods: [Listof String] Scene -> Scene
 ; Zeichnet die Futteritems auf das Spielfeld
@@ -173,29 +173,39 @@
                (- TOTAL-HEIGHT 25)             ; Position direkt unter dem Timer
                scene))
 
-
+(define (draw-player id snake1 snake2 scene)
+  (place-image (text (format "Player-P~a" id) 28 (cond
+                                                  [(= id (snake-id snake1)) (snake-color snake1)]
+                                                  [(= id (snake-id snake2)) (snake-color snake2)]))
+               (/ WIDTH 8)                     ; Zentriert unter dem Timer
+               (- TOTAL-HEIGHT 25)             ; Position direkt unter dem Timer
+               scene))
 
 ; draw-world: WorldState -> Scene
 ; Zeichnet den gesamten Spielzustand
 (define (draw-world w)
   (cond 
     [(string=? (world-status w) "playing")     ; Wenn der Spielstatus "playing" ist
-     (let ([snake1 (snake-coordinates (first (world-snakes w)))] ; Erste Schlange
-           [snake2 (snake-coordinates (second (world-snakes w)))] ; Zweite Schlange
-           [color1 (snake-color (first (world-snakes w)))] ; Farbe der ersten Schlange
-           [color2 (snake-color (second (world-snakes w)))] ; Farbe der zweiten Schlange
-           [score1 (snake-score (first (world-snakes w)))] ; Länge der ersten Schlange
-           [score2 (snake-score (second (world-snakes w)))] ;Länge der zweiten Schlange
+     (let* ([id (world-id w)]
+           [snake1 (first (world-snakes w))]
+           [snake2 (second (world-snakes w))]
+           [snake1-coordinates (snake-coordinates snake1)] ; Koordinaten der ersten Schlange
+           [snake2-coordinates (snake-coordinates snake2)] ; Koordinaten der zweiten Schlange
+           [color1 (snake-color snake1)] ; Farbe der ersten Schlange
+           [color2 (snake-color snake2)] ; Farbe der zweiten Schlange
+           [score1 (snake-score snake1)] ; Länge der ersten Schlange
+           [score2 (snake-score snake2)] ;Länge der zweiten Schlange
            [timer (world-timer w)] ; übrige Zeit
            [foods (world-items w)] ; Fressen für die Schlange
-           [bananacount1 (snake-banana (first (world-snakes w)))] ; Zähler Bananen der ersten Schlange
-           [bananacount2 (snake-banana (second (world-snakes w)))]) ; Zähler Bananen der zweiten Schlange
+           [bananacount1 (snake-banana snake1)] ; Zähler Bananen der ersten Schlange
+           [bananacount2 (snake-banana snake2)]) ; Zähler Bananen der zweiten Schlange
+(draw-player id snake1 snake2
        (draw-score score1 score2 bananacount1 bananacount2
                    (draw-timer timer
-                               (draw-snake snake2 color2
-                                           (draw-snake snake1 color1
+                               (draw-snake snake2-coordinates color2
+                                           (draw-snake snake1-coordinates color1
                                                        (draw-foods foods
-                                                                   (draw-grid (empty-scene WIDTH TOTAL-HEIGHT))))))))]
+                                                                   (draw-grid (empty-scene WIDTH TOTAL-HEIGHT)))))))))]
     [(string=? (world-status w) "waiting")     ; Wenn der Status "waiting" ist
      (overlay (text "Waiting... \n\nUniverse started?" 30 "orange") (empty-scene WIDTH TOTAL-HEIGHT))]
     [(string=? (world-status w) "loose")       ; Wenn der Status "loose" ist
