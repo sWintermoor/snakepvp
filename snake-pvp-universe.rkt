@@ -81,7 +81,7 @@
 ; Initiale Schlangen und Früchte
 (define SNAKE1 (snake (list (list 1 0) (list 0 0)) "Yellow Green" BOOST-DURATION-INITIAL 'right VELOCITY-NORMAL SCORE-INITIAL BANANA-INITIAL)) ; Erste Schlange
 (define SNAKE2 (snake (list (list (- GRID-SIZE 2) (- GRID-SIZE 1)) (list (- GRID-SIZE 1) (- GRID-SIZE 1))) "navy" BOOST-DURATION-INITIAL 'left VELOCITY-NORMAL SCORE-INITIAL BANANA-INITIAL))      ; Zweite Schlange
-(define FRUIT1 (item 'apple 5 5))                   ; Erste Frucht (Apfel)
+(define FRUIT1 (item 'apple (floor (/ GRID-SIZE 2)) (floor (/ GRID-SIZE 2))))                   ; Erste Frucht (Apfel)
 
 ; Initiales Universum, das Welten, Schlangen, Früchte und den Timer enthält
 (define UNIVERSE (list LIST-WORLDS-INITIAL (list SNAKE1 SNAKE2) (list FRUIT1) TIMER-INITIAL))
@@ -224,8 +224,6 @@
   (cond
     ; Anhand der Geschwindigkeit wird überprüft, ob der neue Zustand der Schlange berechnet werden soll.
     [(= (modulo (timer univ) (snake-velocity snake-input)) 0)
-     (printf " Timer:~a" (modulo (timer univ) 3))
-     (printf " ~a \n" (snake-velocity snake-input))
   (let* ([snake_coordinates (snake-coordinates snake-input)]
          [direction (snake-direction snake-input)]
          [fruits (extract-fruit-type-coordinates (current-fruits univ))]  
