@@ -59,7 +59,7 @@
 
 ; Structs: Definition der Strukturen für Items (Futter), Schlangen und den Weltzustand
 (define-struct item [type x-coordinate y-coordinate] #:prefab)   ; item repräsentiert Futter- oder andere Objekte
-(define-struct snake [coordinates color boost-duration direction velocity score banana] #:prefab) ; Schlange mit ihren Eigenschaften
+(define-struct snake [id coordinates color boost-duration direction velocity score banana] #:prefab) ; Schlange mit ihren Eigenschaften
 (define-struct world [snakes items timer worldStatus] #:prefab) ; Weltzustand mit Schlangen, Items, Timer und Spielstatus (waiting, playing, win, loose)
 
 ; Startzustand der Welt

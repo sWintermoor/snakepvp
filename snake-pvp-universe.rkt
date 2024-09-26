@@ -52,7 +52,7 @@
 
 ; Definiert Strukturen für Items und Schlangen
 (define-struct item [type x y] #:prefab)               ; Ein Item hat einen Typ und Koordinaten
-(define-struct snake [coordinates color boost-duration direction velocity score banana] #:prefab) ; Eine Schlange hat Koordinaten, Farbe, Status, Richtung, Geschwindigkeit, Punktestand und "Bananen" als Inventar
+(define-struct snake [id coordinates color boost-duration direction velocity score banana] #:prefab) ; Eine Schlange hat Koordinaten, Farbe, Status, Richtung, Geschwindigkeit, Punktestand und "Bananen" als Inventar
 
 ; Konstanten für das Spielfeld
 (define GRID-SIZE 25)                                 ; Spielfeld hat 25x25 Felder
@@ -70,7 +70,9 @@
 (define TIMER-INITIAL (* 180 GAME-SPEED))              ; Initialer Timerwert (Eingebene Zahl in Sekunden)
 (define TICK-VALUE (/ 1 GAME-SPEED))                   ; Zeitwert für Ticks
 
-; Werte für Geschwindigkeit, Geschwindigkeitsdauer, Score und Bananen der Schlangen
+; Werte für ID, Farbe, Geschwindigkeit, Geschwindigkeitsdauer, Score und Bananen der Schlangen
+(define SNAKE-ID1 1)
+(define SNAKE-ID2 2)
 (define VELOCITY-NORMAL 3)
 (define BOOST 1)
 (define BOOST-DURATION-INITIAL 0)
@@ -79,8 +81,8 @@
 (define BANANA-INITIAL 0)
 
 ; Initiale Schlangen und Früchte
-(define SNAKE1 (snake (list (list 1 0) (list 0 0)) "Yellow Green" BOOST-DURATION-INITIAL 'right VELOCITY-NORMAL SCORE-INITIAL BANANA-INITIAL)) ; Erste Schlange
-(define SNAKE2 (snake (list (list (- GRID-SIZE 2) (- GRID-SIZE 1)) (list (- GRID-SIZE 1) (- GRID-SIZE 1))) "navy" BOOST-DURATION-INITIAL 'left VELOCITY-NORMAL SCORE-INITIAL BANANA-INITIAL))      ; Zweite Schlange
+(define SNAKE1 (snake SNAKE-ID1 (list (list 1 0) (list 0 0)) "Yellow Green" BOOST-DURATION-INITIAL 'right VELOCITY-NORMAL SCORE-INITIAL BANANA-INITIAL)) ; Erste Schlange
+(define SNAKE2 (snake SNAKE-ID2 (list (list (- GRID-SIZE 2) (- GRID-SIZE 1)) (list (- GRID-SIZE 1) (- GRID-SIZE 1))) "navy" BOOST-DURATION-INITIAL 'left VELOCITY-NORMAL SCORE-INITIAL BANANA-INITIAL))      ; Zweite Schlange
 (define FRUIT1 (item 'apple (floor (/ GRID-SIZE 2)) (floor (/ GRID-SIZE 2))))                   ; Erste Frucht (Apfel)
 
 ; Initiales Universum, das Welten, Schlangen, Früchte und den Timer enthält
@@ -129,6 +131,9 @@
 ; Hilfsfunktionen zum Abrufen des Scores der ersten Schlange und des Scores der zweiten Schlange
 (define (first-snake-score univ) (snake-score (first-snake univ)))
 (define (second-snake-score univ) (snake-score (second-snake univ)))
+
+; UniverseState -> iworld?
+; Hilfsfunktion zum Abrufen der ersten und zweiten Welt
 
 ; add-world: UniverseState iworld? -> UniverseState
 ; Fügt eine neue Welt hinzu
@@ -179,13 +184,13 @@
 ; change-velocity: snake Boost-Duration Velocity Banana -> snake
 ; Passt Geschwindigkeit der Schlange an.
 (define (change-velocity snake-input new-velocity-duration new-velocity new-banana)
-  (snake (snake-coordinates snake-input) (snake-color snake-input) new-velocity-duration (snake-direction snake-input) 
+  (snake (snake-id snake-input) (snake-coordinates snake-input) (snake-color snake-input) new-velocity-duration (snake-direction snake-input) 
          new-velocity (snake-score snake-input) new-banana))
 
 ; change-direction: snake Direction -> snake
 ; Passt Richtung der Schlange an.
 (define (change-direction snake-input new-direction)
-  (snake (snake-coordinates snake-input) (snake-color snake-input) (snake-boost-duration snake-input) new-direction 
+  (snake (snake-id snake-input) (snake-coordinates snake-input) (snake-color snake-input) (snake-boost-duration snake-input) new-direction 
          (snake-velocity snake-input) (snake-score snake-input) (snake-banana snake-input)))
 
 
@@ -245,7 +250,7 @@
          [new-snake-coordinates (move-snake snake-input direction ate-apple?)]  ; Schlange wächst nur, wenn Futter gegessen wurde
          [new-snake-boost-duration (if (> (snake-boost-duration snake-input) 0) (sub1 (snake-boost-duration snake-input)) 0)] ; 
          [new-snake-velocity (if (> (snake-boost-duration snake-input) 0) BOOST VELOCITY-NORMAL)])
-    (snake new-snake-coordinates (snake-color snake-input) new-snake-boost-duration (snake-direction snake-input) new-snake-velocity new-score new-banana))] ;Inventory muss ausgebessert werden
+    (snake (snake-id snake-input) new-snake-coordinates (snake-color snake-input) new-snake-boost-duration (snake-direction snake-input) new-snake-velocity new-score new-banana))] ;Inventory muss ausgebessert werden
     [else snake-input]))
 
 
