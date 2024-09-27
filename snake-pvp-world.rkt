@@ -4,7 +4,7 @@
 (require test-engine/racket-tests)
 (require "global-features.rkt")
 
-(provide (all-defined-out)) ; Für Tests
+(provide (all-defined-out)) ; Für Tests und Launch
 
 ; Eine Scene is ein Image, das grundlegend aus einem weißen Rechteck mit schwarzen Rändern besteht.
 ; Interpretation: Die Spielumgebung
@@ -228,8 +228,3 @@
     ;   [register "192.168.1.15"]                 ; Optionaler Register
     ;   [port 9092]                               ; Optionaler Port
     [register LOCALHOST]))                    ; Lokalhost als Standard
-
-; Startet mehrere Welten (für Multiplayer)
-#|(launch-many-worlds 
- (create-world "Player A")
- (create-world "Player B"))|#

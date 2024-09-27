@@ -2,7 +2,7 @@
 (require 2htdp/universe)
 (require "global-features.rkt")
 
-(provide (all-defined-out)) ; Für Tests
+(provide (all-defined-out)) ; Für Tests und Launch
 
 ; Ein UniverseState ist eine Liste aus [Listof iworld?], [List of snake], [Listof item] und Timer.
 ; Interpretation: Der aktuelle Serverzustand
@@ -401,7 +401,6 @@
             (on-msg handle-messages)
             (on-tick tick-handler TICK-VALUE)))
 
-;(server-run)
 
 
 
