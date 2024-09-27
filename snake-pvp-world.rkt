@@ -3,7 +3,7 @@
 (require 2htdp/image)
 (require test-engine/racket-tests)
 
-(provide (all-defined-out))
+(provide (all-defined-out)) ; Für Tests
 
 ; Eine Scene is ein Image, das grundlegend aus einem weißen Rechteck mit schwarzen Rändern besteht.
 ; Interpretation: Die Spielumgebung
@@ -11,10 +11,10 @@
 ; Ein WorldState ist eine world.
 ; Interpretation: Der aktuelle Spielzustand.
 
-; Eine world ist ein Struct bestehend aus einer Liste von snakes, einer Liste von items, einem Timer und einem Status.
+; Eine world ist ein Struct bestehend aus einer ID, einer Liste von snakes, einer Liste von items, einem Timer-String und einem Status.
 ; Interpretation: Die Gesamtheit aller Elemente, die das Spiel ausmachen.
 
-; Ein snake ist ein Struct bestehend aus Coordinates, Color, SnakeStatus, Direction, Velocity, Score und Banana.
+; Eine snake ist ein Struct bestehend aus ID, Coordinates, Color, SnakeStatus, Direction, Velocity, Score und Banana.
 ; Interpretation: Die Gesamtheit aller Elemente, die eine Schlange im Spiel definieren.
 
 ; Ein item ist ein Struct aus Type, x-Coordinate und y-Coordinate.
@@ -23,13 +23,16 @@
 ; Timer ist eine Number.
 ; Interpretation: Vergangene Zeit seit Spielbeginn.
 
+; Timer-String ist ein String.
+; Interpretation: Timer, der die bereits vergangene Zeit seit Spielbeginn anzeigt.
+
 ; WorldStatus ist ein String.
 ; Interpretation: Spielstatus, zu unterscheiden zwischen "waiting", "playing", "win" und "loose".
 
 ; ID ist eine Number.
 ; Interpretation: Eine eindeutige Kennung der Schlange.
 
-; Coordinates ist eine Listof (Number, Number).
+; Coordinates ist eine [Listof (List Number Number)].
 ; Interpretation: Eine Liste von (x, y)-Koordinaten.
 
 ; Color ist ein String.
@@ -38,11 +41,11 @@
 ; Boost-Duration ist eine Number.
 ; Interpretation: Beschreibt wie lange sich die Schlange im Hochgeschwindigkeitsmodus aufhalten wird.
 
-; Direction ist ein String.
+; Direction ist eine Symbol.
 ; Interpretation: Beschreibt Bewegungsrichtung der Schlange.
 
 ; Velocity ist ein String.
-; Interpretation: Beschreibt Geschwindigkeit der Schlange.
+; Interpretation: Beschreibt Geschwindigkeit der Schlange. Je kleiner die Zahl, desto größer die Geschwindigkeit.
 
 ; Score ist eine Number.
 ; Interpretaion: Gibt die länge der gegebenen Schlange wieder.
@@ -50,7 +53,7 @@
 ; Banana ist eine Number.
 ; Interpretation: Die Anzahl an gegessenen Bananen.
 
-; Type ist ein String.
+; Type ist ein Symbol.
 ; Interpretation: Beschreibt den Typ des Items. Unterschieden wird zwischen "apple" und "banana".
 
 ; x-Coordinate ist eine Number.
@@ -63,7 +66,7 @@
 ; Structs: Definition der Strukturen für Items (Futter), Schlangen und den Weltzustand
 (define-struct item [type x-coordinate y-coordinate] #:prefab)   ; item repräsentiert Futter- oder andere Objekte
 (define-struct snake [id coordinates color boost-duration direction velocity score banana] #:prefab) ; Schlange mit ihren Eigenschaften
-(define-struct world [id snakes items timer status] #:prefab) ; Weltzustand mit Schlangen, Items, Timer und Spielstatus (waiting, playing, win, loose)
+(define-struct world [id snakes items timer status] #:prefab) ; Weltzustand mit Schlangen, Items, Timer-String und Spielstatus (waiting, playing, win, loose)
 
 ; Startzustand der Welt
 (define WORLD (world 0 '() '() "0:00" "waiting")) ; Leerer Startzustand, initiale Werte sind irrelevant
@@ -90,7 +93,7 @@
         [world-status (fifth m)])          ; Aktualisiere den Spielstatus
     (world id snakes items timer world-status)))
 
-; seconds-to-minutes: Number -> String 
+; seconds-to-minutes: Number -> Timer-String 
 ; Funktion zur Umwandlung von Sekunden in Minuten. Ausgabe in "Minuten:Sekunden" Format
 (define (seconds-to-minutes seconds)
   (let ([minutes (quotient seconds 60)]     ; Berechne Minuten
@@ -111,7 +114,7 @@
    scene
    (range (+ 1 GRID-SIZE))))  ; Zeichnet das Gitter mit allen Linien inklusive Rand
 
-; draw-snake: Coordinates Color Status Scene -> Scene
+; draw-snake: Coordinates Color Scene -> Scene
 ; Zeichnet die Schlange auf das Spielfeld
 (define (draw-snake snake-input-coordinates color scene)
   (foldl
@@ -158,7 +161,7 @@
    scene
    foods))
 
-; draw-timer: Number Scene -> Scene
+; draw-timer: Timer-String Scene -> Scene
 ; Zeichnet den Timer (links oben unter dem Spielfeld)
 (define (draw-timer timer scene)
   (place-image (text (format "Remaining Playtime: ~a" timer) (* 4 GAME-SIZE) "black") ; Text für den Timer
@@ -166,7 +169,7 @@
                (- TOTAL-HEIGHT (* 12 GAME-SIZE))             ; Positioniert unter dem Spielfeld
                scene))
 
-; draw-score: Number Number Number Number Scene -> Scene
+; draw-score: Score Score Banana Banana Scene -> Scene
 ; Zeichnet die Spieler-Scores und den Banana-Counter unter dem Timer
 (define (draw-score score1 score2 bananacount1 bananacount2 scene)
   (place-image (text (format "     Score-P1: ~a  |  Score-P2: ~a\nBananen-P1: ~a  |  Bananen-P2: ~a" score1 score2 bananacount1 bananacount2) (* 4 GAME-SIZE) "blue")
@@ -214,7 +217,7 @@
     [(string=? (world-status w) "win")         ; Wenn der Status "win" ist
      (overlay (text "You have won" 30 "lime green") (empty-scene WIDTH TOTAL-HEIGHT))]
     [(string=? (world-status w) "tie")         ; Wenn der Status "tie" ist
-     (overlay (text "Its a Tie!" 30 "orange") (empty-scene WIDTH TOTAL-HEIGHT))]
+     (overlay (text "It's a tie!" 30 "orange") (empty-scene WIDTH TOTAL-HEIGHT))]
     [else                                      ; Wenn der Status unbekannt ist
      (overlay (text "rejected" 30 "blue") (empty-scene WIDTH TOTAL-HEIGHT))]))
 

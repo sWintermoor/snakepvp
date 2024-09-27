@@ -2,12 +2,12 @@
 (require 2htdp/universe)
 (require)
 
-(provide (all-defined-out))
+(provide (all-defined-out)) ; Für Tests
 
 ; Ein UniverseState ist eine Liste aus [Listof iworld?], [List of snake], [Listof item] und Timer.
 ; Interpretation: Der aktuelle Serverzustand
 
-; Ein snake ist ein Struct bestehend aus Coordinates, Color, SnakeStatus, Direction, Velocity, Score und Banana.
+; Eine snake ist ein Struct bestehend aus ID, Coordinates, Color, SnakeStatus, Direction, Velocity, Score und Banana.
 ; Interpretation: Die Gesamtheit aller Elemente, die eine Schlange im Spiel definieren.
 
 ; Ein item ist ein Struct aus Type, x-Coordinate und y-Coordinate.
@@ -16,10 +16,13 @@
 ; Timer ist eine Number.
 ; Interpretation: Vergangene Zeit seit Spielbeginn.
 
+; Timer-String ist ein String.
+; Interpretation: Timer, der die bereits vergangene Zeit seit Spielbeginn anzeigt.
+
 ; ID ist eine Number.
 ; Interpretation: Eine eindeutige Kennung der Schlange.
 
-; Coordinates ist eine Listof (Number, Number).
+; Coordinates ist eine [Listof (List Number Number)].
 ; Interpretation: Eine Liste von (x, y)-Koordinaten.
 
 ; Color ist ein String.
@@ -28,11 +31,11 @@
 ; Boost-Duration ist eine Number.
 ; Interpretation: Beschreibt wie lange sich die Schlange im Hochgeschwindigkeitsmodus aufhalten wird.
 
-; Direction ist ein String.
+; Direction ist ein Symbol.
 ; Interpretation: Beschreibt Bewegungsrichtung der Schlange.
 
-; Velocity ist ein String.
-; Interpretation: Beschreibt Geschwindigkeit der Schlange.
+; Velocity ist eine Number.
+; Interpretation: Beschreibt Geschwindigkeit der Schlange. Je kleiner die Zahl, desto größer die Geschwindigkeit.
 
 ; Score ist eine Number.
 ; Interpretaion: Gibt die länge der gegebenen Schlange wieder.
@@ -40,8 +43,8 @@
 ; Banana ist eine Number.
 ; Interpretation: Die Anzahl an gegessenen Bananen.
 
-; Type ist ein String.
-; Interpretation: Beschreibt den Typ des Items. Unterschieden wird zwischen "apple" und "banana".
+; Type ist ein Symbol.
+; Interpretation: Beschreibt den Typ des Items. Unterschieden wird zwischen 'apple und 'banana.
 
 ; x-Coordinate ist eine Number.
 ; Interpretation: Die x-Koordinate im Spiel.
@@ -54,7 +57,7 @@
 
 
 ; Definiert Strukturen für Items und Schlangen
-(define-struct item [type x y] #:prefab)               ; Ein Item hat einen Typ und Koordinaten
+(define-struct item [type x-coordinate y-coordinate] #:prefab)               ; Ein Item hat einen Typ und Koordinaten
 (define-struct snake [id coordinates color boost-duration direction velocity score banana] #:prefab) ; Eine Schlange hat Koordinaten, Farbe, Status, Richtung, Geschwindigkeit, Punktestand und "Bananen" als Inventar
 
 ; Spielfeldparameter
@@ -66,13 +69,6 @@
 
 ; Spielgeschwindigkeit
 (define GAME-SPEED 18)
-
-; Initiale Listen und Werte für Welten, Schlangen, Früchte und den Timer
-(define LIST-WORLDS-INITIAL '())                       ; Liste der Welten (zunächst leer)
-(define LIST-SNAKES-INITIAL '())                       ; Liste der Schlangen (zunächst leer)
-(define LIST-FRUITS-INITIAL '())                       ; Liste der Früchte (zunächst leer)
-(define TIMER-INITIAL (* 180 GAME-SPEED))              ; Initialer Timerwert (Eingebene Zahl in Sekunden)
-(define TICK-VALUE (/ 1 GAME-SPEED))                   ; Zeitwert für Ticks
 
 ; Werte für ID, Farbe, Geschwindigkeit, Geschwindigkeitsdauer, Score und Bananen der Schlangen
 (define SNAKE-ID1 1)
@@ -89,8 +85,15 @@
 (define SNAKE2 (snake SNAKE-ID2 (list (list (- GRID-SIZE 2) (- GRID-SIZE 1)) (list (- GRID-SIZE 1) (- GRID-SIZE 1))) "navy" BOOST-DURATION-INITIAL 'left VELOCITY-NORMAL SCORE-INITIAL BANANA-INITIAL))      ; Zweite Schlange
 (define FRUIT1 (item 'apple (floor (/ GRID-SIZE 2)) (floor (/ GRID-SIZE 2))))                   ; Erste Frucht (Apfel)
 
+; Initiale Listen und Werte für Welten, Schlangen, Früchte und den Timer
+(define LIST-WORLDS-INITIAL '())                       ; Liste der Welten (zunächst leer)
+(define LIST-SNAKES-INITIAL (list SNAKE1 SNAKE2))      ; Liste der Schlangen 
+(define LIST-FRUITS-INITIAL (list FRUIT1))             ; Liste der Früchte 
+(define TIMER-INITIAL (* 180 GAME-SPEED))              ; Initialer Timerwert (Eingebene Zahl in Sekunden)
+(define TICK-VALUE (/ 1 GAME-SPEED))                   ; Zeitwert für Ticks
+
 ; Initiales Universum, das Welten, Schlangen, Früchte und den Timer enthält
-(define UNIVERSE (list LIST-WORLDS-INITIAL (list SNAKE1 SNAKE2) (list FRUIT1) TIMER-INITIAL))
+(define UNIVERSE (list LIST-WORLDS-INITIAL LIST-SNAKES-INITIAL LIST-FRUITS-INITIAL TIMER-INITIAL))
 
 ;; Maximale Anzahl an Spielern
 (define NUM_PLAYERS 2)                                ; Zwei Spieler möglich
@@ -110,12 +113,12 @@
 (define (current-fruits univ) (third univ))            ; UniverseState -> List of item; Gibt die aktuellen Früchte zurück
 (define (timer univ) (fourth univ))                    ; UniverseState -> Timer; Gibt den Timerwert zurück
 
-; information-to-draw: UniverseState -> (List [Listof snake] [Listof item] Timer String ID)
+; information-to-draw: UniverseState ID -> (List [Listof snake] [Listof item] Timer String ID)
 ; Funktion zur Bereitstellung der zu zeichnenden Information basierend auf dem Universum
 (define (information-to-draw univ id)
   (list id (current-snakes univ) (current-fruits univ) (timer univ) PLAYING))
 
-; UniverseState -> (List [Listof snake] [Listof item] Timer String)
+; UniverseState ID -> (List [Listof snake] [Listof item] Timer String)
 ; Verschiedene Spielmodi
 (define (waiting-mode univ id)                                                   
   (list id (current-snakes univ) (current-fruits univ) (timer univ) WAITING))
@@ -326,7 +329,7 @@
 ; Wandelt struct-Struktur von [Listof item] in Listenstruktur um.
 (define (extract-fruit-type-coordinates fruit-list)
   (foldl (lambda (fruit current-list)
-           (append current-list (list (item-type fruit) (list (item-x fruit) (item-y fruit)))))
+           (append current-list (list (item-type fruit) (list (item-x-coordinate fruit) (item-y-coordinate fruit)))))
          '()
          fruit-list))
 
