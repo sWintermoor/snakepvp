@@ -98,12 +98,12 @@
 (define (current-fruits univ) (third univ))            ; UniverseState -> List of item; Gibt die aktuellen Früchte zurück
 (define (timer univ) (fourth univ))                    ; UniverseState -> Timer; Gibt den Timerwert zurück
 
-; information-to-draw: UniverseState ID -> (List [Listof snake] [Listof item] Timer String ID)
+; information-to-draw: UniverseState ID -> (List ID [Listof snake] [Listof item] Timer String ID)
 ; Funktion zur Bereitstellung der zu zeichnenden Information basierend auf dem Universum
 (define (information-to-draw univ id)
   (list id (current-snakes univ) (current-fruits univ) (timer univ) PLAYING))
 
-; UniverseState ID -> (List [Listof snake] [Listof item] Timer String)
+; UniverseState ID -> (List ID [Listof snake] [Listof item] Timer String)
 ; Verschiedene Spielmodi
 (define (waiting-mode univ id)                                                   
   (list id (current-snakes univ) (current-fruits univ) (timer univ) WAITING))
@@ -401,7 +401,7 @@
             (on-msg handle-messages)
             (on-tick tick-handler TICK-VALUE)))
 
-(server-run)
+;(server-run)
 
 
 
