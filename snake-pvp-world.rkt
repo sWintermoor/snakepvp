@@ -2,6 +2,7 @@
 (require 2htdp/universe)
 (require 2htdp/image)
 (require test-engine/racket-tests)
+(require "global-features.rkt")
 
 (provide (all-defined-out)) ; Für Tests
 
@@ -62,24 +63,13 @@
 ; y-Coordinate ist eine Number.
 ; Interpretation: Die y-Koordinate im Spiel.
 
-
-; Structs: Definition der Strukturen für Items (Futter), Schlangen und den Weltzustand
-(define-struct item [type x-coordinate y-coordinate] #:prefab)   ; item repräsentiert Futter- oder andere Objekte
-(define-struct snake [id coordinates color boost-duration direction velocity score banana] #:prefab) ; Schlange mit ihren Eigenschaften
+; Structs: Definition der Struktur für den Weltzustand
 (define-struct world [id snakes items timer status] #:prefab) ; Weltzustand mit Schlangen, Items, Timer-String und Spielstatus (waiting, playing, win, loose)
 
 ; Startzustand der Welt
 (define WORLD (world 0 '() '() "0:00" "waiting")) ; Leerer Startzustand, initiale Werte sind irrelevant
 
-; Spielgeschwindigkeit
-(define GAME-SPEED 18)
-
 ; Spielfeldparameter
-(define GAME-SIZE 5)                          ; Spielgröße
-(define GRID-SIZE (* GAME-SIZE 5))            ; Spielfeldgröße: 25x25 Zellen
-(define CELL-SIZE (* GAME-SIZE 6))            ; Jede Zelle ist 30x30 Pixel groß
-(define WIDTH (* GRID-SIZE CELL-SIZE))  ; Gesamtbreite des Spielfelds in Pixeln
-(define HEIGHT (* GRID-SIZE CELL-SIZE)) ; Gesamthöhe des Spielfelds in Pixeln
 (define EXTRA-HEIGHT (* GAME-SIZE 15))         ; Extra Platz für Timer, Banana-Counter und Scores unter dem Spielfeld
 (define TOTAL-HEIGHT (+ HEIGHT EXTRA-HEIGHT)) ; Gesamthöhe inklusive extra Platz
 

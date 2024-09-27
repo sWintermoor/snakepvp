@@ -1,6 +1,6 @@
 #lang racket
 (require 2htdp/universe)
-(require)
+(require "global-features.rkt")
 
 (provide (all-defined-out)) ; Für Tests
 
@@ -54,21 +54,6 @@
 
 ; Game-Status ist eine Liste aus [Listof snake], [Listof item], Timer und String
 ; Interpretation: Der Spielstatus einer Welt. 
-
-
-; Definiert Strukturen für Items und Schlangen
-(define-struct item [type x-coordinate y-coordinate] #:prefab)               ; Ein Item hat einen Typ und Koordinaten
-(define-struct snake [id coordinates color boost-duration direction velocity score banana] #:prefab) ; Eine Schlange hat Koordinaten, Farbe, Status, Richtung, Geschwindigkeit, Punktestand und "Bananen" als Inventar
-
-; Spielfeldparameter
-(define GAME-SIZE 5)                          ; Spielgröße 
-(define GRID-SIZE (* GAME-SIZE 5))            ; Spielfeldgröße: hier 25x25 Zellen
-(define CELL-SIZE (* GAME-SIZE 6))            ; Jede Zelle ist hier 30x30 Pixel groß
-(define WIDTH (* GRID-SIZE CELL-SIZE))  ; Gesamtbreite des Spielfelds in Pixeln
-(define HEIGHT (* GRID-SIZE CELL-SIZE)) ; Gesamthöhe des Spielfelds in Pixeln
-
-; Spielgeschwindigkeit
-(define GAME-SPEED 18)
 
 ; Werte für ID, Farbe, Geschwindigkeit, Geschwindigkeitsdauer, Score und Bananen der Schlangen
 (define SNAKE-ID1 1)
