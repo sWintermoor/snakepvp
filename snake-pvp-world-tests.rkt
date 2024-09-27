@@ -18,15 +18,19 @@
 
 ; Testwelten
 (define WORLD1 (world 1 '() '() "3:00" "waiting"))
-(define WORLD2 (world 2 '(SNAKE1 SNAKE2) '(ITEM1 ITEM2) "0:30" "playing"))
+(define WORLD2 (world 2 '(SNAKE1 SNAKE2) '(FRUIT1 FRUIT2) "0:30" "playing"))
 
 ; Testnachrichten
-(define MESSAGE (list 1 (list SNAKE1 SNAKE2) (list FRUIT1 FRUIT2) (* 10 GAME-SPEED) "playing"))
+(define MESSAGE1 (list 1 (list SNAKE1 SNAKE2) (list FRUIT1 FRUIT2) (* 10 GAME-SPEED) "playing"))
+(define MESSAGE2 (list 1 (list SNAKE1) (list FRUIT1 FRUIT2) (* 180 GAME-SPEED) "waiting"))
+(define MESSAGE3 (list 2 (list SNAKE1 SNAKE2) (list FRUIT1 FRUIT2) (* 0 GAME-SPEED) "loose"))
 
 
 ; receive: WorldState S-expression -> WorldState
 ; Empfangen von Nachrichten (Weltstatus aktualisieren)
-(check-expect (receive WORLD1 MESSAGE) (world 1 (list SNAKE1 SNAKE2) (list FRUIT1 FRUIT2) "0:10" "playing"))
+(check-expect (receive WORLD1 MESSAGE1) (world 1 (list SNAKE1 SNAKE2) (list FRUIT1 FRUIT2) "0:10" "playing"))
+(check-expect (receive WORLD1 MESSAGE2) (world 1 (list SNAKE1) (list FRUIT1 FRUIT2) "3:00" "waiting"))
+(check-expect (receive WORLD2 MESSAGE3) (world 2 (list SNAKE1 SNAKE2) (list FRUIT1 FRUIT2) "0:00" "loose"))
 
 ; seconds-to-minutes: Number -> Timer-String
 ; Funktion zur Umwandlung von Sekunden in Minuten. Ausgabe in "Minuten:Sekunden" Format
@@ -38,6 +42,7 @@
 ; key-handler: WorldState KeyEvent -> WorldState
 ; Funktion zur Verarbeitung der Tastatureingabe
 (check-expect (key-handler WORLD2 "up") (make-package WORLD2 "up"))
+(check-expect (key-handler WORLD2 " ") (make-package WORLD2 " "))
 (check-expect (key-handler WORLD2 "a") (make-package WORLD2 "a"))
 
 (test)

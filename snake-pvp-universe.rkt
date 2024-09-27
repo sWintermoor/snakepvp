@@ -213,7 +213,6 @@
 ; handle-messages: UniverseState iworld? S-expression -> UniverseState
 ; Verarbeitet Nachrichten im Universum und ruft den Keyhandler auf
 (define (handle-messages univ wrld m)
-  ;(print-received-key wrld m)
   (key-handler univ wrld m))
 
 
@@ -310,8 +309,8 @@
     (if (or (member coordinates ext) (member coordinates forbidden-fields)) (correct-random fruits (list (random GRID-SIZE) (random GRID-SIZE)) forbidden-fields) coordinates)))
 
 
-; extract-fruit-type-coordinates: [Listof item] -> [Listof (List Type x-Coordinate y-Coordinate)]
-; Wandelt struct-Struktur von [Listof item] in Listenstruktur um.
+; extract-fruit-type-coordinates: [Listof item] -> [Listof Type (List x-Coordinate y-Coordinate)]
+; Wandelt struct-Struktur von items in [Listof item] in Listenstruktur um.
 (define (extract-fruit-type-coordinates fruit-list)
   (foldl (lambda (fruit current-list)
            (append current-list (list (item-type fruit) (list (item-x-coordinate fruit) (item-y-coordinate fruit)))))
