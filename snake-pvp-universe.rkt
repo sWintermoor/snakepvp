@@ -161,7 +161,7 @@
 ; Verarbeitet Tastatureingaben
 (define (detect-key snake-input a-key snake-current-direction)
          (cond
-           [(key=? a-key " ") (activate-booster snake-input)]
+           [(and (key=? a-key " ") (> (snake-banana snake-input) 0)) (activate-booster snake-input)]
            [(and (key=? a-key "left") (not (eq? snake-current-direction 'right))) (change-direction snake-input 'left)]
            [(and (key=? a-key "right") (not (eq? snake-current-direction 'left))) (change-direction snake-input 'right)]
            [(and (key=? a-key "up") (not (eq? snake-current-direction 'down))) (change-direction snake-input 'up)]
@@ -171,9 +171,7 @@
 ; activate-booster: snake -> snake
 ; Erhöht ggf. Geschwindigkeit der Schlange
 (define (activate-booster snake-input)
-  (cond
-    [(> (snake-banana snake-input) 0) (change-velocity snake-input (+ (snake-boost-duration snake-input) BOOST-DURATION) BOOST (- (snake-banana snake-input) 1))]
-    [else snake-input]))
+  (change-velocity snake-input (+ (snake-boost-duration snake-input) BOOST-DURATION) BOOST (- (snake-banana snake-input) 1)))
 
 ; change-velocity: snake Boost-Duration Velocity Banana -> snake
 ; Passt Geschwindigkeit der Schlange an.
