@@ -4,12 +4,12 @@
 ### Ziel des Spiels
 Mehr Früchte als der Gegner sammeln, ohne mit Schalngen zu kollidieren.
 ### Spielstart
-- [ ] Universe Starten (Server)
-- [ ] World Datei starten (Spieler)
+- [ ] Universe über Launch-Datei starten (Server)
+- [ ] World über Launch-Datei starten (Spieler)
 
 ## Wichtige Links
 
-GoogleDoc für Entwurf: [https://docs.google.com/document/d/13wrCPKRJzpxp-4ILPLiJzAn5dTOKmDyd8B49Dxw33-4/edit](https://docs.google.com/document/d/13wrCPKRJzpxp-4ILPLiJzAn5dTOKmDyd8B49Dxw33-4/edit)
+GoogleDoc für Entwurf (Ideensammlung): [https://docs.google.com/document/d/13wrCPKRJzpxp-4ILPLiJzAn5dTOKmDyd8B49Dxw33-4/edit](https://docs.google.com/document/d/13wrCPKRJzpxp-4ILPLiJzAn5dTOKmDyd8B49Dxw33-4/edit)
 
 OverleafDoc für Projektdokumentation: [https://www.overleaf.com/2913849131ykxngcrrcxxm#89043f](https://www.overleaf.com/2913849131ykxngcrrcxxm#89043f)
 
