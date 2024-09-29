@@ -105,8 +105,6 @@
 (check-expect (change-direction SNAKE5 'up)  ; Eingabe: Entgegengesetzten Richtung
               (snake (snake-id SNAKE5) (snake-coordinates SNAKE5) (snake-color SNAKE5) (snake-boost-duration SNAKE5) 'up (snake-velocity SNAKE5) (snake-score SNAKE5) (snake-banana SNAKE5)))
 
-; key-handler - wegen iworld-Verarbeitung keine Tests verfügbar
-
 ; handle-messages - wegen iworld-Verarbeitung keine Tests verfügbar
 
 ; next-snake-state: snake UniverseState -> snake
@@ -134,26 +132,26 @@
 ; Berechnet den nächsten Zustand eines Items
 ; Es wird mit einem seed getestet
 (check-expect (next-fruit-state SNAKE1 SNAKE2 UNIVERSE1) (list FRUIT1)) ; Keine Frucht konsumiert.
-(check-expect (next-fruit-state SNAKE5 SNAKE6 UNIVERSE3) (list (item 'banana 2 8) (item 'banana 1 2))) ; Frucht wird konsumiert.
+(check-expect (next-fruit-state SNAKE5 SNAKE6 UNIVERSE3) (list (item 'banana 2 7) (item 'banana 1 2))) ; Frucht wird konsumiert.
 
 ; new-fruit: [Listof item] item Coordinates -> [Listof item]
 ; Entfernt die gegessene Frucht und platziert 1-2 Neue
 ; Es wird mit einem seed getestet
-(check-expect (new-fruit (list FRUIT2 FRUIT3) FRUIT3 (list SNAKE5 SNAKE6)) (list (item 'apple 18 19) (item 'banana 22 20) FRUIT2))
+(check-expect (new-fruit (list FRUIT2 FRUIT3) FRUIT3 (list SNAKE5 SNAKE6)) (list (item 'apple 15 15) (item 'banana 18 16) FRUIT2))
 
 ; create-fruit: [Listof item] Type Coordinates -> [Listof item]
 ; Erstellt 1-2 neue Früchte
 ; Es wird mit einem seed getestet
-(check-expect (create-fruit (list FRUIT2 FRUIT3) 'banana (list SNAKE5 SNAKE6)) (list (item 'apple 11 21) (item 'banana 8 22)))
+(check-expect (create-fruit (list FRUIT2 FRUIT3) 'banana (list SNAKE5 SNAKE6)) (list (item 'apple 9 17) (item 'banana 6 18)))
 
 ; correct-random: [Listof item] (List x-Coordinate y-Coordinate) Coordinates -> (List x-Coordinate y-Coordinate)
 ; Verhindert das Spawnen von neuen Früchten auf der Schlange und auf Früchten (in der World müssen Früchte zuerst gezeichnet werden)
 (check-expect (correct-random (list FRUIT1) '(10 10) (append (snake-coordinates SNAKE1) (snake-coordinates SNAKE2)))       ; leere Stelle gewählt
               '(10 10)) ; leere Stelle gewählt
 (check-expect (correct-random (list FRUIT2 FRUIT3) '(2 1) (append (snake-coordinates SNAKE5) (snake-coordinates SNAKE5)))  ; Koordinaten einer Schlange gewählt
-              '(11 4))
+              '(9 3))
 (check-expect (correct-random (list FRUIT2 FRUIT3) '(0 0) (append (snake-coordinates SNAKE5) (snake-coordinates SNAKE5)))  ; Koordinaten einer Frucht gewählt
-              '(12 12))
+              '(10 10))
 
 ; extract-fruit-type-coordinates: [Listof item] -> [Listof Type (List x-Coordinate y-Coordinate)]
 ; Wandelt struct-Struktur von [Listof item] in Listenstruktur um.
