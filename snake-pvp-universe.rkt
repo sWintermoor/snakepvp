@@ -303,7 +303,7 @@
 
 
 ; extract-fruit-type-coordinates: [Listof item] -> [Listof Type (List x-Coordinate y-Coordinate)]
-; Wandelt struct-Struktur von items in [Listof item] in Listenstruktur um.
+; Hilfsfunktion: Wandelt struct-Struktur von items in [Listof item] in Listenstruktur um.
 (define (extract-fruit-type-coordinates fruit-list)
   (foldl (lambda (fruit current-list)
            (append current-list (list (item-type fruit) (list (item-x-coordinate fruit) (item-y-coordinate fruit)))))
