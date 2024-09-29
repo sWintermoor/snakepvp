@@ -186,7 +186,7 @@
          (snake-velocity snake-input) (snake-score snake-input) (snake-banana snake-input)))
 
 
-; key-handler: UniverseState iworld? S-expression -> UniverseState
+; handle-messages: UniverseState iworld? S-expression -> UniverseState
 ; Verarbeitet Tastatureingaben für das Universum und aktualisiert die Schlangen
 (define (handle-messages univ wrld m)
   (let* ([worldname (iworld-name wrld)]
