@@ -203,8 +203,8 @@
 ; change-direction: snake Direction -> snake
 ; Passt Richtung der Schlange an.
 (define (change-direction snake-input new-direction)
-  (snake (snake-id snake-input) (snake-coordinates snake-input) (snake-color snake-input) (snake-boost-duration snake-input) (snake-immunity-duration snake-input) new-direction 
-         (snake-velocity snake-input) (snake-score snake-input) (snake-banana snake-input) (snake-blueberry snake-input)))
+  (snake (snake-id snake-input) (snake-coordinates snake-input) (snake-color snake-input) (snake-boost-duration snake-input) new-direction 
+         (snake-velocity snake-input) (snake-score snake-input) (snake-banana snake-input)))
 
 
 ; handle-messages: UniverseState iworld? S-expression -> UniverseState
@@ -241,7 +241,6 @@
          [fruits (extract-fruit-type-coordinates (current-fruits univ))]  
          [score (snake-score snake-input)]
          [banana (snake-banana snake-input)]
-         [blueberry (snake-blueberry snake-input)]
          
          ; Berechne den neuen Kopf der Schlange, bevor die Bewegung stattfindet
          [new-head (cond
@@ -253,15 +252,12 @@
          ; Überprüfe, ob der neue Kopf auf dem Futter ist
          [ate-apple? (and (member new-head fruits) (eq? 'apple (list-ref fruits (sub1 (index-of fruits new-head)))))]
          [ate-banana? (and (member new-head fruits) (eq? 'banana (list-ref fruits (sub1 (index-of fruits new-head)))))]
-         [ate-blueberry? (and (member new-head fruits) (eq? 'blueberry (list-ref fruits (sub1 (index-of fruits new-head)))))]
          [new-score (if ate-apple? (add1 score) score)]  ; Punkte erhöhen, wenn Futter gegessen wurde
          [new-banana (if ate-banana? (add1 banana) banana)]
-         [new-blueberry (if ate-blueberry? (add1 blueberry) blueberry)]
          [new-snake-coordinates (move-snake snake-input direction ate-apple?)]  ; Schlange wächst nur, wenn Futter gegessen wurde
-         [new-snake-boost-duration (if (> (snake-boost-duration snake-input) 0) (sub1 (snake-boost-duration snake-input)) 0)] ;
-         [new-snake-immunity-duration (if (> (snake-immunity-duration snake-input) 0) (sub1 (snake-immunity-duration snake-input)) 0)]
+         [new-snake-boost-duration (if (> (snake-boost-duration snake-input) 0) (sub1 (snake-boost-duration snake-input)) 0)] ; 
          [new-snake-velocity (if (> (snake-boost-duration snake-input) 0) BOOST VELOCITY-NORMAL)])
-    (snake (snake-id snake-input) new-snake-coordinates (snake-color snake-input) new-snake-boost-duration new-snake-immunity-duration (snake-direction snake-input) new-snake-velocity new-score new-banana new-blueberry))] ;Inventory muss ausgebessert werden
+    (snake (snake-id snake-input) new-snake-coordinates (snake-color snake-input) new-snake-boost-duration (snake-direction snake-input) new-snake-velocity new-score new-banana))] ;Inventory muss ausgebessert werden
     [else snake-input]))
 
 
