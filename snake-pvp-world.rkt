@@ -104,14 +104,14 @@
    scene
    (range (+ 1 GRID-SIZE))))  ; Zeichnet das Gitter mit allen Linien inklusive Rand
 
-; draw-snake: Coordinates Color Scene -> Scene
+; draw-snake: Coordinates Immunity-Duration Color Scene -> Scene
 ; Zeichnet die Schlange auf das Spielfeld
-(define (draw-snake snake-input-coordinates color scene)
+(define (draw-snake snake-input-coordinates snake-immunity-duration color scene)
   (foldl
    (lambda (pos image)
      (let ([x (first pos)]                     ; X-Koordinate des Schlangenkörpers
            [y (second pos)])                   ; Y-Koordinate des Schlangenkörpers
-       (place-image (rectangle CELL-SIZE CELL-SIZE "solid" color) ; Zeichne Rechteck für die Schlangensegmente
+       (place-image (rectangle CELL-SIZE CELL-SIZE "solid" (if (> snake-immunity-duration 0) "orange" color)) ; Zeichne Rechteck für die Schlangensegmente
                     (+ (/ CELL-SIZE 2) (* x CELL-SIZE))          ; Zentriere in der Zelle
                     (+ (/ CELL-SIZE 2) (* y CELL-SIZE))
                     image)))
@@ -147,7 +147,14 @@
            (+ (/ CELL-SIZE 2) (* x CELL-SIZE))
            (+ (/ CELL-SIZE 2) (* y CELL-SIZE))
            image)
-          ])))
+          ]
+          [(eq? type 'blueberry)                    ; Zeichne Apfel-Item
+          (place-image (underlay/xy (ellipse CELL-SIZE (- CELL-SIZE (/ CELL-SIZE 3)) "solid" "blue") ; Apfel als Ellipse
+                                    (/ CELL-SIZE 2) (- 0 (/ CELL-SIZE 5))
+                                    (rotate 160 (isosceles-triangle (/ CELL-SIZE 2) CELL-SIZE "solid" "brown"))) ; Stiel des Apfels
+                       (+ (/ CELL-SIZE 2) (* x CELL-SIZE))
+                       (+ (/ CELL-SIZE 2) (* y CELL-SIZE))
+                       image)])))
    scene
    foods))
 
@@ -185,6 +192,8 @@
            [snake2 (second (world-snakes w))]
            [snake1-coordinates (snake-coordinates snake1)] ; Koordinaten der ersten Schlange
            [snake2-coordinates (snake-coordinates snake2)] ; Koordinaten der zweiten Schlange
+           [snake1-immunity-duration (snake-immunity-duration snake1)]
+           [snake2-immunity-duration (snake-immunity-duration snake2)]
            [color1 (snake-color snake1)] ; Farbe der ersten Schlange
            [color2 (snake-color snake2)] ; Farbe der zweiten Schlange
            [score1 (snake-score snake1)] ; Länge der ersten Schlange
@@ -196,8 +205,8 @@
 (draw-player id snake1 snake2
        (draw-score score1 score2 bananacount1 bananacount2
                    (draw-timer timer
-                               (draw-snake snake2-coordinates color2
-                                           (draw-snake snake1-coordinates color1
+                               (draw-snake snake2-coordinates snake2-immunity-duration color2
+                                           (draw-snake snake1-coordinates snake1-immunity-duration color1
                                                        (draw-foods foods
                                                                    (draw-grid (empty-scene WIDTH TOTAL-HEIGHT)))))))))]
     [(string=? (world-status w) "waiting")     ; Wenn der Status "waiting" ist
@@ -226,5 +235,5 @@
     [name worldname]                          ; Name der Welt
     ;   [state #t]                                ; Optionaler Zustand (deaktiviert)
     ;[register "192.168.2.117"]                 ; Optionaler Register
-    [port 9092]                               ; Optionaler Port
+    ;[port 9092]                               ; Optionaler Port
     [register LOCALHOST]))                    ; Lokalhost als Standard

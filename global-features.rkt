@@ -5,7 +5,7 @@
 
 ; Structs: Definition der Strukturen für Items (Futter) und Schlangen
 (define-struct item [type x-coordinate y-coordinate] #:prefab)   ; item repräsentiert Futter- oder andere Objekte
-(define-struct snake [id coordinates color boost-duration direction velocity score banana] #:prefab) ; Schlange mit ihren Eigenschaften
+(define-struct snake [id coordinates color boost-duration immunity-duration direction velocity score banana blueberry] #:prefab) ; Schlange mit ihren Eigenschaften
 
 ; Spielgeschwindigkeit
 (define GAME-SPEED 18)

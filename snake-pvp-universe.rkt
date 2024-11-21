@@ -31,6 +31,9 @@
 ; Boost-Duration ist eine Number.
 ; Interpretation: Beschreibt wie lange sich die Schlange im Hochgeschwindigkeitsmodus aufhalten wird.
 
+; Immunity-Duration ist eine Number.
+; Interpretation: Beschreibt wie lange sich die Schlange im Unbesiegbarmodus aufhalten wird.
+
 ; Direction ist ein Symbol.
 ; Interpretation: Beschreibt Bewegungsrichtung der Schlange.
 
@@ -42,6 +45,9 @@
 
 ; Banana ist eine Number.
 ; Interpretation: Die Anzahl an gegessenen Bananen.
+
+; Blueberry ist eine Number.
+; Interpretation: Die Anzahl an gegessenen Blaubeeren.
 
 ; Type ist ein Symbol.
 ; Interpretation: Beschreibt den Typ des Items. Unterschieden wird zwischen 'apple und 'banana.
@@ -62,12 +68,15 @@
 (define BOOST 1)
 (define BOOST-DURATION-INITIAL 0)
 (define BOOST-DURATION 15)
+(define IMMUNITY-DURATION-INITIAL 0)
+(define IMMUNITY-DURATION 15)
 (define SCORE-INITIAL 0)
 (define BANANA-INITIAL 0)
+(define BLUEBERRY-INITIAL 0)
 
 ; Initiale Schlangen und Früchte
-(define SNAKE1 (snake SNAKE-ID1 (list (list 1 0) (list 0 0)) "Yellow Green" BOOST-DURATION-INITIAL 'right VELOCITY-NORMAL SCORE-INITIAL BANANA-INITIAL)) ; Erste Schlange
-(define SNAKE2 (snake SNAKE-ID2 (list (list (- GRID-SIZE 2) (- GRID-SIZE 1)) (list (- GRID-SIZE 1) (- GRID-SIZE 1))) "navy" BOOST-DURATION-INITIAL 'left VELOCITY-NORMAL SCORE-INITIAL BANANA-INITIAL))      ; Zweite Schlange
+(define SNAKE1 (snake SNAKE-ID1 (list (list 1 0) (list 0 0)) "Yellow Green" BOOST-DURATION-INITIAL IMMUNITY-DURATION-INITIAL 'right VELOCITY-NORMAL SCORE-INITIAL BANANA-INITIAL BLUEBERRY-INITIAL)) ; Erste Schlange
+(define SNAKE2 (snake SNAKE-ID2 (list (list (- GRID-SIZE 2) (- GRID-SIZE 1)) (list (- GRID-SIZE 1) (- GRID-SIZE 1))) "navy" BOOST-DURATION-INITIAL IMMUNITY-DURATION-INITIAL 'left VELOCITY-NORMAL SCORE-INITIAL BANANA-INITIAL BLUEBERRY-INITIAL))      ; Zweite Schlange
 (define FRUIT1 (item 'apple (floor (/ GRID-SIZE 2)) (floor (/ GRID-SIZE 2))))                   ; Erste Frucht (Apfel)
 
 ; Initiale Listen und Werte für Welten, Schlangen, Früchte und den Timer
@@ -161,12 +170,24 @@
 ; Verarbeitet Tastatureingaben
 (define (detect-key snake-input a-key snake-current-direction)
          (cond
+           [(and (key=? a-key "r") (> (snake-blueberry snake-input) 0)) (activate-immunity snake-input)]
            [(and (key=? a-key " ") (> (snake-banana snake-input) 0)) (activate-booster snake-input)]
            [(and (key=? a-key "left") (not (eq? snake-current-direction 'right))) (change-direction snake-input 'left)]
            [(and (key=? a-key "right") (not (eq? snake-current-direction 'left))) (change-direction snake-input 'right)]
            [(and (key=? a-key "up") (not (eq? snake-current-direction 'down))) (change-direction snake-input 'up)]
            [(and (key=? a-key "down") (not (eq? snake-current-direction 'up))) (change-direction snake-input 'down)]
            [else snake-input]))
+
+; activate-immunity: snake -> snake
+; Erhöht ggf. Immunität der Schlange
+(define (activate-immunity snake-input)
+  (change-immunity snake-input (+ (snake-immunity-duration snake-input) IMMUNITY-DURATION) (- (snake-blueberry snake-input) 1)))
+
+; change-immunity: snake Immunity-Duration Blueberry -> snake
+; Passt Immunität der Schlange an.
+(define (change-immunity snake-input new-immunity-duration new-blueberry)
+  (snake (snake-id snake-input) (snake-coordinates snake-input) (snake-color snake-input) (snake-boost-duration snake-input) new-immunity-duration (snake-direction snake-input) 
+         (snake-velocity snake-input) (snake-score snake-input) (snake-banana snake-input) new-blueberry))
 
 ; activate-booster: snake -> snake
 ; Erhöht ggf. Geschwindigkeit der Schlange
@@ -283,7 +304,7 @@
 ; create-fruit: [Listof item] Type Coordinates -> [Listof item]
 ; Erstellt 1-2 neue Früchte
 (define (create-fruit fruits type forbidden-fields)
-  (let* ([randnum (random 4)]
+  (let* ([randnum (random 6)]
          [x1 (first (correct-random fruits (list (random GRID-SIZE) (random GRID-SIZE)) forbidden-fields))]
          [y1 (second (correct-random fruits (list (random GRID-SIZE) (random GRID-SIZE)) forbidden-fields))]
          [x2 (first (correct-random fruits (list (random GRID-SIZE) (random GRID-SIZE)) forbidden-fields))]
@@ -291,8 +312,10 @@
          [fruit-choices (list
                          (list (item 'apple x1 y1))
                          (list (item 'banana x1 y1))
+                         (list (item 'blueberry x1 y1))
                          (list (item 'apple x1 y1) (item 'apple x2 y2))
-                         (list (item 'apple x1 y1) (item 'banana x2 y2)))])
+                         (list (item 'apple x1 y1) (item 'banana x2 y2))
+                         (list (item 'apple x1 y1) (item 'blueberry x2 y2)))])
     (list-ref fruit-choices randnum)))
 
 ; correct-random: [Listof item] (List x-Coordinate y-Coordinate) Coordinates -> (List x-Coordinate y-Coordinate)
@@ -380,16 +403,18 @@
 ; check-all-collisions: snake snake -> Boolean
 ; Überprüft, ob eine der beiden Schlangen kollidiert (entweder mit der anderen oder mit sich selbst)
 (define (check-all-collisions snake1 snake2)
+  (if (or (> (snake-immunity-duration snake1) 0) (> (snake-immunity-duration snake2) 0))
+  #f
   (or (check-snake-collisions snake1 snake2)  ; Kollidieren die beiden Schlangen miteinander?
       (check-self-collision snake1)           ; Kollidiert snake1 mit sich selbst?
-      (check-self-collision snake2)))         ; Kollidiert snake2 mit sich selbst?
+      (check-self-collision snake2))))         ; Kollidiert snake2 mit sich selbst?
 
 
 ;; Erschafft das Universum mit den entsprechenden Handlern
 (define (server-run)
   (universe UNIVERSE
             (on-new add-world)
-            (port 9092)
+            ;(port 9092)
             (on-msg handle-messages)
             (on-tick tick-handler TICK-VALUE)))
 
