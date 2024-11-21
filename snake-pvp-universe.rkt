@@ -389,7 +389,7 @@
 (define (server-run)
   (universe UNIVERSE
             (on-new add-world)
-            ;(port 9092)
+            (port 9092)
             (on-msg handle-messages)
             (on-tick tick-handler TICK-VALUE)))
 
