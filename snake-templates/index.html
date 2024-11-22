@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>
-            TestWebsite
-        </title>
+        <title>SnakePvP</title>
         <link rel="stylesheet" href="../snake-static/snake-css/style.css">
+        <script src="../snake-static/snake-js/racket-base.js"></script>
+        <script src="../snake-static/snake-js/game.js"></script>
     </head>
 
     <body>
@@ -18,12 +18,13 @@
             </nav>
             <h1>SnakePvP</h1>
         </header>
-        <section>
-            <div>Play</div>
-            <div>b</div>
-            <div>c</div>
-        </section>
-        <section>lower-section</section>
+        <section id="game-container"></section>
+        <script>
+            // Initialisiere dein Spiel
+            window.onload = funtion() {
+                racket.runGame("game-container");
+            };
+        </script>
         <footer>footer</footer>
     </body>
 </html>
