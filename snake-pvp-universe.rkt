@@ -197,8 +197,8 @@
 ; change-velocity: snake Boost-Duration Velocity Banana -> snake
 ; Passt Geschwindigkeit der Schlange an.
 (define (change-velocity snake-input new-velocity-duration new-velocity new-banana)
-  (snake (snake-id snake-input) (snake-coordinates snake-input) (snake-color snake-input) new-velocity-duration (snake-direction snake-input) 
-         new-velocity (snake-score snake-input) new-banana))
+  (snake (snake-id snake-input) (snake-coordinates snake-input) (snake-color snake-input) new-velocity-duration (snake-immunity-duration snake-input) (snake-direction snake-input) 
+         new-velocity (snake-score snake-input) new-banana (snake-blueberry snake-input)))
 
 ; change-direction: snake Direction -> snake
 ; Passt Richtung der Schlange an.
