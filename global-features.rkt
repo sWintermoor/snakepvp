@@ -11,7 +11,7 @@
 (define GAME-SPEED 18)
 
 ; Spielfeldparameter
-(define GAME-SIZE 4)                          ; Spielgröße 
+(define GAME-SIZE 5)                          ; Spielgröße 
 (define GRID-SIZE (* GAME-SIZE 5))            ; Spielfeldgröße: hier 25x25 Zellen
 (define CELL-SIZE (* GAME-SIZE 6))            ; Jede Zelle ist hier 30x30 Pixel groß
 (define WIDTH (* GRID-SIZE CELL-SIZE))  ; Gesamtbreite des Spielfelds in Pixeln
