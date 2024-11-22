@@ -308,7 +308,7 @@
 ; create-fruit: [Listof item] Type Coordinates -> [Listof item]
 ; Erstellt 1-2 neue Früchte
 (define (create-fruit fruits type forbidden-fields)
-  (let* ([randnum (random 9)]
+  (let* ([randnum (random 12)]
          [x1 (first (correct-random fruits (list (random GRID-SIZE) (random GRID-SIZE)) forbidden-fields))]
          [y1 (second (correct-random fruits (list (random GRID-SIZE) (random GRID-SIZE)) forbidden-fields))]
          [x2 (first (correct-random fruits (list (random GRID-SIZE) (random GRID-SIZE)) forbidden-fields))]
