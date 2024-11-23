@@ -25,6 +25,19 @@
                 racket.runGame("game-container");
             };
         </script>
+        <section>
+            <button onclick="changeText()">Play</button>
+            <script>
+                // JavaScript
+                function changeText() {
+                    // Get the element with the ID 'message'
+                    const messageElement = document.getElementById('message');
+                    
+                    // Change its text content
+                    messageElement.textContent = 'You clicked the button!';
+                }
+            </script>
+        </section>
         <footer>footer</footer>
     </body>
 </html>

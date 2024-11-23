@@ -40,6 +40,13 @@ section{
     display: flex;
     flex-direction: row;
 }
+button {
+    width: 15vw;
+    height: 5vh;
+    position: absolute;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
 div{
     background: red;
     margin: auto;
