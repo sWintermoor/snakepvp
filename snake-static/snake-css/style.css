@@ -46,6 +46,7 @@ button {
     position: absolute;
     left: 50%;
     transform: translate(-50%, -50%);
+    cursor: pointer;
 }
 div{
     background: red;
@@ -53,6 +54,6 @@ div{
     width: 100px;
 }
 footer{
-    background: black;
+    background: rgb(62, 62, 62);
     padding: 10px 20px;
 }
