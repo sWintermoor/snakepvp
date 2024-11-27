@@ -40,6 +40,9 @@ section{
     display: flex;
     flex-direction: row;
 }
+#game-container{
+    text-align: center;
+}
 button {
     width: 15vw;
     height: 5vh;
