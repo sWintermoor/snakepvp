@@ -33,7 +33,7 @@ li{
     display: inline-block;
     margin-right: 20px;
 }
-section{
+#playButton{
     background: white;
     color: grey;
     padding: 20px;
@@ -41,7 +41,13 @@ section{
     flex-direction: row;
 }
 #game-container{
-    text-align: center;
+    display: flexbox;
+    align-items: center;
+}
+img{
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
 }
 button {
     width: 15vw;
