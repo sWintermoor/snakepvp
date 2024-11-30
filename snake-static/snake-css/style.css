@@ -33,16 +33,17 @@ li{
     display: inline-block;
     margin-right: 20px;
 }
+#gameContainer{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
 #playButton{
     background: white;
     color: grey;
     padding: 20px;
     display: flex;
     flex-direction: row;
-}
-#game-container{
-    display: flexbox;
-    align-items: center;
 }
 img{
     display: block;
@@ -56,11 +57,6 @@ button {
     left: 50%;
     transform: translate(-50%, -50%);
     cursor: pointer;
-}
-div{
-    background: red;
-    margin: auto;
-    width: 100px;
 }
 footer{
     background: rgb(62, 62, 62);
