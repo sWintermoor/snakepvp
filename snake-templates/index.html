@@ -3,8 +3,9 @@
     <head>
         <title>SnakePvP</title>
         <link rel="stylesheet" href="../snake-static/snake-css/style.css">
-        <script src="../snake-static/snake-js/racket-base.js"></script>
-        <script src="../snake-static/snake-js/game.js"></script>
+        <script src="../snake-static/snake-js/snake-pvp-world-classes.js"></script>
+        <script src="../snake-static/snake-js/snake-pvp-world-functions.js"></script>
+        <script src="../snake-static/snake-js/snake-pvp-world-initial.js"></script>
     </head>
 
     <body>
@@ -19,27 +20,11 @@
             <h1>SnakePvP</h1>
         </header>
         <section id="game-container">
-            <img src="../snake-static/snake-img/snakepvp-arena.PNG" alt="">
+           <!-- <img src="../snake-static/snake-img/snakepvp-arena.PNG" alt=""> -->
+           <canvas id="gameCanvas"></canvas>
         </section>
-        <script>
-            // Initialisiere dein Spiel
-            window.onload = function() {
-                racket.runGame("game-container");
-            };
-        </script>
         <section id="playButton">
-            <button onclick="changeText()">Play</button>
-            <p id="message"></p> <!-- Hier fügen wir das Element mit der ID 'message' hinzu -->
-            <script>
-                // JavaScript
-                function changeText() {
-                    // Get the element with the ID 'message'
-                    const messageElement = document.getElementById('message');
-                    
-                    // Change its text content
-                    messageElement.textContent = 'You clicked the button!';
-                }
-            </script>
+            <button onclick="main()">Play</button>
         </section>
         <footer>footer</footer>
     </body>
