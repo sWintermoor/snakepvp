@@ -60,14 +60,8 @@ document.addEventListener("keydown", (event) => keyHandler(event, world));
 // MAIN GAME LOOP
 
 function gameLoop(context, world, cellSize, width, height) {
-  //context.clearRect(0, 0, width, height); // Clear the canvas
+  context.clearRect(0, 0, width, height); // Clear the canvas
 
-  context.fillStyle = "orange";
-  context.font = "30px Arial";
-  context.textAlign = "center";
-  context.fillText("Waiting...", width / 2, height / 2);
-
-  /*
   if (world.status === "playing") {
     drawGrid(context, world.gridSize, cellSize, width, height);
     world.snakes.forEach(snake =>
@@ -82,7 +76,6 @@ function gameLoop(context, world, cellSize, width, height) {
   }
 
   requestAnimationFrame(() => gameLoop(context, world, cellSize, width, height));
-  */
 }
 
 export{gameLoop};

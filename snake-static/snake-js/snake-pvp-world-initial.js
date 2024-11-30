@@ -14,7 +14,7 @@ function main(){
     canvas.style.display = "block";
 
     // Initial world state
-    const world = new World(0, [new Snake(1, [[5, 5]], "green", "alive", "up", 1, 0, 0)], [], "0:00", "waiting");
+    const world = new World(0, [new Snake(1, [[5, 5]], "green", "alive", "up", 1, 0, 0)], [], "0:00", "playing");
 
     gameLoop(context, world, cellSize, width, height);
 }
