@@ -63,9 +63,9 @@ function gameLoop(context, world, cellSize, width, height) {
   //context.clearRect(0, 0, width, height); // Clear the canvas
 
   context.fillStyle = "orange";
-    context.font = "30px Arial";
-    context.textAlign = "center";
-    context.fillText("Waiting...", width / 2, height / 2);
+  context.font = "30px Arial";
+  context.textAlign = "center";
+  context.fillText("Waiting...", width / 2, height / 2);
 
   /*
   if (world.status === "playing") {
@@ -84,3 +84,5 @@ function gameLoop(context, world, cellSize, width, height) {
   requestAnimationFrame(() => gameLoop(context, world, cellSize, width, height));
   */
 }
+
+export{gameLoop};

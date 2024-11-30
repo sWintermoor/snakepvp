@@ -1,7 +1,7 @@
-import * as snakeClass from 'snake-pvp-world-classes.js';
-import * as snakeFunction from 'snake-pvp-world-functions.js';
+import {World, Snake} from "./snake-pvp-world-classes.js";
+import {gameLoop} from "./snake-pvp-world-functions.js";
 
-export function main(){
+function main(){
     const canvas = document.getElementById("gameCanvas");
     const image = document.getElementById("gameImage");
     const context = canvas.getContext("2d");
@@ -14,7 +14,9 @@ export function main(){
     canvas.style.display = "block";
 
     // Initial world state
-    const world = new snakeClass.World(0, [new snakeClass.Snake(1, [[5, 5]], "green", "alive", "up", 1, 0, 0)], [], "0:00", "waiting");
+    const world = new World(0, [new Snake(1, [[5, 5]], "green", "alive", "up", 1, 0, 0)], [], "0:00", "waiting");
 
-    snakeFunction.gameLoop(context, world, cellSize, width, height);
+    gameLoop(context, world, cellSize, width, height);
 }
+
+window.main = main;

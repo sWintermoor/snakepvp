@@ -8,7 +8,7 @@ class World{
     }
 }
 
-class snake{
+class Snake{
     constructor(id, coordinates, color, boostDuration, immunityDuration, direction, velocity, score, banana, blueberry){
         this.id = id;
         this.coordinates = coordinates;
@@ -23,10 +23,12 @@ class snake{
     }
 }
 
-class item{
+class Item{
     constructor(type, xCoordinate, yCoordinate){
         this.type = type;
         this.xCoordinate = xCoordinate;
         this.yCoordinate = yCoordinate;
     }
 }
+
+export{World, Snake, Item};
