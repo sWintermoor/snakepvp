@@ -1,5 +1,8 @@
-import {World, Snake} from "./snake-pvp-world-classes.js";
-import {gameLoop} from "./snake-pvp-world-functions.js";
+import {World, Snake} from "../snake-static/snake-js/snake-pvp-world-classes.js";
+import {gameLoop} from "../snake-static/snake-js/snake-pvp-world-functions.js";
+
+var playButton = document.getElementById("playButton")
+playButton.addEventListener("click", main)
 
 function main(){
     const canvas = document.getElementById("gameCanvas");
@@ -18,5 +21,3 @@ function main(){
 
     gameLoop(context, world, cellSize, width, height);
 }
-
-window.main = main;

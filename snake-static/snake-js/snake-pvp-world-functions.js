@@ -15,6 +15,11 @@ function secondsToMinutes(seconds){
 // RENDERING FUNCTIONS
 
 // Using p5.js
+
+function draw(gridSize, cellSize){
+  drawGrid(gridSize, cellSize);
+}
+
 function drawGrid(gridSize, cellSize){
     stroke(0); //Black stroke
     for (let i=0; i <= gridSize; i++){
@@ -63,11 +68,14 @@ function gameLoop(context, world, cellSize, width, height) {
   context.clearRect(0, 0, width, height); // Clear the canvas
 
   if (world.status === "playing") {
+    /*
     drawGrid(context, world.gridSize, cellSize, width, height);
     world.snakes.forEach(snake =>
       drawSnake(context, snake.coordinates, snake.color, snake.immunityDuration, cellSize)
     );
     drawFood(context, world.items, cellSize);
+    */
+    draw(gridSize, cellSize);
   } else {
     context.fillStyle = "orange";
     context.font = "30px Arial";
