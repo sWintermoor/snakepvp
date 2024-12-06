@@ -23,8 +23,8 @@ function draw(gridSize, cellSize){
 function drawGrid(gridSize, cellSize){
     stroke(0); //Black stroke
     for (let i=0; i <= gridSize; i++){
-        line(i*cellSize, 0, i*cellSize, height) // Vertical lines
-        line(0, i*cellSize, width, i*cellSize) // Horizontal lines
+        line(i*cellSize, 0, i*cellSize, HEIGHT) // Vertical lines
+        line(0, i*cellSize, WIDTH, i*cellSize) // Horizontal lines
     }
 }
 
@@ -60,7 +60,7 @@ function keyHandler(event, world) {
       world.snakes[0].direction = "right";
     }
 }
-document.addEventListener("keydown", (event) => keyHandler(event, world));
+document.addEventListener("keydown", (event) => keyHandler(event, _WORLD));
 
 // MAIN GAME LOOP
 
@@ -75,7 +75,7 @@ function gameLoop(context, world, cellSize, width, height) {
     );
     drawFood(context, world.items, cellSize);
     */
-    draw(gridSize, cellSize);
+    draw(GRIDSIZE, cellSize);
   } else {
     context.fillStyle = "orange";
     context.font = "30px Arial";

@@ -1,46 +1,126 @@
-const cellSize = 20;
-const gridSize = 20;
+const GAMESIZE = 5;
+const GRIDSIZE = GAMESIZE*5;
+const CELLSIZE = GAMESIZE*6;
+const WIDTH = GRIDSIZE*CELLSIZE;
+const HEIGHT = GRIDSIZE*CELLSIZE;
+const IMAGE = document.getElementById("gameImage");
 
-const image = document.getElementById("gameImage");
+const SOCKET = new WebSocket('ws://localhost:9092');
+const PLAYBUTTON = document.getElementById("playButton");
 
-var playButton = document.getElementById("playButton");
-playButton.addEventListener("click", printHello);
+var _BOARD;
+var _CONTEXT;
+var _SNAKE1;
+var _SNAKE2;
+var _WORLD;
+
+var _ID;
+var _SNAKES;
+var _ITEMS;
+var _TIMER;
+var _WORLDSTATUS;
 
 function testMain(){
-    const canvas = document.getElementById("gameCanvas");
-    const image = document.getElementById("gameImage");
-    const context = canvas.getContext("2d");
+    _WORLD = new World(0, [], [], "0:00", "waiting");
 
-    image.style.display = "none";
-    canvas.style.display = "block";
+    if (_WORLD[5] == "waiting"){
+        initializeWaitingMode();
+    }
+    else{
+        initializeGame();
+    }
 
-    // Set the canvas size
-    canvas.width = 500;
-    canvas.height = 500;
+    SOCKET.onmessage({data}) => {
+        _ID = data[0];
+        _SNAKES = data[1];
+        _ITEMS = data[2];
+        _TIMER = data[3];
+        _WORLDSTATUS = data[4];
+    };
+}
 
-    // Draw a red rectangle
-    // context.fillStyle = "red";
-    // context.fillRect(50, 50, 100, 100);
+function initializeWaitingMode(){
+    _CONTEXT.fillStyle = "orange";
+    _CONTEXT.font = "30px Arial";
+    _CONTEXT.textAlign = "center";
+    _CONTEXT.fillText("Waiting...", canvas.width / 2, canvas.height / 2);
+}
 
-    context.fillStyle = "orange";
-    context.font = "30px Arial";
-    context.textAlign = "center";
-    context.fillText("Waiting...", canvas.width / 2, canvas.height / 2);
+function initializeGame(){
+
+    createBoard();
+    drawGrid();
+    createSnakes();
+}
+
+function createBoard(){
+    _BOARD=document.getElementById("gameCanvas");
+    _BOARD.width=WIDTH;
+    _BOARD.height=HEIGHT;
+    _CONTEXT=_BOARD.getContext("2d");
+
+    IMAGE.style.display = "none";
+    _BOARD.style.display = "block";
+
+    _CONTEXT.fillStyle="white";
+    _CONTEXT.fillRect(0, 0, _BOARD.width, _BOARD.height);
+    _BOARD.style.border = "2px solid black";   
+}
+
+function drawGrid(){
+    for (let i=0; i <= GRIDSIZE; i++){
+        _CONTEXT.beginPath();
+        _CONTEXT.moveTo(i*CELLSIZE, 0);
+        _CONTEXT.lineTo(i*CELLSIZE, HEIGHT);
+        _CONTEXT.moveTo(0, i*CELLSIZE);
+        _CONTEXT.lineTo(HEIGHT, i*CELLSIZE);
+        _CONTEXT.strokeStyle="black";
+        _CONTEXT.lineWidth=2;
+        _CONTEXT.stroke();
+    }
+}
+
+function createSnakes(){
+    _SNAKE1 = new Snake()
 }
 
 function printHello(){
-    image.style.display = "none";
+    IMAGE.style.display = "none";
     alert("Hi");
 }
 
-function draw(gridSize, cellSize){
-    drawGrid(gridSize, cellSize);
-}
-  
-function drawGrid(gridSize, cellSize){
-    stroke(0); //Black stroke
-    for (let i=0; i <= gridSize; i++){
-        line(i*cellSize, 0, i*cellSize, height) // Vertical lines
-        line(0, i*cellSize, width, i*cellSize) // Horizontal lines
+
+class World{
+    constructor(id, snakes, items, timer, status){
+        this.id = id;
+        this.snakes = snakes;
+        this.items = items;
+        this.timer = timer;
+        this.status = status;
     }
 }
+
+class Snake{
+    constructor(id, coordinates, color, boostDuration, immunityDuration, direction, velocity, score, banana, blueberry){
+        this.id = id;
+        this.coordinates = coordinates;
+        this.color = color;
+        this.boostDuration = boostDuration;
+        this.immunityDuration = immunityDuration;
+        this.direction = direction;
+        this.velocity = velocity;
+        this.score = score;
+        this.banana = banana;
+        this.blueberry = blueberry
+    }
+}
+
+class Item{
+    constructor(type, xCoordinate, yCoordinate){
+        this.type = type;
+        this.xCoordinate = xCoordinate;
+        this.yCoordinate = yCoordinate;
+    }
+}
+
+PLAYBUTTON.addEventListener("click", testMain);

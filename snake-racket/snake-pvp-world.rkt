@@ -234,6 +234,6 @@
     [on-key key-handler]                      ; Verarbeitet Tastatureingaben
     [name worldname]                          ; Name der Welt
     ;   [state #t]                                ; Optionaler Zustand (deaktiviert)
-    ;[register "192.168.2.117"]                 ; Optionaler Register
+    ;[myIp"]                 ; Optionaler Register
     [port 9092]                               ; Optionaler Port
     [register LOCALHOST]))                    ; Lokalhost als Standard
