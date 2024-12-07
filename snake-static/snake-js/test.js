@@ -108,7 +108,18 @@ function drawTimer(){
 }
 
 function drawSnakes(){
-    // Missing
+    drawSnake(_SNAKE1);
+    drawSnake(_SNAKe2);
+}
+
+function drawSnake(snakeInput){
+    for (const coordinate in snakeInput[1]){
+        drawCoordinate(coordinate);
+    }
+}
+
+function drawCoordinate([x, y]){
+    
 }
 
 function drawFoods(){
