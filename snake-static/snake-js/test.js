@@ -21,15 +21,21 @@ var _TIMER;
 var _WORLDSTATUS;
 
 function testMain(){
-    _WORLD = new World(0, [], [], "0:00", "waiting");
+    _WORLD = new World(0, [], [], "0:00", "playing");
 
-    if (_WORLD[5] == "waiting"){
+    while (_WORLD[5] == "waiting"){
+        update();
         initializeWaitingMode();
     }
-    else{
-        initializeGame();
-    }
 
+    initializeGame();
+
+    gameLoop();
+
+    drawResult();
+}
+
+function update(){
     SOCKET.onmessage(({data}) => {
         _ID = data[0];
         _SNAKES = data[1];
@@ -47,10 +53,8 @@ function initializeWaitingMode(){
 }
 
 function initializeGame(){
-
     createBoard();
     drawGrid();
-    createSnakes();
 }
 
 function createBoard(){
@@ -80,15 +84,40 @@ function drawGrid(){
     }
 }
 
-function createSnakes(){
-    _SNAKE1 = new Snake()
+function gameLoop(){
+    while (_WORLDSTATUS == "playing"){
+        update();
+        drawPlayer();
+        drawScore();
+        drawTimer();
+        drawSnakes();
+        drawFoods();
+    }
 }
 
-function printHello(){
-    IMAGE.style.display = "none";
-    alert("Hi");
+function drawPlayer(){
+    // Missing
 }
 
+function drawScore(){
+    // Missing
+}
+
+function drawTimer(){
+    // Missing
+}
+
+function drawSnakes(){
+    // Missing
+}
+
+function drawFoods(){
+    // Missing
+}
+
+function drawResult(){
+    // Missing
+}
 
 class World{
     constructor(id, snakes, items, timer, status){
