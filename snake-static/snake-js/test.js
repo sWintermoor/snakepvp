@@ -30,13 +30,13 @@ function testMain(){
         initializeGame();
     }
 
-    SOCKET.onmessage({data}) => {
+    SOCKET.onmessage(({data}) => {
         _ID = data[0];
         _SNAKES = data[1];
         _ITEMS = data[2];
         _TIMER = data[3];
         _WORLDSTATUS = data[4];
-    };
+    });
 }
 
 function initializeWaitingMode(){
