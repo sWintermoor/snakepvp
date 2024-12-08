@@ -1,23 +1,35 @@
 import os
 import socket 
 from socket import *
+import threading
 import sys # In order to terminate the program
 
-serverSocket = socket(AF_INET, SOCK_STREAM)
+# def handleClient(connectionSocket):
+    
+def main():
+    serverSocket = socket(AF_INET, SOCK_STREAM) # AF_INET für IPv4 und SOCK_STREAM für TCP
 
-#Verzeichnis für statische Dateien
-BASE_DIR = os.path.join(os.getcwd(), '..', 'snake-static')
+    #Verzeichnis für statische Dateien
+    BASE_DIR = os.path.join(os.getcwd(), '..', 'snake-static')
 
-#Prepare a sever socket
-serverSocket.bind(('0.0.0.0', 6603))
-serverSocket.listen(1)
+    #Prepare a sever socket
+    serverSocket.bind(('0.0.0.0', 6603))
+    serverSocket.listen(1)
 
-while True:
-    #Establish the connection
     print('Ready to serve...')
-    connectionSocket, addr = serverSocket.accept()
+
+    while True:
+        #Accept a new connection
+        connectionSocket, addr = serverSocket.accept()
+        print(f"Connection established with{addr}")
+
+        #Starting a new thread
+        client_thread = threading.Thread(target=handle_client, args=(connectionSocket,))
+        client_thread.start()
 
 
+
+def handle_client(connectionSocket):
     try:
         #Empfange die Nachricht (also den Dateinamen)
         message = connectionSocket.recv(1024).decode()
@@ -56,7 +68,4 @@ while True:
     except Exception as e:
         print(f"Error occured: {e}")
         connectionSocket.close()
-
-serverSocket.close()
-sys.exit() #Terminate the program after sending the corresponding data
 
