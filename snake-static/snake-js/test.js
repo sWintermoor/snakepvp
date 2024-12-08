@@ -119,11 +119,50 @@ function drawSnake(snakeInput){
 }
 
 function drawCoordinate([x, y]){
-    
+    _CONTEXT.fillRect(x, y, (x+CELLSIZE), (y+CELLSIZE));
 }
 
 function drawFoods(){
-    // Missing
+    for (const food in _ITEMS){
+        drawSpecificFood(food);
+    }
+}
+
+function drawSpecificFood(food){
+    x = food[0];
+    y = food[1];
+    type = food[2];
+
+    if (type == "apple"){
+        drawApple(x, y);
+    }
+    else if (type == "banana"){
+        drawBanana(x, y);
+    }
+    else{
+        drawBlueberry(x, y);
+    }
+}
+
+function drawApple(x, y){
+    _CONTEXT.beginPath();
+    _CONTEXT.arc(x, y, (CELLSIZE/2), 0, 2*Math.PI);
+    _CONTEXT.fillStyle = 'red';
+    _CONTEXT.fill();
+}
+
+function drawBanana(x, y){
+    _CONTEXT.beginPath();
+    _CONTEXT.arc(x, y, (CELLSIZE/2), 0, 2*Math.PI);
+    _CONTEXT.fillStyle = 'yellow';
+    _CONTEXT.fill();
+}
+
+function drawBlueberry(x, y){
+    _CONTEXT.beginPath();
+    _CONTEXT.arc(x, y, (CELLSIZE/2), 0, 2*Math.PI);
+    _CONTEXT.fillStyle = 'blue';
+    _CONTEXT.fill();
 }
 
 function drawResult(){
