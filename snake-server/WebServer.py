@@ -2,6 +2,7 @@ import os
 import socket 
 from socket import *
 import threading
+import subprocess
 import sys # In order to terminate the program
 
 # def handleClient(connectionSocket):
@@ -27,7 +28,28 @@ def main():
         client_thread = threading.Thread(target=handle_client, args=(connectionSocket,))
         client_thread.start()
 
+def execute_racket_file(filepath):
+    """
+    Execute a Racket file using subprocess and return its output or errors.
+    """
+    try:
+        # Run the Racket file
+        process = subprocess.Popen(
+            ['racket', filepath],  # Command to execute the Racket file
+            stdout=subprocess.PIPE,  # Capture standard output
+            stderr=subprocess.PIPE   # Capture standard error
+        )
+        stdout, stderr = process.communicate()
 
+        # Check for success or errors
+        if process.returncode == 0:
+            return stdout.decode()  # Return the program's output
+        else:
+            return f"Error executing Racket file:\n{stderr.decode()}"
+    except FileNotFoundError:
+        return "Racket interpreter not found. Ensure Racket is installed and in PATH."
+    except Exception as e:
+        return f"Unexpected error: {e}"
 
 def handle_client(connectionSocket):
     try:
