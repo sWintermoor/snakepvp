@@ -3,7 +3,6 @@ import socket
 from socket import *
 import threading
 import subprocess
-import sys # In order to terminate the program
 
 matchmaking_queue = []
 lock = threading.Lock()
@@ -72,7 +71,7 @@ def main():
     Start the server and listen for connections
     """
     serverSocket = socket(AF_INET, SOCK_STREAM) # AF_INET für IPv4 und SOCK_STREAM für TCP
-    serverSocket.bind(('0.0.0.0', 6603))
+    serverSocket.bind(('0.0.0.0', 9092))
     serverSocket.listen(1)
 
     print('Ready to serve...')
