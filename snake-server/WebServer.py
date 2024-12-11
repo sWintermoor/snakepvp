@@ -5,28 +5,43 @@ import threading
 import subprocess
 import sys # In order to terminate the program
 
-# def handleClient(connectionSocket):
-    
-def main():
-    serverSocket = socket(AF_INET, SOCK_STREAM) # AF_INET für IPv4 und SOCK_STREAM für TCP
+matchmaking_queue = []
+lock = threading.Lock()
 
-    #Verzeichnis für statische Dateien
-    BASE_DIR = os.path.join(os.getcwd(), '..', 'snake-static')
+def handle_client(connectionSocket):
+    try:
+        with lock:
+            matchmaking_queue.append(connectionSocket)
+            print("Client added to matchmaking queue")
 
-    #Prepare a sever socket
-    serverSocket.bind(('0.0.0.0', 6603))
-    serverSocket.listen(1)
+        # Wait until two clients are connected
+        while True:
+            with lock:
+                if len(matchmaking_queue) >= 2:
+                    # Pair the first two clients 
+                    player1 = matchmaking_queue.pop(0)
+                    player2 = matchmaking_queue.pop(0)
+                    break
 
-    print('Ready to serve...')
+        # Notify both players
+        player1.send("Matched! Game starting...\n".encode())
+        player2.send("Matched! Game starting...\n".encode())
 
-    while True:
-        #Accept a new connection
-        connectionSocket, addr = serverSocket.accept()
-        print(f"Connection established with{addr}")
+        # Execute Racket file for the pair
+        result = execute_racket_file('../snake-racket/launch-snake-pvp-universe.rkt')
 
-        #Starting a new thread
-        client_thread = threading.Thread(target=handle_client, args=(connectionSocket,))
-        client_thread.start()
+        # Send results to both players
+        player1.send(f"Game Results:\n{result}".encode())
+        player2.send(f"Game Results:\n{result}".encode())
+
+    except Exception as e:
+        print(f"Error in handle_client: {e}")
+        connectionSocket.close()
+
+    finally:
+        #Close the sockets
+        connectionSocket.close()
+
 
 def execute_racket_file(filepath):
     """
@@ -51,43 +66,25 @@ def execute_racket_file(filepath):
     except Exception as e:
         return f"Unexpected error: {e}"
 
-def handle_client(connectionSocket):
-    try:
-        #Empfange die Nachricht (also den Dateinamen)
-        message = connectionSocket.recv(1024).decode()
-        filename = message.split()[1]
 
-        # Handle unterschiedliche Dateitypen
-        if filename == '/':
-            filename = '/templates/index.html'  # Standardseite ist index.html
-        if filename.endswith('.css'):
-            content_type = 'text/css'
-        elif filename.endswith('.html'):
-            content_type = 'text/html'
-        elif filename.endswith('.js'):
-            content_type = 'application/javascript'
-        else:
-            content_type = 'text/html'
-    
-        filepath = os.path.join(os.getcwd(), '..', filename[1:])
+def main():
+    """
+    Start the server and listen for connections
+    """
+    serverSocket = socket(AF_INET, SOCK_STREAM) # AF_INET für IPv4 und SOCK_STREAM für TCP
+    serverSocket.bind(('0.0.0.0', 6603))
+    serverSocket.listen(1)
 
-        try:
-            with open(filepath, 'r') as f:
-                outputdata = f.read()
-        
-            #Sende Header und Dateiinhalte
-            connectionSocket.send(f"HTTP/1.1 200 OK\r\nContent-Type: {content_type}\r\n\r\n".encode())
-            connectionSocket.send(outputdata.encode())
-        
-        except IOError:
-            #Send response message for file not found
-            connectionSocket.send("HTTP/1.1 404 Not Found\r\n".encode())
-            connectionSocket.send("<html><body><h1>404 Not Found</h1></body></html>".encode())
-            
-            #Close client socket
-            connectionSocket.close()
+    print('Ready to serve...')
 
-    except Exception as e:
-        print(f"Error occured: {e}")
-        connectionSocket.close()
+    while True:
+        #Accept a new connection
+        connectionSocket, addr = serverSocket.accept()
+        print(f"Connection established with{addr}")
 
+        #Starting a new thread
+        client_thread = threading.Thread(target=handle_client, args=(connectionSocket,))
+        client_thread.start()
+
+if __name__ == "__main__":
+    main()
