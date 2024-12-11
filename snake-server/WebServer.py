@@ -1,4 +1,3 @@
-import os
 import socket 
 from socket import *
 import threading
