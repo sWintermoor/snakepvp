@@ -6,6 +6,7 @@ const HEIGHT = GRIDSIZE*CELLSIZE;
 const IMAGE = document.getElementById("gameImage");
 
 const SOCKET = new WebSocket('ws://localhost:9092');
+
 const PLAYBUTTON = document.getElementById("playButton");
 
 var _BOARD;
@@ -14,47 +15,36 @@ var _SNAKE1;
 var _SNAKE2;
 var _WORLD;
 
-var _ID;
-var _SNAKES;
-var _ITEMS;
-var _TIMER;
-var _WORLDSTATUS;
+PLAYBUTTON.addEventListener("click", testMain);
 
 function testMain(){
-    _WORLD = new World(0, [], [], "0:00", "playing");
 
-    while (_WORLD[5] == "waiting"){
-        update();
+    console.log("Entered main")
+
+    _WORLD = new World(0, [], [], "0:00", "waiting");
+
+    console.log("Starting receive mode")
+
+    createBoard();
+    receiveLoop();
+
+    console.log("Waiting phase")
+
+    console.log("WorldStatus is:", _WORLD.getStatus())
+
+    if (_WORLD.getStatus() == "waiting"){
         initializeWaitingMode();
     }
 
+    console.log("Initializing gaming")
+
     initializeGame();
+
+    console.log("game Loop")
 
     gameLoop();
 
     drawResult();
-}
-
-function update(){
-    SOCKET.onmessage(({data}) => {
-        _ID = data[0];
-        _SNAKES = data[1];
-        _ITEMS = data[2];
-        _TIMER = data[3];
-        _WORLDSTATUS = data[4];
-    });
-}
-
-function initializeWaitingMode(){
-    _CONTEXT.fillStyle = "orange";
-    _CONTEXT.font = "30px Arial";
-    _CONTEXT.textAlign = "center";
-    _CONTEXT.fillText("Waiting...", canvas.width / 2, canvas.height / 2);
-}
-
-function initializeGame(){
-    createBoard();
-    drawGrid();
 }
 
 function createBoard(){
@@ -65,7 +55,37 @@ function createBoard(){
 
     IMAGE.style.display = "none";
     _BOARD.style.display = "block";
+}
 
+function receiveLoop(){
+    try{
+        SOCKET.onmessage(({data}) => {
+            _WORLD.setID(data[0]);
+            _WORLD.setSnakes(data[1]);
+            _WORLD.setItems(data[2]);
+            _WORLD.setTimer(data[3]);
+            _WORLD.setStatus(data[4]);
+        });
+    }
+    catch(e){
+        console.error('Error parsing WebSocket message:', e);
+    }
+}
+
+function initializeWaitingMode(){
+    _CONTEXT.fillStyle = "orange";
+    _CONTEXT.font = "30px Arial";
+    _CONTEXT.textAlign = "center";
+    _CONTEXT.fillText("Waiting...", _BOARD.width / 2, _BOARD.height / 2);
+}
+
+function initializeGame(){
+    cleanBoard();
+    drawGrid();
+    createKeyHandler();
+}
+
+function cleanBoard(){
     _CONTEXT.fillStyle="white";
     _CONTEXT.fillRect(0, 0, _BOARD.width, _BOARD.height);
     _BOARD.style.border = "2px solid black";   
@@ -84,6 +104,10 @@ function drawGrid(){
     }
 }
 
+function createKeyHandler(){
+    document.addEventListener("keydown", (event) => SOCKET.send(event.key))
+}
+
 function gameLoop(){
     while (_WORLDSTATUS == "playing"){
         update();
@@ -92,6 +116,7 @@ function gameLoop(){
         drawTimer();
         drawSnakes();
         drawFoods();
+        keyHandler();
     }
 }
 
@@ -169,6 +194,7 @@ function drawResult(){
     // Missing
 }
 
+
 class World{
     constructor(id, snakes, items, timer, status){
         this.id = id;
@@ -176,6 +202,46 @@ class World{
         this.items = items;
         this.timer = timer;
         this.status = status;
+    }
+
+    getID(){
+        return this.id;
+    }
+
+    getSnakes(){
+        return this.snakes;
+    }
+
+    getItems(){
+        return this.items;
+    }
+
+    getTimer(){
+        return this.timer;
+    }
+
+    getStatus(){
+        return this.status;
+    }
+
+    setID(newID){
+        this.id = newID;
+    }
+
+    setSnakes(newSnakes){
+        this.snakes = newSnakes;
+    }
+
+    setItems(newItems){
+        this.items = newItems;
+    }
+
+    setTimer(newTimer){
+        this.timer = newTimer;
+    }
+
+    setStatus(newStatus){
+        this.status = newStatus;
     }
 }
 
@@ -202,4 +268,3 @@ class Item{
     }
 }
 
-PLAYBUTTON.addEventListener("click", testMain);
