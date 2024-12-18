@@ -105,7 +105,10 @@ function drawGrid(){
 }
 
 function createKeyHandler(){
-    document.addEventListener("keydown", (event) => SOCKET.send(event.key))
+    document.addEventListener("keydown", (event) => {
+        const data = JSON.stringify({key: event.key});
+        SOCKET.send(data);
+});
 }
 
 function gameLoop(){
