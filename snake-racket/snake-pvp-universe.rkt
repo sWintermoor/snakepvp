@@ -2,6 +2,7 @@
 (require 2htdp/universe)
 (require "global-features.rkt")
 (require json)
+(require json net/websocket)
 
 (provide (all-defined-out)) ; Für Tests und Launch
 
@@ -164,6 +165,7 @@
     [(= (length (current-worlds univ)) (- NUM_PLAYERS 2))
      (local ((define UNIV (list (append (current-worlds univ) (list wrld)) (current-snakes univ) (current-fruits univ) (timer univ))))
        (make-bundle UNIV
+                    ;; (websocket-send! conn json-string)) ; JSON-String senden
                     (list (make-mail wrld (waiting-mode univ (length (current-worlds UNIV)))))
                     '()))]))
 
