@@ -215,7 +215,7 @@
   ;; Parse the JSON string `msg` into a Racket data structure
   (let ([parsed-msg (string->jsexpr m)])
 
-    (let ([received-key (hash-ref parsed-msg "key" #f)])
+    (let ([received-key (hash-ref parsed-msg "key" 'm')]) ;; Achtung, der Buchstabe könnte vllt später doch zu gebrauchen sein!
 
       (let* ([worldname (iworld-name wrld)]
             [snakes (second univ)]
