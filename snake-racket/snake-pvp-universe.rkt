@@ -1,6 +1,7 @@
 #lang racket
 (require 2htdp/universe)
 (require "global-features.rkt")
+(require json)
 
 (provide (all-defined-out)) ; Für Tests und Launch
 
@@ -210,24 +211,30 @@
 ; handle-messages: UniverseState iworld? S-expression -> UniverseState
 ; Verarbeitet Tastatureingaben für das Universum und aktualisiert die Schlangen
 (define (handle-messages univ wrld m)
-  (let* ([worldname (iworld-name wrld)]
-         [snakes (second univ)]
-         [snake1 (first snakes)]
-         [snake2 (second snakes)]
-         [direction1 (snake-direction snake1)]
-         [direction2 (snake-direction snake2)]
-         [food (third univ)])
-         
-    (cond
-      ; Prüft, ob die erste oder zweite Schlange die Eingabe erhalten hat
-      [(eq? worldname (iworld-name (first-world univ)))
-       (let ([new-univ (list (current-worlds univ) (list (detect-key snake1 m direction1) snake2) (current-fruits univ) (timer univ))])
-         new-univ)]
-      [(eq? worldname (iworld-name (second-world univ)))
-       (let ([new-univ (list (current-worlds univ) (list snake1 (detect-key snake2 m direction2)) (current-fruits univ) (timer univ))])
-         new-univ)]
-      [else
-       univ])))
+
+  ;; Parse the JSON string `msg` into a Racket data structure
+  (let ([parsed-msg (string->jsexpr m)])
+
+    (let ([received-key (hash-ref parsed-msg "key" #f)])
+
+      (let* ([worldname (iworld-name wrld)]
+            [snakes (second univ)]
+            [snake1 (first snakes)]
+            [snake2 (second snakes)]
+            [direction1 (snake-direction snake1)]
+            [direction2 (snake-direction snake2)]
+            [food (third univ)])
+            
+        (cond
+          ; Prüft, ob die erste oder zweite Schlange die Eingabe erhalten hat
+          [(eq? worldname (iworld-name (first-world univ)))
+          (let ([new-univ (list (current-worlds univ) (list (detect-key snake1 received-key direction1) snake2) (current-fruits univ) (timer univ))])
+            new-univ)]
+          [(eq? worldname (iworld-name (second-world univ)))
+          (let ([new-univ (list (current-worlds univ) (list snake1 (detect-key snake2 received-key direction2)) (current-fruits univ) (timer univ))])
+            new-univ)]
+          [else
+          univ])))))
 
 
 ; next-snake-state: snake UniverseState -> snake
