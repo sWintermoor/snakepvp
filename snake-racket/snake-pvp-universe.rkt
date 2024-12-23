@@ -111,8 +111,20 @@
 
 ; information-to-draw: UniverseState ID -> (List ID [Listof snake] [Listof item] Timer String ID)
 ; Funktion zur Bereitstellung der zu zeichnenden Information basierend auf dem Universum
+;(define (information-to-draw univ id)
+;  (list id (current-snakes univ) (current-fruits univ) (timer univ) PLAYING))
 (define (information-to-draw univ id)
-  (list id (current-snakes univ) (current-fruits univ) (timer univ) PLAYING))
+  (let ((info (make-hash))) ; Erstelle eine neue Hash-Tabelle
+    (hash-set! info "id" id)
+    (hash-set! info "snakes" (current-snakes univ))
+    (hash-set! info "fruits" (current-fruits univ))
+    (hash-set! info "timer" (timer univ))
+    (hash-set! info "mode" 'PLAYING)
+    info))
+
+; Umwandeln der Daten zu JSON
+(define (convert-information-to-json input-information)
+  (jsexpr->string input-information))
 
 ; UniverseState ID -> (List ID [Listof snake] [Listof item] Timer String)
 ; Verschiedene Spielmodi
@@ -157,7 +169,7 @@
     [(= (length (current-worlds univ)) (- NUM_PLAYERS 1))
      (local ((define UNIV (list (append (current-worlds univ) (list wrld)) (current-snakes univ) (current-fruits univ) (timer univ))))
        (make-bundle UNIV
-                    (list (make-mail wrld (information-to-draw univ (length (current-worlds UNIV)))))
+                    (list (make-mail wrld (convert-information-to-json (information-to-draw univ (length (current-worlds UNIV))))))
                     '()))]
 
     ; Maximale Anzahl an Spielern noch nicht erreicht
@@ -386,8 +398,8 @@
                     [time (timer univ)]
                     [univ* (list (current-worlds univ) (list snake1 snake2) fruits (sub1 time))]) 
                  (make-bundle univ*
-                              (list (make-mail (first-world univ) (information-to-draw univ* (snake-id (first-snake univ))))
-                                    (make-mail (second-world univ) (information-to-draw univ* (snake-id (second-snake univ)))))
+                              (list (make-mail (first-world univ) (convert-information-to-json (information-to-draw univ* (snake-id (first-snake univ)))))
+                                    (make-mail (second-world univ) (convert-information-to-json (information-to-draw univ* (snake-id (second-snake univ))))))
                               '()))
                ])]
         [else univ]
