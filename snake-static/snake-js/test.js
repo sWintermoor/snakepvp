@@ -112,7 +112,7 @@ function createKeyHandler(){
 }
 
 function gameLoop(){
-    while (_WORLDSTATUS == "playing"){
+    while (_WORLD.getStatus() == "playing"){
         update();
         drawPlayer();
         drawScore();
