@@ -15,6 +15,8 @@ var _SNAKE1;
 var _SNAKE2;
 var _WORLD;
 
+var _STARTGAME;
+
 PLAYBUTTON.addEventListener("click", testMain);
 
 function testMain(){
@@ -22,29 +24,51 @@ function testMain(){
     console.log("Entered main")
 
     _WORLD = new World(0, [], [], "0:00", "waiting");
+    _STARTGAME = true;
 
     console.log("Starting receive mode")
 
     createBoard();
-    receiveLoop();
 
-    console.log("Waiting phase")
+    try{
+        SOCKET.onmessage(({data}) => {
 
-    console.log("WorldStatus is:", _WORLD.getStatus())
+            console.log("game Loop");
 
-    if (_WORLD.getStatus() == "waiting"){
-        initializeWaitingMode();
+            if (_STARTGAME == true){
+                initializeGame();
+                _STARTGAME = false;
+            }
+
+            if(_WORLD.getStatus() == 'tie' || _WORLD.getStatus() == 'win' || _WORLD.getStatus == 'loose'){
+                drawResult();
+                SOCKET.onmessage = null;
+            }
+            else{
+                _WORLD.setID(data[0]);
+                _WORLD.setSnakes(data[1]);
+                _WORLD.setItems(data[2]);
+                _WORLD.setTimer(data[3]);
+                _WORLD.setStatus(data[4]);
+    
+                drawPlayer();
+                drawScore();
+                drawTimer();
+                drawSnakes();
+                drawFoods();
+                keyHandler();
+            }
+        });
     }
-
-    console.log("Initializing gaming")
-
-    initializeGame();
-
-    console.log("game Loop")
-
-    gameLoop();
-
-    drawResult();
+    catch(e){
+        if (_WORLD.getStatus() == "waiting"){
+            initializeWaitingMode();
+            console.log("Waiting phase");
+        }
+        else{
+            console.error('Error parsing WebSocket message:', e);
+        }
+    }
 }
 
 function createBoard(){
@@ -55,21 +79,6 @@ function createBoard(){
 
     IMAGE.style.display = "none";
     _BOARD.style.display = "block";
-}
-
-function receiveLoop(){
-    try{
-        SOCKET.onmessage(({data}) => {
-            _WORLD.setID(data[0]);
-            _WORLD.setSnakes(data[1]);
-            _WORLD.setItems(data[2]);
-            _WORLD.setTimer(data[3]);
-            _WORLD.setStatus(data[4]);
-        });
-    }
-    catch(e){
-        console.error('Error parsing WebSocket message:', e);
-    }
 }
 
 function initializeWaitingMode(){
@@ -109,18 +118,6 @@ function createKeyHandler(){
         const data = JSON.stringify({key: event.key});
         SOCKET.send(data);
 });
-}
-
-function gameLoop(){
-    while (_WORLD.getStatus() == "playing"){
-        update();
-        drawPlayer();
-        drawScore();
-        drawTimer();
-        drawSnakes();
-        drawFoods();
-        keyHandler();
-    }
 }
 
 function drawPlayer(){
