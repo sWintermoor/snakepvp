@@ -1,3 +1,6 @@
+import asyncio
+import websockets
+from aiohttp import web
 import socket 
 from socket import *
 import threading
@@ -6,7 +9,7 @@ import subprocess
 matchmaking_queue = []
 lock = threading.Lock()
 
-def handle_client(connectionSocket):
+async def handle_client(connectionSocket):
     try:
         with lock:
             matchmaking_queue.append(connectionSocket)
@@ -40,6 +43,34 @@ def handle_client(connectionSocket):
         #Close the sockets
         connectionSocket.close()
 
+
+# Handling html request
+async def handle_html(request):
+    try:
+        with open('../snake-templates/index.html', 'r') as file:
+            html_content = file.read()
+
+        return web.Response(text=html_content, content_type="text/html")
+    except Exception as e:
+        return web.Response(text=f"Fehler beim Laden der Datei: {e}", content_type='text/html')
+    
+
+# Creating http-Server
+async def init():
+    app = web.Application()
+    app.router.add_get('/', handle_html)
+    return app
+
+# Starting http-Server 
+def start_http_server():
+    web.run_app(init(), port=5500)
+    print("HTTP server running at http://localhost:5500")
+
+def start_ws_server():
+    start_server = websockets.serve(handle_client, "localhost, 5501")
+    asyncio.get_event_loop().run_until_complete(start_server)
+    print("WebSocket server running at ws://localhost:5501")
+    asyncio.get_event_loop().run_forever()
 
 def execute_racket_file(filepath):
     """
