@@ -9,20 +9,19 @@ import subprocess
 matchmaking_queue = []
 lock = threading.Lock()
 
-async def handle_client(connectionSocket):
+async def handle_client(websocket, path):
     try:
         with lock:
-            matchmaking_queue.append(connectionSocket)
+            matchmaking_queue.append(websocket)
             print("Client added to matchmaking queue")
 
         # Wait until two clients are connected
-        while True:
-            with lock:
-                if len(matchmaking_queue) >= 2:
-                    # Pair the first two clients 
-                    player1 = matchmaking_queue.pop(0)
-                    player2 = matchmaking_queue.pop(0)
-                    break
+        while len(matchmaking_queue) < 2:
+            await asyncio.sleep(0.1)
+
+        player1 = matchmaking_queue.pop(0)
+        player2 = matchmaking_queue.pop(0)
+        
 
         # Notify both players
         player1.send("Matched! Game starting...\n".encode())
@@ -37,11 +36,10 @@ async def handle_client(connectionSocket):
 
     except Exception as e:
         print(f"Error in handle_client: {e}")
-        connectionSocket.close()
 
     finally:
         #Close the sockets
-        connectionSocket.close()
+        await websocket.close()
 
 
 # Handling html request
@@ -97,23 +95,10 @@ def execute_racket_file(filepath):
 
 
 def main():
-    """
-    Start the server and listen for connections
-    """
-    serverSocket = socket(AF_INET, SOCK_STREAM) # AF_INET für IPv4 und SOCK_STREAM für TCP
-    serverSocket.bind(('0.0.0.0', 5500))
-    serverSocket.listen(1)
+    ws_thread = threading.Thread(target=start_ws_server)
+    ws_thread.start()
 
-    print('Ready to serve...')
-
-    while True:
-        #Accept a new connection
-        connectionSocket, addr = serverSocket.accept()
-        print(f"Connection established with{addr}")
-
-        #Starting a new thread
-        client_thread = threading.Thread(target=handle_client, args=(connectionSocket,))
-        client_thread.start()
+    start_http_server()
 
 if __name__ == "__main__":
     main()
