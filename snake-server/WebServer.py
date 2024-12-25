@@ -1,10 +1,13 @@
 import asyncio
 import websockets
 from aiohttp import web
+import os
 import socket 
 from socket import *
 import threading
 import subprocess
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 matchmaking_queue = []
 lock = threading.Lock()
@@ -28,7 +31,8 @@ async def handle_client(websocket, path):
         player2.send("Matched! Game starting...\n".encode())
 
         # Execute Racket file for the pair
-        result = execute_racket_file('../snake-racket/launch-snake-pvp-universe.rkt')
+        racket_file_path = os.path.join(BASE_DIR, '../snake-racket/launch-snake-pvp-universe.rkt')
+        result = execute_racket_file(racket_file_path)
 
         # Send results to both players
         player1.send(f"Game Results:\n{result}".encode())
@@ -45,7 +49,8 @@ async def handle_client(websocket, path):
 # Handling html request
 async def handle_html(request):
     try:
-        with open('../snake-templates/index.html', 'r') as file:
+        html_file_path = os.path.join(BASE_DIR, '../snake-templates/index.html')
+        with open(html_file_path, 'r') as file:
             html_content = file.read()
 
         return web.Response(text=html_content, content_type="text/html")

@@ -5,7 +5,7 @@ const WIDTH = GRIDSIZE*CELLSIZE;
 const HEIGHT = GRIDSIZE*CELLSIZE;
 const IMAGE = document.getElementById("gameImage");
 
-const SOCKET = new WebSocket('ws://192.168.2.108:5500');
+const SOCKET = new WebSocket('ws://192.168.2.117:5501');
 
 const PLAYBUTTON = document.getElementById("playButton");
 
