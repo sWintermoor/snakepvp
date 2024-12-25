@@ -13,6 +13,13 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 matchmaking_queue = []
 lock = threading.Lock()
 
+async def forward_to_racket(message):
+    uri = "ws://localhost:9092"
+    async with websockets.connect(uri) as websocket:
+        await websocket.send(message)
+        response = await websocket.recv()
+        return response
+
 async def handle_client(websocket, path):
     try:
         with lock:
@@ -44,6 +51,9 @@ async def handle_client(websocket, path):
             message1 = await player1.recv()
             message2 = await player2.recv()
 
+            response1 = await forward_to_racket(message1)
+            response2 = await forward_to_racket(message2)
+
             data1 = json.loads(message1)
             data2 = json.loads(message2)
 
@@ -51,8 +61,8 @@ async def handle_client(websocket, path):
             print(f"Received data from player2: {data2}")
 
             # Example of sending a message back to the clients
-            await player1.send(json.dumps({"response": "Message received"}))
-            await player2.send(json.dumps({"response": "Message received"})) 
+            await player1.send(json.dumps(data1))
+            await player2.send(json.dumps(data2)) 
 
     except Exception as e:
         print(f"Error in handle_client: {e}")
