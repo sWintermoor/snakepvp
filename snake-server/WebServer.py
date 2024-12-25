@@ -1,5 +1,6 @@
 import asyncio
 import websockets
+import json
 from aiohttp import web
 import os
 import socket 
@@ -27,16 +28,31 @@ async def handle_client(websocket, path):
         
 
         # Notify both players
-        player1.send("Matched! Game starting...\n".encode())
-        player2.send("Matched! Game starting...\n".encode())
+        player1.send(json.dumps({"message": "Matched! Game starting...\n"}))
+        player2.send(json.dumps({"message": "Matched! Game starting...\n"}))
 
         # Execute Racket file for the pair
         racket_file_path = os.path.join(BASE_DIR, '../snake-racket/launch-snake-pvp-universe.rkt')
         result = execute_racket_file(racket_file_path)
 
         # Send results to both players
-        player1.send(f"Game Results:\n{result}".encode())
-        player2.send(f"Game Results:\n{result}".encode())
+        player1.send(json.dumps({"game-results": result}))
+        player2.send(json.dumps({"game-results": result}))
+
+        # Continuously receive and send messages
+        while True:
+            message1 = await player1.recv()
+            message2 = await player2.recv()
+
+            data1 = json.loads(message1)
+            data2 = json.loads(message2)
+
+            print(f"Received data from player1: {data1}")
+            print(f"Received data from player2: {data2}")
+
+            # Example of sending a message back to the clients
+            await player1.send(json.dumps({"response": "Message received"}))
+            await player2.send(json.dumps({"response": "Message received"})) 
 
     except Exception as e:
         print(f"Error in handle_client: {e}")
