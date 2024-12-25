@@ -5,7 +5,7 @@ const WIDTH = GRIDSIZE*CELLSIZE;
 const HEIGHT = GRIDSIZE*CELLSIZE;
 const IMAGE = document.getElementById("gameImage");
 
-var SOCKET;
+var _SOCKET;
 
 const PLAYBUTTON = document.getElementById("playButton");
 
@@ -21,7 +21,7 @@ PLAYBUTTON.addEventListener("click", testMain);
 
 function testMain(){
 
-    SOCKET = new WebSocket('ws://192.168.2.117:5501');
+    _SOCKET = new WebSocket('ws://192.168.2.117:5501');
 
     console.log("Entered main")
 
@@ -34,11 +34,11 @@ function testMain(){
 
     initializeWaitingMode();
 
-    SOCKET.onopen = () => {
+    _SOCKET.onopen = () => {
         console.log("Connected to WebSocket server");
     };
     
-    SOCKET.onmessage = (event) => {
+    _SOCKET.onmessage = (event) => {
 
         const data = JSON.parse(event.data);
 
@@ -51,7 +51,7 @@ function testMain(){
 
         if(_WORLD.getStatus() == 'tie' || _WORLD.getStatus() == 'win' || _WORLD.getStatus == 'loose'){
             drawResult();
-            SOCKET.onmessage = null;
+            _SOCKET.onmessage = null;
         }
         else{
             _WORLD.setID(data[0]);
@@ -69,7 +69,7 @@ function testMain(){
         }
     };
 
-    SOCKET.onclose = () => {
+    _SOCKET.onclose = () => {
         console.log("Disconnected from WebSocket server");
     };
 }
@@ -119,7 +119,7 @@ function drawGrid(){
 function createKeyHandler(){
     document.addEventListener("keydown", (event) => {
         const data = JSON.stringify({key: event.key});
-        SOCKET.send(data);
+        _SOCKET.send(data);
 });
 }
 
