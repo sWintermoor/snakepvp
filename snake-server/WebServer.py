@@ -98,8 +98,8 @@ def start_http_server():
 
 def start_ws_server():
     async def run_ws_server():
-        start_server = await websockets.serve(handle_client, "localhost", 5501)
-        print("WebSocket server running at ws://localhost:5501")
+        start_server = await websockets.serve(handle_client, '0.0.0.0', 5501)
+        print("WebSocket server running at ws://0.0.0.0:5501")
         await start_server.wait_closed()
 
     # I have to create an event loop for the websockets server, because http server is running in the main thread

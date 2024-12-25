@@ -5,7 +5,7 @@ const WIDTH = GRIDSIZE*CELLSIZE;
 const HEIGHT = GRIDSIZE*CELLSIZE;
 const IMAGE = document.getElementById("gameImage");
 
-const SOCKET = new WebSocket('ws://192.168.2.117:5501');
+var SOCKET;
 
 const PLAYBUTTON = document.getElementById("playButton");
 
@@ -21,6 +21,8 @@ PLAYBUTTON.addEventListener("click", testMain);
 
 function testMain(){
 
+    SOCKET = new WebSocket('ws://192.168.2.117:5501');
+
     console.log("Entered main")
 
     _WORLD = new World(0, [], [], "0:00", "waiting");
@@ -30,45 +32,46 @@ function testMain(){
 
     createBoard();
 
-    try{
-        SOCKET.onmessage(({data}) => {
+    initializeWaitingMode();
 
-            console.log("game Loop");
-
-            if (_STARTGAME == true){
-                initializeGame();
-                _STARTGAME = false;
-            }
-
-            if(_WORLD.getStatus() == 'tie' || _WORLD.getStatus() == 'win' || _WORLD.getStatus == 'loose'){
-                drawResult();
-                SOCKET.onmessage = null;
-            }
-            else{
-                _WORLD.setID(data[0]);
-                _WORLD.setSnakes(data[1]);
-                _WORLD.setItems(data[2]);
-                _WORLD.setTimer(data[3]);
-                _WORLD.setStatus(data[4]);
+    SOCKET.onopen = () => {
+        console.log("Connected to WebSocket server");
+    };
     
-                drawPlayer();
-                drawScore();
-                drawTimer();
-                drawSnakes();
-                drawFoods();
-                keyHandler();
-            }
-        });
-    }
-    catch(e){
-        if (_WORLD.getStatus() == "waiting"){
-            initializeWaitingMode();
-            console.log("Waiting phase");
+    SOCKET.onmessage = (event) => {
+
+        const data = JSON.parse(event.data);
+
+        console.log("game Loop");
+
+        if (_STARTGAME == true){
+            initializeGame();
+            _STARTGAME = false;
+        }
+
+        if(_WORLD.getStatus() == 'tie' || _WORLD.getStatus() == 'win' || _WORLD.getStatus == 'loose'){
+            drawResult();
+            SOCKET.onmessage = null;
         }
         else{
-            console.error('Error parsing WebSocket message:', e);
+            _WORLD.setID(data[0]);
+            _WORLD.setSnakes(data[1]);
+            _WORLD.setItems(data[2]);
+            _WORLD.setTimer(data[3]);
+            _WORLD.setStatus(data[4]);
+
+            drawPlayer();
+            drawScore();
+            drawTimer();
+            drawSnakes();
+            drawFoods();
+            keyHandler();
         }
-    }
+    };
+
+    SOCKET.onclose = () => {
+        console.log("Disconnected from WebSocket server");
+    };
 }
 
 function createBoard(){
