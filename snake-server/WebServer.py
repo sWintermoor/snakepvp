@@ -62,6 +62,7 @@ async def handle_html(request):
 async def init():
     app = web.Application()
     app.router.add_get('/', handle_html)
+    app.router.add_static('/snake-static/', os.path.join(BASE_DIR, '../snake-static'))
     return app
 
 # Starting http-Server 
