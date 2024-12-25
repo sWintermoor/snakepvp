@@ -71,10 +71,16 @@ def start_http_server():
     print("HTTP server running at http://localhost:5500")
 
 def start_ws_server():
-    start_server = websockets.serve(handle_client, "localhost, 5501")
-    asyncio.get_event_loop().run_until_complete(start_server)
-    print("WebSocket server running at ws://localhost:5501")
-    asyncio.get_event_loop().run_forever()
+    async def run_ws_server():
+        start_server = await websockets.serve(handle_client, "localhost", 5501)
+        print("WebSocket server running at ws://localhost:5501")
+        await start_server.wait_closed()
+
+    # I have to create an event loop for the websockets server, because http server is running in the main thread
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(run_ws_server())
+
 
 def execute_racket_file(filepath):
     """
