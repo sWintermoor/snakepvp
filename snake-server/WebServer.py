@@ -20,7 +20,7 @@ async def forward_to_racket(message):
         response = await websocket.recv()
         return response
 
-async def handle_client(websocket, path):
+async def handle_client(websocket):
     try:
         print(f"New connection attempt from {websocket.remote_address}")
 
