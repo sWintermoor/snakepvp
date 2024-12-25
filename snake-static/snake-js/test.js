@@ -21,7 +21,7 @@ PLAYBUTTON.addEventListener("click", testMain);
 
 function testMain(){
 
-    _SOCKET = new WebSocket('ws://192.168.2.117:5501');
+    _SOCKET = new WebSocket('ws://192.168.2.108:5501');
 
     console.log("Entered main")
 
@@ -40,32 +40,40 @@ function testMain(){
     
     _SOCKET.onmessage = (event) => {
 
+        console.log("Received data", event.data);
+
         const data = JSON.parse(event.data);
 
-        console.log("game Loop");
+        console.log("Parsed data", data);
 
-        if (_STARTGAME == true){
-            initializeGame();
-            _STARTGAME = false;
+        if(data.status == "waiting"){
+            initializeWaitingMode();
         }
-
-        if(_WORLD.getStatus() == 'tie' || _WORLD.getStatus() == 'win' || _WORLD.getStatus == 'loose'){
-            drawResult();
-            _SOCKET.onmessage = null;
-        }
-        else{
-            _WORLD.setID(data[0]);
-            _WORLD.setSnakes(data[1]);
-            _WORLD.setItems(data[2]);
-            _WORLD.setTimer(data[3]);
-            _WORLD.setStatus(data[4]);
-
-            drawPlayer();
-            drawScore();
-            drawTimer();
-            drawSnakes();
-            drawFoods();
-            keyHandler();
+        else
+        {
+            if (_STARTGAME == true){
+                initializeGame();
+                _STARTGAME = false;
+            }
+    
+            if(_WORLD.getStatus() == 'tie' || _WORLD.getStatus() == 'win' || _WORLD.getStatus == 'loose'){
+                drawResult();
+                _SOCKET.onmessage = null;
+            }
+            else{
+                _WORLD.setID(data[0]);
+                _WORLD.setSnakes(data[1]);
+                _WORLD.setItems(data[2]);
+                _WORLD.setTimer(data[3]);
+                _WORLD.setStatus(data[4]);
+    
+                drawPlayer();
+                drawScore();
+                drawTimer();
+                drawSnakes();
+                drawFoods();
+                keyHandler();
+            }
         }
     };
 

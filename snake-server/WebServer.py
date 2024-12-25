@@ -30,7 +30,7 @@ async def handle_client(websocket):
             print(f"Queue size: {len(matchmaking_queue)}")
 
         # Send initial acknowledgment
-        await websocket.send(json.dumps({"status": "connected"}))
+        await websocket.send(json.dumps({"status": "waiting"}))
 
         # Wait until two clients are connected
         while len(matchmaking_queue) < 2:
@@ -43,16 +43,16 @@ async def handle_client(websocket):
         
 
         # Notify both players
-        player1.send(json.dumps({"message": "Matched! Game starting...\n"}))
-        player2.send(json.dumps({"message": "Matched! Game starting...\n"}))
+        await player1.send(json.dumps({"status": "connected\n"}))
+        await player2.send(json.dumps({"status": "connected\n"}))
 
         # Execute Racket file for the pair
         racket_file_path = os.path.join(BASE_DIR, '../snake-racket/launch-snake-pvp-universe.rkt')
         result = execute_racket_file(racket_file_path)
 
         # Send results to both players
-        player1.send(json.dumps({"game-results": result}))
-        player2.send(json.dumps({"game-results": result}))
+        await player1.send(json.dumps({"game-results": result}))
+        await player2.send(json.dumps({"game-results": result}))
 
         # Continuously receive and send messages
         while True:
