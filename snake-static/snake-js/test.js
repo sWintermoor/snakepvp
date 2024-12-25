@@ -69,8 +69,16 @@ function testMain(){
         }
     };
 
-    _SOCKET.onclose = () => {
-        console.log("Disconnected from WebSocket server");
+    _SOCKET.onerror = (error) => {
+        console.log("Websocket error", error);
+    };
+
+    _SOCKET.onclose = (event) => {
+        console.log("Websocket closed",{ 
+            clean: event.wasClean,
+            code: event.code, 
+            reason: event.reason
+        });
     };
 }
 

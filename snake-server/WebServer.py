@@ -22,13 +22,21 @@ async def forward_to_racket(message):
 
 async def handle_client(websocket, path):
     try:
+        print(f"New connection attempt from {websocket.remote_address}")
+
         with lock:
             matchmaking_queue.append(websocket)
-            print("Client added to matchmaking queue")
+            print(f"Client {websocket.remote_address} added to matchmaking queue")
+            print(f"Queue size: {len(matchmaking_queue)}")
+
+        # Send initial acknowledgment
+        await websocket.send(json.dumps({"status": "connected"}))
 
         # Wait until two clients are connected
         while len(matchmaking_queue) < 2:
             await asyncio.sleep(0.1)
+            # Keep connection alive
+            await websocket.ping()
 
         player1 = matchmaking_queue.pop(0)
         player2 = matchmaking_queue.pop(0)
@@ -64,12 +72,14 @@ async def handle_client(websocket, path):
             await player1.send(json.dumps(data1))
             await player2.send(json.dumps(data2)) 
 
+    except websockets.ConnectionClosed as e:
+        print(f"Connection closed by client {websocket.remote_address}. Clean: {e.code} Reason: {e.reason}")
     except Exception as e:
-        print(f"Error in handle_client: {e}")
-
+        print(f"Error handling client {websocket.remote_address}: {str(e)}")
     finally:
-        #Close the sockets
-        await websocket.close()
+        if websocket in matchmaking_queue:
+            matchmaking_queue.remove(websocket)
+        print(f"Client {websocket.remote_address} disconnected. Queue size: {len(matchmaking_queue)}")
 
 
 # Handling html request
