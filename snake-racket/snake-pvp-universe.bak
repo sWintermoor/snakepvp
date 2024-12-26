@@ -1,6 +1,8 @@
 #lang racket
 (require 2htdp/universe)
 (require "global-features.rkt")
+(require json)
+(require json net/websocket)
 
 (provide (all-defined-out)) ; Für Tests und Launch
 
@@ -109,8 +111,20 @@
 
 ; information-to-draw: UniverseState ID -> (List ID [Listof snake] [Listof item] Timer String ID)
 ; Funktion zur Bereitstellung der zu zeichnenden Information basierend auf dem Universum
+;(define (information-to-draw univ id)
+;  (list id (current-snakes univ) (current-fruits univ) (timer univ) PLAYING))
 (define (information-to-draw univ id)
-  (list id (current-snakes univ) (current-fruits univ) (timer univ) PLAYING))
+  (let ((info (make-hash))) ; Erstelle eine neue Hash-Tabelle
+    (hash-set! info "id" id)
+    (hash-set! info "snakes" (current-snakes univ))
+    (hash-set! info "fruits" (current-fruits univ))
+    (hash-set! info "timer" (timer univ))
+    (hash-set! info "mode" 'PLAYING)
+    info))
+
+; Umwandeln der Daten zu JSON
+(define (convert-information-to-json input-information)
+  (jsexpr->string input-information))
 
 ; UniverseState ID -> (List ID [Listof snake] [Listof item] Timer String)
 ; Verschiedene Spielmodi
@@ -155,7 +169,7 @@
     [(= (length (current-worlds univ)) (- NUM_PLAYERS 1))
      (local ((define UNIV (list (append (current-worlds univ) (list wrld)) (current-snakes univ) (current-fruits univ) (timer univ))))
        (make-bundle UNIV
-                    (list (make-mail wrld (information-to-draw univ (length (current-worlds UNIV)))))
+                    (list (make-mail wrld (convert-information-to-json (information-to-draw univ (length (current-worlds UNIV))))))
                     '()))]
 
     ; Maximale Anzahl an Spielern noch nicht erreicht
@@ -163,6 +177,7 @@
     [(= (length (current-worlds univ)) (- NUM_PLAYERS 2))
      (local ((define UNIV (list (append (current-worlds univ) (list wrld)) (current-snakes univ) (current-fruits univ) (timer univ))))
        (make-bundle UNIV
+                    ;; (websocket-send! conn json-string)) ; JSON-String senden
                     (list (make-mail wrld (waiting-mode univ (length (current-worlds UNIV)))))
                     '()))]))
 
@@ -197,37 +212,43 @@
 ; change-velocity: snake Boost-Duration Velocity Banana -> snake
 ; Passt Geschwindigkeit der Schlange an.
 (define (change-velocity snake-input new-velocity-duration new-velocity new-banana)
-  (snake (snake-id snake-input) (snake-coordinates snake-input) (snake-color snake-input) new-velocity-duration (snake-direction snake-input) 
-         new-velocity (snake-score snake-input) new-banana))
+  (snake (snake-id snake-input) (snake-coordinates snake-input) (snake-color snake-input) new-velocity-duration (snake-immunity-duration snake-input) (snake-direction snake-input) 
+         new-velocity (snake-score snake-input) new-banana (snake-blueberry snake-input)))
 
 ; change-direction: snake Direction -> snake
 ; Passt Richtung der Schlange an.
 (define (change-direction snake-input new-direction)
-  (snake (snake-id snake-input) (snake-coordinates snake-input) (snake-color snake-input) (snake-boost-duration snake-input) new-direction 
-         (snake-velocity snake-input) (snake-score snake-input) (snake-banana snake-input)))
+  (snake (snake-id snake-input) (snake-coordinates snake-input) (snake-color snake-input) (snake-boost-duration snake-input) (snake-immunity-duration snake-input) new-direction 
+         (snake-velocity snake-input) (snake-score snake-input) (snake-banana snake-input) (snake-blueberry snake-input)))
 
 
 ; handle-messages: UniverseState iworld? S-expression -> UniverseState
 ; Verarbeitet Tastatureingaben für das Universum und aktualisiert die Schlangen
 (define (handle-messages univ wrld m)
-  (let* ([worldname (iworld-name wrld)]
-         [snakes (second univ)]
-         [snake1 (first snakes)]
-         [snake2 (second snakes)]
-         [direction1 (snake-direction snake1)]
-         [direction2 (snake-direction snake2)]
-         [food (third univ)])
-         
-    (cond
-      ; Prüft, ob die erste oder zweite Schlange die Eingabe erhalten hat
-      [(eq? worldname (iworld-name (first-world univ)))
-       (let ([new-univ (list (current-worlds univ) (list (detect-key snake1 m direction1) snake2) (current-fruits univ) (timer univ))])
-         new-univ)]
-      [(eq? worldname (iworld-name (second-world univ)))
-       (let ([new-univ (list (current-worlds univ) (list snake1 (detect-key snake2 m direction2)) (current-fruits univ) (timer univ))])
-         new-univ)]
-      [else
-       univ])))
+
+  ;; Parse the JSON string `msg` into a Racket data structure
+  (let ([parsed-msg (string->jsexpr m)])
+
+    (let ([received-key (hash-ref parsed-msg "key" 'm')]) ;; Achtung, der Buchstabe könnte vllt später doch zu gebrauchen sein!
+
+      (let* ([worldname (iworld-name wrld)]
+            [snakes (second univ)]
+            [snake1 (first snakes)]
+            [snake2 (second snakes)]
+            [direction1 (snake-direction snake1)]
+            [direction2 (snake-direction snake2)]
+            [food (third univ)])
+            
+        (cond
+          ; Prüft, ob die erste oder zweite Schlange die Eingabe erhalten hat
+          [(eq? worldname (iworld-name (first-world univ)))
+          (let ([new-univ (list (current-worlds univ) (list (detect-key snake1 received-key direction1) snake2) (current-fruits univ) (timer univ))])
+            new-univ)]
+          [(eq? worldname (iworld-name (second-world univ)))
+          (let ([new-univ (list (current-worlds univ) (list snake1 (detect-key snake2 received-key direction2)) (current-fruits univ) (timer univ))])
+            new-univ)]
+          [else
+          univ])))))
 
 
 ; next-snake-state: snake UniverseState -> snake
@@ -241,6 +262,7 @@
          [fruits (extract-fruit-type-coordinates (current-fruits univ))]  
          [score (snake-score snake-input)]
          [banana (snake-banana snake-input)]
+         [blueberry (snake-blueberry snake-input)]
          
          ; Berechne den neuen Kopf der Schlange, bevor die Bewegung stattfindet
          [new-head (cond
@@ -252,12 +274,15 @@
          ; Überprüfe, ob der neue Kopf auf dem Futter ist
          [ate-apple? (and (member new-head fruits) (eq? 'apple (list-ref fruits (sub1 (index-of fruits new-head)))))]
          [ate-banana? (and (member new-head fruits) (eq? 'banana (list-ref fruits (sub1 (index-of fruits new-head)))))]
+         [ate-blueberry? (and (member new-head fruits) (eq? 'blueberry (list-ref fruits (sub1 (index-of fruits new-head)))))]
          [new-score (if ate-apple? (add1 score) score)]  ; Punkte erhöhen, wenn Futter gegessen wurde
          [new-banana (if ate-banana? (add1 banana) banana)]
+         [new-blueberry (if ate-blueberry? (add1 blueberry) blueberry)]
          [new-snake-coordinates (move-snake snake-input direction ate-apple?)]  ; Schlange wächst nur, wenn Futter gegessen wurde
-         [new-snake-boost-duration (if (> (snake-boost-duration snake-input) 0) (sub1 (snake-boost-duration snake-input)) 0)] ; 
+         [new-snake-boost-duration (if (> (snake-boost-duration snake-input) 0) (sub1 (snake-boost-duration snake-input)) 0)] ;
+         [new-snake-immunity-duration (if (> (snake-immunity-duration snake-input) 0) (sub1 (snake-immunity-duration snake-input)) 0)]
          [new-snake-velocity (if (> (snake-boost-duration snake-input) 0) BOOST VELOCITY-NORMAL)])
-    (snake (snake-id snake-input) new-snake-coordinates (snake-color snake-input) new-snake-boost-duration (snake-direction snake-input) new-snake-velocity new-score new-banana))] ;Inventory muss ausgebessert werden
+    (snake (snake-id snake-input) new-snake-coordinates (snake-color snake-input) new-snake-boost-duration new-snake-immunity-duration (snake-direction snake-input) new-snake-velocity new-score new-banana new-blueberry))] ;Inventory muss ausgebessert werden
     [else snake-input]))
 
 
@@ -304,12 +329,18 @@
 ; create-fruit: [Listof item] Type Coordinates -> [Listof item]
 ; Erstellt 1-2 neue Früchte
 (define (create-fruit fruits type forbidden-fields)
-  (let* ([randnum (random 6)]
+  (let* ([randnum (random 12)]
          [x1 (first (correct-random fruits (list (random GRID-SIZE) (random GRID-SIZE)) forbidden-fields))]
          [y1 (second (correct-random fruits (list (random GRID-SIZE) (random GRID-SIZE)) forbidden-fields))]
          [x2 (first (correct-random fruits (list (random GRID-SIZE) (random GRID-SIZE)) forbidden-fields))]
          [y2 (second (correct-random fruits (list (random GRID-SIZE) (random GRID-SIZE)) forbidden-fields))]
          [fruit-choices (list
+                         (list (item 'apple x1 y1))     ; Äußerst unschöner Code
+                         (list (item 'banana x1 y1))
+                         (list (item 'blueberry x1 y1))
+                         (list (item 'apple x1 y1))
+                         (list (item 'banana x1 y1))
+                         (list (item 'blueberry x1 y1))
                          (list (item 'apple x1 y1))
                          (list (item 'banana x1 y1))
                          (list (item 'blueberry x1 y1))
@@ -367,8 +398,8 @@
                     [time (timer univ)]
                     [univ* (list (current-worlds univ) (list snake1 snake2) fruits (sub1 time))]) 
                  (make-bundle univ*
-                              (list (make-mail (first-world univ) (information-to-draw univ* (snake-id (first-snake univ))))
-                                    (make-mail (second-world univ) (information-to-draw univ* (snake-id (second-snake univ)))))
+                              (list (make-mail (first-world univ) (convert-information-to-json (information-to-draw univ* (snake-id (first-snake univ)))))
+                                    (make-mail (second-world univ) (convert-information-to-json (information-to-draw univ* (snake-id (second-snake univ))))))
                               '()))
                ])]
         [else univ]
@@ -414,7 +445,7 @@
 (define (server-run)
   (universe UNIVERSE
             (on-new add-world)
-            ;(port 9092)
+            (port 9092)
             (on-msg handle-messages)
             (on-tick tick-handler TICK-VALUE)))
 
