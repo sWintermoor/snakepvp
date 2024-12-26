@@ -36,7 +36,7 @@ int main(){
     Snake _SNAKE(SNAKE_ID1, SNAKE_COORDINATES1, "red", BOOST_DURATION_INITIAL, IMMUNITY_DURATION_INITIAL, "right", VELOCITY_NORMAL, SCORE_INITIAL, BANANA_INITIAL, BLUEBERRY_INITIAL);
     Snake _SNAKE(SNAKE_ID2, SNAKE_COORDINATES2, "blue", BOOST_DURATION_INITIAL, IMMUNITY_DURATION_INITIAL, "left", VELOCITY_NORMAL, SCORE_INITIAL, BANANA_INITIAL, BLUEBERRY_INITIAL);
     return 0;
-}
+};
 
 class Snake{
     private:
@@ -65,7 +65,7 @@ class Snake{
             _banana = banana;
             _blueberry = blueberry;
         };
-}
+};
 
 class Fruit{
     private:
@@ -80,4 +80,5 @@ class Fruit{
             _x = x;
             _y = y;
         };
-}
+};
+
