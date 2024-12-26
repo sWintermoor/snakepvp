@@ -11,8 +11,8 @@ const PLAYBUTTON = document.getElementById("playButton");
 
 var _BOARD;
 var _CONTEXT;
-var _SNAKE1;
-var _SNAKE2;
+//var _SNAKE1;
+//var _SNAKE2;
 var _WORLD;
 
 var _STARTGAME;
@@ -26,6 +26,7 @@ function testMain(){
     console.log("Entered main")
 
     _WORLD = new World(0, [], [], "0:00", "waiting");
+
     _STARTGAME = true;
 
     console.log("Starting receive mode")
@@ -51,20 +52,29 @@ function testMain(){
         }
         else
         {
-            if (_STARTGAME == true){
+            if (data.status == "connected"){
                 initializeGame();
                 _STARTGAME = false;
             }
     
-            if(_WORLD.getStatus() == 'tie' || _WORLD.getStatus() == 'win' || _WORLD.getStatus == 'loose'){
+            else if(_WORLD.getStatus() == 'tie' || _WORLD.getStatus() == 'win' || _WORLD.getStatus == 'loose'){
                 drawResult();
                 _SOCKET.onmessage = null;
             }
             else{
-                _WORLD.setID(data[0]);
-                _WORLD.setSnakes(data[1]);
+                console.log("ID", data.status[0]);
+                _WORLD.setID(data.status[0]);
+
+                console.log("Snakes", data.status[1]);
+                _WORLD.setSnakes(data.status[1]);
+
+                console.log("Items", data);
                 _WORLD.setItems(data[2]);
+
+                console.log("Timer", data);
                 _WORLD.setTimer(data[3]);
+
+                console.log("Status", data);
                 _WORLD.setStatus(data[4]);
     
                 drawPlayer();
@@ -152,11 +162,12 @@ function drawTimer(){
 }
 
 function drawSnakes(){
-    drawSnake(_SNAKE1);
-    drawSnake(_SNAKe2);
+    drawSnake(_WORLD.getSnake1());
+    drawSnake(_WORLD.getSnake2());
 }
 
 function drawSnake(snakeInput){
+    console.log("Drawing snake", snakeInput);
     for (const coordinate in snakeInput[1]){
         drawCoordinate(coordinate);
     }
@@ -218,6 +229,8 @@ class World{
     constructor(id, snakes, items, timer, status){
         this.id = id;
         this.snakes = snakes;
+        this.snake1 = snakes[0];
+        this.snake2 = snakes[1];
         this.items = items;
         this.timer = timer;
         this.status = status;
@@ -229,6 +242,14 @@ class World{
 
     getSnakes(){
         return this.snakes;
+    }
+
+    getSnake1(){
+        return this.snake1;
+    }
+
+    getSnake2(){
+        return this.snake2;
     }
 
     getItems(){
@@ -249,6 +270,8 @@ class World{
 
     setSnakes(newSnakes){
         this.snakes = newSnakes;
+        this.snake1 = newSnakes[0];
+        this.snake2 = newSnakes[1];
     }
 
     setItems(newItems){

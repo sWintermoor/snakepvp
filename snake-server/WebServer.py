@@ -40,23 +40,36 @@ async def handle_client(websocket):
 
         player1 = matchmaking_queue.pop(0)
         player2 = matchmaking_queue.pop(0)
+
+        # Start Racket server first
+        racket_started = await execute_racket_file(
+            os.path.join(BASE_DIR, '../snake-racket/launch-snake-pvp-universe.rkt')
+        )
+
+        if not racket_started:
+            print("Failed to start Racket server")
+            return
         
+        print(f"Match found between {player1.remote_address} and {player2.remote_address}")
+        # Register players as worlds in Racket universe
+        register_world1 = await forward_to_racket(json.dumps({
+            "type": "register",
+            "player": 1,
+            "id": str(id(player1))
+        }))
+        
+        register_world2 = await forward_to_racket(json.dumps({
+            "type": "register",
+            "player": 2,
+            "id": str(id(player2))
+        }))
 
-        # Notify both players
-        await player1.send(json.dumps({"status": "connected\n"}))
-        await player2.send(json.dumps({"status": "connected\n"}))
+        print("Notified Racket of player registration")
+        # Notify players of successful registration
+        await player1.send(json.dumps({"status": "connected", "player": 1}))
+        await player2.send(json.dumps({"status": "connected", "player": 2}))
 
-        print("trying to execute racket file")
-
-        # Execute Racket file for the pair
-        racket_file_path = os.path.join(BASE_DIR, '../snake-racket/launch-snake-pvp-universe.rkt')
-        result = execute_racket_file(racket_file_path)
-
-        print(f"Racket file executed with result: {result}")
-
-        # Send results to both players
-        await player1.send(json.dumps({"game-results": result}))
-        await player2.send(json.dumps({"game-results": result}))
+        print("Entering while-Loop")
 
         # Continuously receive and send messages
         while True:
@@ -122,7 +135,7 @@ def start_ws_server():
     loop.run_until_complete(run_ws_server())
 
 
-def execute_racket_file(filepath):
+async def execute_racket_file(filepath):
     """
     Execute a Racket file using subprocess and return its output or errors.
     """
@@ -133,18 +146,23 @@ def execute_racket_file(filepath):
             stdout=subprocess.PIPE,  # Capture standard output
             stderr=subprocess.PIPE   # Capture standard error
         )
-        stdout, stderr = process.communicate()
 
-        # Check for success or errors
-        if process.returncode == 0:
-            return stdout.decode()  # Return the program's output
-        else:
-            return f"Error executing Racket file:\n{stderr.decode()}"
-    except FileNotFoundError:
-        return "Racket interpreter not found. Ensure Racket is installed and in PATH."
+    	# Wait for server to start (Adding delay)
+        await asyncio.sleep(2)
+
+        # Verify that the racket server is running
+        try:
+            async with websockets.connect('ws://localhost:9092') as ws:
+                await ws.close()
+                print("Racket server is ready")
+                return True
+        except:
+            print("Failed to connect to Racket server")
+            return False
+            
     except Exception as e:
-        return f"Unexpected error: {e}"
-
+        print(f"Error starting Racket: {e}")
+        return False
 
 def main():
     ws_thread = threading.Thread(target=start_ws_server)

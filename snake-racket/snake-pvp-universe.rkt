@@ -2,6 +2,8 @@
 (require 2htdp/universe)
 (require "global-features.rkt")
 (require json)
+(require web-server/http)
+(require web-server/servlet)
 
 (provide (all-defined-out)) ; Für Tests und Launch
 
@@ -447,6 +449,7 @@
             (port 9092)
             (on-msg handle-messages)
             (on-tick tick-handler TICK-VALUE)))
+            
 
 
 
