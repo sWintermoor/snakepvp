@@ -46,9 +46,13 @@ async def handle_client(websocket):
         await player1.send(json.dumps({"status": "connected\n"}))
         await player2.send(json.dumps({"status": "connected\n"}))
 
+        print("trying to execute racket file")
+
         # Execute Racket file for the pair
         racket_file_path = os.path.join(BASE_DIR, '../snake-racket/launch-snake-pvp-universe.rkt')
         result = execute_racket_file(racket_file_path)
+
+        print(f"Racket file executed with result: {result}")
 
         # Send results to both players
         await player1.send(json.dumps({"game-results": result}))
@@ -62,8 +66,8 @@ async def handle_client(websocket):
             response1 = await forward_to_racket(message1)
             response2 = await forward_to_racket(message2)
 
-            data1 = json.loads(message1)
-            data2 = json.loads(message2)
+            data1 = json.loads(response1)
+            data2 = json.loads(response2)
 
             print(f"Received data from player1: {data1}")
             print(f"Received data from player2: {data2}")
