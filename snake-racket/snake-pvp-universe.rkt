@@ -2,7 +2,6 @@
 (require 2htdp/universe)
 (require "global-features.rkt")
 (require json)
-(require json net/websocket)
 
 (provide (all-defined-out)) ; Für Tests und Launch
 
