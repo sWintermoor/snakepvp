@@ -1,6 +1,16 @@
 #include <iostream>
 #include <list>
+#include <cmath>
 #include <utility> // Für std::pair
+#include <boost/beast/core.hpp>
+#include <boost/beast/websocket.hpp>
+#include <boost/asio/ip/tcp.hpp>
+#include <thread>
+
+namespace beast = boost::beast;
+namespace websocket = beast::websocket;
+namespace net = boost::asio;
+using tcp = boost::asio::ip::tcp;
 using namespace std;
 
 int main(){
@@ -33,9 +43,86 @@ int main(){
 
 
     //Initale Schlangen und Früchte
-    Snake _SNAKE(SNAKE_ID1, SNAKE_COORDINATES1, "red", BOOST_DURATION_INITIAL, IMMUNITY_DURATION_INITIAL, "right", VELOCITY_NORMAL, SCORE_INITIAL, BANANA_INITIAL, BLUEBERRY_INITIAL);
-    Snake _SNAKE(SNAKE_ID2, SNAKE_COORDINATES2, "blue", BOOST_DURATION_INITIAL, IMMUNITY_DURATION_INITIAL, "left", VELOCITY_NORMAL, SCORE_INITIAL, BANANA_INITIAL, BLUEBERRY_INITIAL);
+    Snake _SNAKE1(SNAKE_ID1, SNAKE_COORDINATES1, "red", BOOST_DURATION_INITIAL, IMMUNITY_DURATION_INITIAL, "right", VELOCITY_NORMAL, SCORE_INITIAL, BANANA_INITIAL, BLUEBERRY_INITIAL);
+    Snake _SNAKE2(SNAKE_ID2, SNAKE_COORDINATES2, "blue", BOOST_DURATION_INITIAL, IMMUNITY_DURATION_INITIAL, "left", VELOCITY_NORMAL, SCORE_INITIAL, BANANA_INITIAL, BLUEBERRY_INITIAL);
+    Fruit FRUIT("apple", std::floor(GRID_SIZE / 2), std::floor(GRID_SIZE / 2));
+
+    // Initiale Listen und Werte für Welten, Schlangen, Früchte und Timer
+
+
+
+    WebSocketServer server;
+    server.run();
+
     return 0;
+};
+
+class WebSocketServer {
+private:
+    net::io_context ioc;
+    tcp::acceptor acceptor;
+    
+public:
+    WebSocketServer() : 
+        acceptor(ioc, tcp::endpoint(tcp::v4(), 9092)) {
+        accept();
+    }
+
+    void accept() {
+        acceptor.async_accept(
+            [this](beast::error_code ec, tcp::socket socket) {
+                if (!ec) {
+                    std::make_shared<Session>(std::move(socket))->start();
+                }
+                accept();
+            });
+    }
+
+    void run() {
+        ioc.run();
+    }
+};
+
+class Session : public std::enable_shared_from_this<Session> {
+private:
+    websocket::stream<tcp::socket> ws;
+    beast::flat_buffer buffer;
+
+public:
+    explicit Session(tcp::socket socket) : ws(std::move(socket)) {}
+
+    void start() {
+        ws.async_accept(
+            [self = shared_from_this()](beast::error_code ec) {
+                if (!ec) {
+                    self->read();
+                }
+            });
+    }
+
+    void read() {
+        ws.async_read(
+            buffer,
+            [self = shared_from_this()](beast::error_code ec, std::size_t bytes) {
+                if (!ec) {
+                    // Handle received message
+                    self->handleMessage(beast::buffers_to_string(self->buffer.data()));
+                    self->buffer.consume(self->buffer.size());
+                    self->read();
+                }
+            });
+    }
+
+    void handleMessage(const std::string& message) {
+        // Handle game logic here
+        ws.async_write(
+            net::buffer(message),
+            [self = shared_from_this()](beast::error_code ec, std::size_t bytes) {
+                if (!ec) {
+                    // Message sent successfully
+                }
+            });
+    }
 };
 
 class Snake{
@@ -52,19 +139,19 @@ class Snake{
         int _blueberry;
 
     public:
-        Snake(int id, list<pair<int, int>> coordinates, std::string color, int boostDuration, int immunityDuration, std::string direction, int velocity, int score, int banana, int blueberry){
+        Snake(int id, list<pair<int, int>> coordinates, std::string color, int boostDuration, int immunityDuration, std::string direction, int velocity, int score, int banana, int blueberry):
             // Constructor
-            _id = id;
-            _coordinates = coordinates;
-            _color = color;
-            _boostDuration = boostDuration;
-            _immunityDuration = immunityDuration;
-            _direction = direction;
-            _velocity = velocity;
-            _score = score;
-            _banana = banana;
-            _blueberry = blueberry;
-        };
+            _id(id), 
+            _coordinates(coordinates), 
+            _color(color), 
+            _boostDuration(boostDuration), 
+            _immunityDuration(immunityDuration), 
+            _direction(direction), 
+            _velocity(velocity), 
+            _score(score), 
+            _banana(banana), 
+            _blueberry(blueberry)
+        {};
 };
 
 class Fruit{
@@ -74,11 +161,11 @@ class Fruit{
         int _y;
 
     public:
-        Fruit(std::string type, int x, int y){
+        Fruit(std::string type, int x, int y):
             // Constructor
-            _type = type;
-            _x = x;
-            _y = y;
-        };
+            _type(type),
+            _x(x),
+            _y(y)
+        {};
 };
 
