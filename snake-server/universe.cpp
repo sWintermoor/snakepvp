@@ -13,43 +13,46 @@ namespace net = boost::asio;
 using tcp = boost::asio::ip::tcp;
 using namespace std;
 
+// Spielgeschwindigkeit
+int GAME_SPEED = 18; 
+
+// Spielfeldparameter
+int GAME_SIZE = 5; // Spielgröße
+int GRID_SIZE = 5 * GAME_SIZE; // Spielfeldgröße: hier 25x25 Zellen
+int CELL_SIZE = 6 * GAME_SIZE; // Jede Zelle ist hier 30x30 Pixel groß
+int WIDTH = GRID_SIZE * CELL_SIZE; // Gesambtbreite des Spielfelds in Pixeln
+int HEIGHT = GRID_SIZE * CELL_SIZE; // Gesamthöhe des Spielfelds in Pixeln
+
+// Werte für ID, Farbe, Geschwindigkeit, Geschwindigkeitsdauer, Score und Bananen der Schlangen
+int SNAKE_ID1 = 1;
+int SNAKE_ID2 = 2;
+list<pair<int, int>> SNAKE_COORDINATES1 =  {make_pair(1, 0), make_pair(0, 0)};
+list<pair<int, int>> SNAKE_COORDINATES2 =  {make_pair(GRID_SIZE - 2, GRID_SIZE - 1), make_pair(GRID_SIZE - 1, GRID_SIZE - 1)};
+int VELOCITY_NORMAL = 3;
+int BOOST = 1;
+int BOOST_DURATION_INITIAL = 0;
+int BOOST_DURATION = 15;
+int IMMUNITY_DURATION_INITIAL = 0;
+int IMMUNITY_DURATION = 15;
+int SCORE_INITIAL = 0;
+int BANANA_INITIAL = 0;
+int BLUEBERRY_INITIAL = 0;
+
+
+//Initale Schlangen und Früchte
+Snake _SNAKE1(SNAKE_ID1, SNAKE_COORDINATES1, "red", BOOST_DURATION_INITIAL, IMMUNITY_DURATION_INITIAL, "right", VELOCITY_NORMAL, SCORE_INITIAL, BANANA_INITIAL, BLUEBERRY_INITIAL);
+Snake _SNAKE2(SNAKE_ID2, SNAKE_COORDINATES2, "blue", BOOST_DURATION_INITIAL, IMMUNITY_DURATION_INITIAL, "left", VELOCITY_NORMAL, SCORE_INITIAL, BANANA_INITIAL, BLUEBERRY_INITIAL);
+Fruit FRUIT("apple", std::floor(GRID_SIZE / 2), std::floor(GRID_SIZE / 2));
+
+// Initiale Listen und Werte für Welten, Schlangen, Früchte und Timer
+list<Fruit> FRUITS_INITIAL = {FRUIT}; // Liste mit Früchten
+int TIMER_INITIAL = 180*GAME_SPEED; // Timer in Sekunden
+int TICK_VALUE = 1 / GAME_SPEED; // Zeitwert für Ticks
+
+// Funktionen für die Spiellogik
+
 int main(){
     // Main function
-
-    // Spielgeschwindigkeit
-    int GAME_SPEED = 18; 
-
-    // Spielfeldparameter
-    int GAME_SIZE = 5; // Spielgröße
-    int GRID_SIZE = 5 * GAME_SIZE; // Spielfeldgröße: hier 25x25 Zellen
-    int CELL_SIZE = 6 * GAME_SIZE; // Jede Zelle ist hier 30x30 Pixel groß
-    int WIDTH = GRID_SIZE * CELL_SIZE; // Gesambtbreite des Spielfelds in Pixeln
-    int HEIGHT = GRID_SIZE * CELL_SIZE; // Gesamthöhe des Spielfelds in Pixeln
-
-    // Werte für ID, Farbe, Geschwindigkeit, Geschwindigkeitsdauer, Score und Bananen der Schlangen
-    int SNAKE_ID1 = 1;
-    int SNAKE_ID2 = 2;
-    list<pair<int, int>> SNAKE_COORDINATES1 =  {make_pair(1, 0), make_pair(0, 0)};
-    list<pair<int, int>> SNAKE_COORDINATES2 =  {make_pair(GRID_SIZE - 2, GRID_SIZE - 1), make_pair(GRID_SIZE - 1, GRID_SIZE - 1)};
-    int VELOCITY_NORMAL = 3;
-    int BOOST = 1;
-    int BOOST_DURATION_INITIAL = 0;
-    int BOOST_DURATION = 15;
-    int IMMUNITY_DURATION_INITIAL = 0;
-    int IMMUNITY_DURATION = 15;
-    int SCORE_INITIAL = 0;
-    int BANANA_INITIAL = 0;
-    int BLUEBERRY_INITIAL = 0;
-
-
-    //Initale Schlangen und Früchte
-    Snake _SNAKE1(SNAKE_ID1, SNAKE_COORDINATES1, "red", BOOST_DURATION_INITIAL, IMMUNITY_DURATION_INITIAL, "right", VELOCITY_NORMAL, SCORE_INITIAL, BANANA_INITIAL, BLUEBERRY_INITIAL);
-    Snake _SNAKE2(SNAKE_ID2, SNAKE_COORDINATES2, "blue", BOOST_DURATION_INITIAL, IMMUNITY_DURATION_INITIAL, "left", VELOCITY_NORMAL, SCORE_INITIAL, BANANA_INITIAL, BLUEBERRY_INITIAL);
-    Fruit FRUIT("apple", std::floor(GRID_SIZE / 2), std::floor(GRID_SIZE / 2));
-
-    // Initiale Listen und Werte für Welten, Schlangen, Früchte und Timer
-
-
 
     WebSocketServer server;
     server.run();
@@ -61,6 +64,8 @@ class WebSocketServer {
 private:
     net::io_context _ioc;
     tcp::acceptor _acceptor;
+    std::optional<tcp::socket> first_socket;
+    std::mutex mutex;
     
 public:
     WebSocketServer() : 
@@ -72,7 +77,22 @@ public:
         _acceptor.async_accept(
             [this](beast::error_code ec, tcp::socket socket) {
                 if (!ec) {
-                    std::make_shared<Session>(std::move(socket))->start();
+                    std::lock_guard<std::mutex> lock(mutex);
+                    if (!first_socket){
+                        // Erster Client
+                        first_socket.emplace(std::move(socket));
+                        std::cout << "First player connected" << std::endl;
+                    }
+                    else{
+                        // Zweiter Client und Start der Session
+                        std::cout << "Second player connected" << std::endl;
+                        auto session = std::make_shared<Session>(
+                            std::move(*first_socket),
+                            std::move(socket)
+                        );
+                        session->start();
+                        first_socket.reset();
+                    }
                 }
                 accept();
             });
@@ -85,30 +105,55 @@ public:
 
 class Session : public std::enable_shared_from_this<Session> {
 private:
-    websocket::stream<tcp::socket> _ws;
-    beast::flat_buffer _buffer;
+    websocket::stream<tcp::socket> _ws1;
+    websocket::stream<tcp::socket> _ws2;
+    beast::flat_buffer _buffer1;
+    beast::flat_buffer _buffer2;
 
 public:
-    explicit Session(tcp::socket socket) : _ws(std::move(socket)) {}
+    explicit Session(tcp::socket socket1, tcp::socket socket2) : 
+    _ws1(std::move(socket1)),
+    _ws2(std::move(socket2)) {}
 
     void start() {
-        _ws.async_accept(
-            [self = shared_from_this()](beast::error_code ec) {
+        auto self = shared_from_this();
+        _ws1.async_accept(
+            [self](beast::error_code ec) {
                 if (!ec) {
-                    self->read();
+                    self->_ws2.async_accept(
+                        [self](beast::error_code ec) {
+                            if (!ec) {
+                                self->read_client1();
+                                self->read_client2();
+                            }
+                        }
+                    );
                 }
             });
     }
 
-    void read() {
-        _ws.async_read(
-            _buffer,
+    void read_client1() {
+        _ws1.async_read(
+            _buffer1,
             [self = shared_from_this()](beast::error_code ec, std::size_t bytes) {
                 if (!ec) {
                     // Handle received message
-                    self->handleMessage(beast::buffers_to_string(self->_buffer.data()));
-                    self->_buffer.consume(self->_buffer.size());
-                    self->read();
+                    self->handleMessage(beast::buffers_to_string(self->_buffer1.data()));
+                    self->_buffer1.consume(self->_buffer1.size());
+                    self->read_client1();
+                }
+            });
+    }
+
+    void read_client2() {
+        _ws2.async_read(
+            _buffer2,
+            [self = shared_from_this()](beast::error_code ec, std::size_t bytes) {
+                if (!ec) {
+                    // Handle received message
+                    self->handleMessage(beast::buffers_to_string(self->_buffer2.data()));
+                    self->_buffer2.consume(self->_buffer2.size());
+                    self->read_client2();
                 }
             });
     }
@@ -123,6 +168,110 @@ public:
                 }
             });
     }
+};
+
+class Universe{
+    private:
+        Snake _snake1;
+        Snake _snake2;
+        list<Fruit> _fruits;
+        int _timer;
+
+    public:
+        Universe(Snake snake1, Snake snake2, list<Fruit> fruits, int timer):
+            // Constructor
+            _snake1(snake1),
+            _snake2(snake2),
+            _fruits(fruits),
+            _timer(timer)
+        {
+            tick();
+        };
+
+        void tick(){
+            // Tick function
+            _timer -= 1;
+            if (_timer == 0){
+                // End of game
+            }
+            else{
+                if (!checkCollisions()){
+                    bool timerPermission = (_timer % GAME_SPEED == 0);
+
+                    if (timerPermission || checkBooster(_snake1)){
+                        int updateConsumption = checkFruit(_snake1);
+                        _snake1.update(timerPermission, updateConsumption);
+                    }
+                    if (_timer % GAME_SPEED == 0 || checkBooster(_snake2)){
+                        int updateConsumption = checkFruit(_snake2);
+                        _snake2.update(timerPermission, updateConsumption);
+                    }                    
+                }
+                else{
+                    setFinalScore();
+                }
+                updateClients();
+            }
+        };
+
+        bool checkBooster(Snake snake){
+            if (snake.getBoostDuration() > 0){
+                return true;
+            }
+            else{
+                return false;
+            }
+        };
+
+        bool checkFruit(Snake snake){
+            pair<int, int> head = snake.getHead();
+            int consumedFruit = -1;
+
+            for (Fruit fruit : _fruits){
+                if (head.first == fruit.getX() && head.second == fruit.getY()){
+                    if (fruit.getType() == "apple"){
+                        snake.setScore(snake.getScore() + 1);
+                        consumedFruit = 0;
+                    }
+                    else if (fruit.getType() == "banana"){
+                        snake.setBanana(snake.getBanana() + 1);
+                        consumedFruit = 1;
+                    }
+                    else if (fruit.getType() == "blueberry"){
+                        snake.setBlueberry(snake.getBlueberry() + 1);
+                        consumedFruit = 2;
+                    }
+                    _fruits.remove(fruit);
+                }
+            }
+            return consumedFruit;
+        };
+
+        void checkCollisions(Snake snake1, Snake snake2){
+            pair<int, int> head1 = snake1.getHead();
+            pair<int, int> head2 = snake2.getHead();
+
+            if (head1.first == head2.first && head1.second == head2.second){
+                // Collision
+            }
+            else{
+                list<pair<int, int>> body1 = snake1.getCoordinates();
+                list<pair<int, int>> body2 = snake2.getCoordinates();
+                body1.pop_front();
+                body2.pop_front();
+
+                if (find(body1.begin(), body1.end(), head1) != body1.end()){
+                    // Collision
+                }
+                else if (find(body2.begin(), body2.end(), head2) != body2.end()){
+                    // Collision
+                }
+            }
+        }
+
+        void updateClients(){
+
+        }
 };
 
 class Snake{
@@ -152,6 +301,91 @@ class Snake{
             _banana(banana), 
             _blueberry(blueberry)
         {};
+
+        void update(bool changeImmunityBooster, int fruitConsumption){
+            // Update function
+            bool appleConsumption = (fruitConsumption == 0);
+
+            modifyBooster(changeImmunityBooster);
+            modifyImmunity(changeImmunityBooster);
+            move(appleConsumption);
+        };
+
+        void modifyBooster(bool changeImmunityBooster){
+            // Check booster function
+            if (_boostDuration > 0 && changeImmunityBooster){
+                _boostDuration -= 1;
+            }
+        };
+
+        void modifyImmunity(bool changeImmunityBooster){
+            // Check immunity function
+            if (_immunityDuration > 0 && changeImmunityBooster){
+                _immunityDuration -= 1;
+            }
+        };
+
+        void move(bool appleConsumption){
+            // Move function
+            pair<int, int> head = getHead();
+            pair<int, int> newHead;
+            if (_direction == "up"){
+                newHead = make_pair(head.first, (head.second - 1) % GRID_SIZE);
+            }
+            else if (_direction == "down"){
+                newHead = make_pair(head.first, (head.second + 1) % GRID_SIZE);
+            }
+            else if (_direction == "left"){
+                newHead = make_pair((head.first - 1) % GRID_SIZE, head.second);
+            }
+            else if (_direction == "right"){
+                newHead = make_pair((head.first + 1) % GRID_SIZE, head.second);
+            }
+            _coordinates.push_front(newHead);
+
+            if (!appleConsumption){
+                _coordinates.pop_back();
+            }
+        };
+
+        void setScore(int newScore){
+            // Set score function
+            _score = newScore;
+        };
+
+        void setBanana(int newBanana){
+            // Set banana function
+            _banana = newBanana;
+        };
+
+        void setBlueberry(int newBlueberry){
+            // Set blueberry function
+            _blueberry = newBlueberry;
+        };
+
+        pair<int, int> getHead(){
+            return _coordinates.front();
+        };
+
+        list<pair<int, int>> getCoordinates(){
+            return _coordinates;
+        };
+
+        int getBoostDuration(){
+            return _boostDuration;
+        };
+
+        int getScore(){
+            return _score;
+        };
+
+        int getBanana(){
+            return _banana;
+        };
+
+        int getBlueberry(){
+            return _blueberry;
+        };
 };
 
 class Fruit{
@@ -167,5 +401,17 @@ class Fruit{
             _x(x),
             _y(y)
         {};
+
+        std::string getType(){
+            return _type;
+        };
+
+        int getX(){
+            return _x;
+        };
+
+        int getY(){
+            return _y;
+        };
 };
 
