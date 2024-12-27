@@ -6,11 +6,13 @@
 #include <boost/beast/websocket.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <thread>
+#include <nlohmann/json.hpp>
 
 namespace beast = boost::beast;
 namespace websocket = beast::websocket;
 namespace net = boost::asio;
 using tcp = boost::asio::ip::tcp;
+using json = nlohmann::json;
 using namespace std;
 
 // Spielgeschwindigkeit
@@ -109,6 +111,7 @@ private:
     websocket::stream<tcp::socket> _ws2;
     beast::flat_buffer _buffer1;
     beast::flat_buffer _buffer2;
+    Universe _universe;
 
 public:
     explicit Session(tcp::socket socket1, tcp::socket socket2) : 
@@ -123,6 +126,7 @@ public:
                     self->_ws2.async_accept(
                         [self](beast::error_code ec) {
                             if (!ec) {
+                                _universe(self, _SNAKE1, _SNAKE2, FRUITS_INITIAL, TIMER_INITIAL);
                                 self->read_client1();
                                 self->read_client2();
                             }
@@ -138,7 +142,7 @@ public:
             [self = shared_from_this()](beast::error_code ec, std::size_t bytes) {
                 if (!ec) {
                     // Handle received message
-                    self->handleMessage(beast::buffers_to_string(self->_buffer1.data()));
+                    self->handleMessage(1, beast::buffers_to_string(self->_buffer1.data()));
                     self->_buffer1.consume(self->_buffer1.size());
                     self->read_client1();
                 }
@@ -151,17 +155,51 @@ public:
             [self = shared_from_this()](beast::error_code ec, std::size_t bytes) {
                 if (!ec) {
                     // Handle received message
-                    self->handleMessage(beast::buffers_to_string(self->_buffer2.data()));
+                    self->handleMessage(2, beast::buffers_to_string(self->_buffer2.data()));
                     self->_buffer2.consume(self->_buffer2.size());
                     self->read_client2();
                 }
             });
     }
 
-    void handleMessage(const std::string& message) {
+    void handleMessage(int id, const std::string& message) {
         // Handle game logic here
-        _ws.async_write(
-            net::buffer(message),
+        try{
+            json Data = json::parse(message);
+            if (Data.contains("key")){
+                if (id == 1){
+                    _universe.updateSnakeDirection(id, Data["direction"]);
+                }
+                else if (id == 2){
+                    _universe.updateSnakeDirection(id, Data["direction"]);
+                }
+            }
+        }
+        catch (const json::exception& e) {
+        // Handle JSON parsing errors
+        std::cerr << "JSON parsing error: " << e.what() << std::endl;
+        }
+    }
+
+    void sendMessage(list<pair<int,int>> snake1Coordinates, list<pair<int,int>> snake2Coordinates, list<Fruit> fruits, int timer, std::string gameStatus) {
+        // Send game state to clients
+        // Format: {"snake1": [[x1, y1], [x2, y2], ...], "snake2": [[x1, y1], [x2, y2], ...], "fruit": [[x, y]], "timer": timer}
+        json message = {
+            {"snake1", snake1Coordinates},
+            {"snake2", snake2Coordinates},
+            {"fruit", fruits},
+            {"timer", timer},
+            {"gameStatus", gameStatus}
+        };
+        _ws1.async_write(
+            net::buffer(message.dump()),
+            [self = shared_from_this()](beast::error_code ec, std::size_t bytes) {
+                if (!ec) {
+                    // Message sent successfully
+                }
+            });
+        _ws2.async_write(
+            net::buffer(message.dump()),
             [self = shared_from_this()](beast::error_code ec, std::size_t bytes) {
                 if (!ec) {
                     // Message sent successfully
@@ -172,19 +210,23 @@ public:
 
 class Universe{
     private:
+        Session _session;
         Snake _snake1;
         Snake _snake2;
         list<Fruit> _fruits;
         int _timer;
+        std::string _gameState;
 
     public:
-        Universe(Snake snake1, Snake snake2, list<Fruit> fruits, int timer):
+        Universe(Session session, Snake snake1, Snake snake2, list<Fruit> fruits, int timer):
             // Constructor
+            _session(session),
             _snake1(snake1),
             _snake2(snake2),
             _fruits(fruits),
             _timer(timer)
         {
+            _gameState = "running";
             tick();
         };
 
@@ -195,7 +237,7 @@ class Universe{
                 // End of game
             }
             else{
-                if (!checkCollisions()){
+                if (checkCollisions(_snake1, _snake2) == -1){
                     bool timerPermission = (_timer % GAME_SPEED == 0);
 
                     if (timerPermission || checkBooster(_snake1)){
@@ -213,6 +255,51 @@ class Universe{
                 updateClients();
             }
         };
+
+        int checkCollisions(Snake snake1, Snake snake2){
+            pair<int, int> head1 = snake1.getHead();
+            pair<int, int> head2 = snake2.getHead();
+            int collision = -1;
+
+            if (head1.first == head2.first && head1.second == head2.second){
+                collision = 0;
+            }
+            else{
+                list<pair<int, int>> body1 = snake1.getCoordinates();
+                list<pair<int, int>> body2 = snake2.getCoordinates();
+                body1.pop_front();
+                body2.pop_front();
+
+                if (find(body1.begin(), body1.end(), head1) != body1.end()){
+                    collision = 1;
+                }
+                if (find(body2.begin(), body2.end(), head2) != body2.end()){
+                    if (collision == 1){
+                        collision = 0;
+                    }
+                    else{
+                        collision = 2;
+                    }
+                }
+                if (find(body1.begin(), body1.end(), head2) != body1.end()){
+                    if (collision == 1){
+                        collision = 0;
+                    }
+                    else{
+                        collision = 2;
+                    }
+                }
+                if (find(body2.begin(), body2.end(), head1) != body2.end()){
+                    if (collision == 2){
+                        collision = 0;
+                    }
+                    else{
+                        collision = 1;
+                    }
+                }
+            }
+            return collision;
+        }
 
         bool checkBooster(Snake snake){
             if (snake.getBoostDuration() > 0){
@@ -247,30 +334,29 @@ class Universe{
             return consumedFruit;
         };
 
-        void checkCollisions(Snake snake1, Snake snake2){
-            pair<int, int> head1 = snake1.getHead();
-            pair<int, int> head2 = snake2.getHead();
-
-            if (head1.first == head2.first && head1.second == head2.second){
-                // Collision
-            }
-            else{
-                list<pair<int, int>> body1 = snake1.getCoordinates();
-                list<pair<int, int>> body2 = snake2.getCoordinates();
-                body1.pop_front();
-                body2.pop_front();
-
-                if (find(body1.begin(), body1.end(), head1) != body1.end()){
-                    // Collision
+        void updateSnakeDirection(int id, std::string key){
+            if (id == 1){
+                if (key == "up" || key == "down" || key == "left" || key == "right"){
+                    _snake1.setDirection(key);
                 }
-                else if (find(body2.begin(), body2.end(), head2) != body2.end()){
-                    // Collision
+                else if (key == "space"){
+                    _snake1.changeBoost(BOOST_DURATION);
                 }
             }
-        }
+            else if (id == 2){
+                if (key == "up" || key == "down" || key == "left" || key == "right"){
+                    _snake2.setDirection(key);
+                }
+                else if (key == "space"){
+                    _snake2.changeBoost(BOOST_DURATION);
+                }
+            }
+        };
 
         void updateClients(){
-
+            list<pair<int, int>> snake1Coordinates = _snake1.getCoordinates();
+            list<pair<int, int>> snake2Coordinates = _snake2.getCoordinates();
+            _session.sendMessage(snake1Coordinates, snake2Coordinates, _fruits, _timer, "running");
         }
 };
 
@@ -318,6 +404,11 @@ class Snake{
             }
         };
 
+         void changeBoost(int additionalBoostDuration){
+            // Change boost function
+            _boostDuration += additionalBoostDuration;
+        };
+
         void modifyImmunity(bool changeImmunityBooster){
             // Check immunity function
             if (_immunityDuration > 0 && changeImmunityBooster){
@@ -346,6 +437,11 @@ class Snake{
             if (!appleConsumption){
                 _coordinates.pop_back();
             }
+        };
+
+        void setDirection(std::string newDirection){
+            // Set direction function
+            _direction = newDirection;
         };
 
         void setScore(int newScore){
