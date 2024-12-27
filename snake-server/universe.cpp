@@ -181,7 +181,7 @@ public:
         }
     }
 
-    void sendMessage(list<pair<int,int>> snake1Coordinates, list<pair<int,int>> snake2Coordinates, list<Fruit> fruits, int timer, std::string gameStatus) {
+    void sendMessageClient1(list<pair<int,int>> snake1Coordinates, list<pair<int,int>> snake2Coordinates, list<Fruit> fruits, int timer, std::string gameStatus) {
         // Send game state to clients
         // Format: {"snake1": [[x1, y1], [x2, y2], ...], "snake2": [[x1, y1], [x2, y2], ...], "fruit": [[x, y]], "timer": timer}
         json message = {
@@ -198,6 +198,18 @@ public:
                     // Message sent successfully
                 }
             });
+    }
+
+    void sendMessageClient2(list<pair<int,int>> snake1Coordinates, list<pair<int,int>> snake2Coordinates, list<Fruit> fruits, int timer, std::string gameStatus) {
+        // Send game state to clients
+        // Format: {"snake1": [[x1, y1], [x2, y2], ...], "snake2": [[x1, y1], [x2, y2], ...], "fruit": [[x, y]], "timer": timer}
+        json message = {
+            {"snake1", snake1Coordinates},
+            {"snake2", snake2Coordinates},
+            {"fruit", fruits},
+            {"timer", timer},
+            {"gameStatus", gameStatus}
+        };
         _ws2.async_write(
             net::buffer(message.dump()),
             [self = shared_from_this()](beast::error_code ec, std::size_t bytes) {
@@ -243,16 +255,31 @@ class Universe{
                     if (timerPermission || checkBooster(_snake1)){
                         int updateConsumption = checkFruit(_snake1);
                         _snake1.update(timerPermission, updateConsumption);
+                        if (updateConsumption > 0){
+                            spawnFruits();
+                        }
                     }
-                    if (_timer % GAME_SPEED == 0 || checkBooster(_snake2)){
+                    if (timerPermission || checkBooster(_snake2)){
                         int updateConsumption = checkFruit(_snake2);
                         _snake2.update(timerPermission, updateConsumption);
+                        if (updateConsumption > 0){
+                            spawnFruits();
+                        }
                     }                    
                 }
                 else{
                     setFinalScore();
                 }
                 updateClients();
+            }
+        };
+
+        bool checkBooster(Snake snake){
+            if (snake.getBoostDuration() > 0){
+                return true;
+            }
+            else{
+                return false;
             }
         };
 
@@ -270,10 +297,10 @@ class Universe{
                 body1.pop_front();
                 body2.pop_front();
 
-                if (find(body1.begin(), body1.end(), head1) != body1.end()){
+                if (!_snake1.checkImmunity() && (find(body1.begin(), body1.end(), head1) != body1.end())){
                     collision = 1;
                 }
-                if (find(body2.begin(), body2.end(), head2) != body2.end()){
+                if (!_snake2.checkImmunity() && (find(body2.begin(), body2.end(), head2) != body2.end())){
                     if (collision == 1){
                         collision = 0;
                     }
@@ -281,34 +308,27 @@ class Universe{
                         collision = 2;
                     }
                 }
-                if (find(body1.begin(), body1.end(), head2) != body1.end()){
-                    if (collision == 1){
-                        collision = 0;
+                if (!_snake1.checkImmunity() && !_snake2.checkImmunity()){
+                    if (find(body1.begin(), body1.end(), head2) != body1.end()){
+                        if (collision == 1){
+                            collision = 0;
+                        }
+                        else{
+                            collision = 2;
+                        }
                     }
-                    else{
-                        collision = 2;
-                    }
-                }
-                if (find(body2.begin(), body2.end(), head1) != body2.end()){
-                    if (collision == 2){
-                        collision = 0;
-                    }
-                    else{
-                        collision = 1;
-                    }
+                    if (find(body2.begin(), body2.end(), head1) != body2.end()){
+                        if (collision == 2){
+                            collision = 0;
+                        }
+                        else{
+                            collision = 1;
+                        }
+                    }   
                 }
             }
             return collision;
         }
-
-        bool checkBooster(Snake snake){
-            if (snake.getBoostDuration() > 0){
-                return true;
-            }
-            else{
-                return false;
-            }
-        };
 
         bool checkFruit(Snake snake){
             pair<int, int> head = snake.getHead();
@@ -334,6 +354,80 @@ class Universe{
             return consumedFruit;
         };
 
+        void setFinalScore(){
+            int collisionStatus = checkCollisions(_snake1, _snake2);
+            if (collisionStatus == 0){
+                _session.sendMessageClient1(_snake1.getCoordinates(), _snake2.getCoordinates(), _fruits, _timer, "draw");
+                _session.sendMessageClient2(_snake1.getCoordinates(), _snake2.getCoordinates(), _fruits, _timer, "draw");
+            }
+            else if (collisionStatus == 1){
+                _session.sendMessageClient1(_snake1.getCoordinates(), _snake2.getCoordinates(), _fruits, _timer, "lose");
+                _session.sendMessageClient2(_snake1.getCoordinates(), _snake2.getCoordinates(), _fruits, _timer, "win");
+            }
+            else{
+                _session.sendMessageClient1(_snake1.getCoordinates(), _snake2.getCoordinates(), _fruits, _timer, "win");
+                _session.sendMessageClient2(_snake1.getCoordinates(), _snake2.getCoordinates(), _fruits, _timer, "lose");
+            }
+        }
+
+        void spawnFruits(){
+            int randomX = rand() % GRID_SIZE;
+            int randomY = rand() % GRID_SIZE;
+            list<pair<int, int>> snake1Coordinates = _snake1.getCoordinates();
+            list<pair<int, int>> snake2Coordinates = _snake2.getCoordinates();
+            list<pair<int, int>> _fruitCoordinates;
+
+            for (Fruit fruit : _fruits){
+                _fruitCoordinates.push_back(make_pair(fruit.getX(), fruit.getY()));
+            }  
+
+            while (find(snake1Coordinates.begin(), snake1Coordinates.end(), make_pair(randomX, randomY)) != snake1Coordinates.end() || find(snake2Coordinates.begin(), snake2Coordinates.end(), make_pair(randomX, randomY)) != snake2Coordinates.end() || find(_fruitCoordinates.begin(), _fruitCoordinates.end(), make_pair(randomX, randomY)) != _fruitCoordinates.end()){
+                randomX = rand() % GRID_SIZE;
+                randomY = rand() % GRID_SIZE;
+            }
+
+            int randomFruit = rand() % 6;
+            std::string fruitType1;
+            std::string fruitType2;
+
+            if (randomFruit == 0){
+                fruitType1 = "apple";
+            }
+            else if (randomFruit == 1){
+                fruitType1 = "banana";
+            }
+            else if (randomFruit == 2){
+                fruitType1 = "blueberry";
+            }
+            else if (randomFruit == 3){
+                fruitType1 = "apple";
+                fruitType2 = "apple";
+            }
+            else if (randomFruit == 4){
+                fruitType1 = "apple";
+                fruitType2 = "banana";
+            }
+            else if (randomFruit == 5){
+                fruitType1 = "apple";
+                fruitType2 = "blueberry";
+            }
+
+            Fruit newFruit(fruitType1, randomX, randomY);
+            _fruits.push_back(newFruit);
+
+            if (randomFruit > 2){
+                Fruit newFruit2(fruitType2, randomX, randomY);
+                _fruits.push_back(newFruit2);
+            }
+        }
+
+        void updateClients(){
+            list<pair<int, int>> snake1Coordinates = _snake1.getCoordinates();
+            list<pair<int, int>> snake2Coordinates = _snake2.getCoordinates();
+            _session.sendMessageClient1(snake1Coordinates, snake2Coordinates, _fruits, _timer, "running");
+            _session.sendMessageClient2(snake1Coordinates, snake2Coordinates, _fruits, _timer, "running");
+        }
+
         void updateSnakeDirection(int id, std::string key){
             if (id == 1){
                 if (key == "up" || key == "down" || key == "left" || key == "right"){
@@ -352,12 +446,6 @@ class Universe{
                 }
             }
         };
-
-        void updateClients(){
-            list<pair<int, int>> snake1Coordinates = _snake1.getCoordinates();
-            list<pair<int, int>> snake2Coordinates = _snake2.getCoordinates();
-            _session.sendMessage(snake1Coordinates, snake2Coordinates, _fruits, _timer, "running");
-        }
 };
 
 class Snake{
@@ -407,6 +495,15 @@ class Snake{
          void changeBoost(int additionalBoostDuration){
             // Change boost function
             _boostDuration += additionalBoostDuration;
+        };
+
+        bool checkImmunity(){
+            if (getImmunityDuration() > 0){
+                return true;
+            }
+            else{
+                return false;
+            }
         };
 
         void modifyImmunity(bool changeImmunityBooster){
@@ -469,6 +566,10 @@ class Snake{
 
         int getBoostDuration(){
             return _boostDuration;
+        };
+
+        int getImmunityDuration(){
+            return _immunityDuration;
         };
 
         int getScore(){
