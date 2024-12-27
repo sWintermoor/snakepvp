@@ -59,17 +59,17 @@ int main(){
 
 class WebSocketServer {
 private:
-    net::io_context ioc;
-    tcp::acceptor acceptor;
+    net::io_context _ioc;
+    tcp::acceptor _acceptor;
     
 public:
     WebSocketServer() : 
-        acceptor(ioc, tcp::endpoint(tcp::v4(), 9092)) {
+        _acceptor(_ioc, tcp::endpoint(tcp::v4(), 9092)) {
         accept();
     }
 
     void accept() {
-        acceptor.async_accept(
+        _acceptor.async_accept(
             [this](beast::error_code ec, tcp::socket socket) {
                 if (!ec) {
                     std::make_shared<Session>(std::move(socket))->start();
@@ -79,20 +79,20 @@ public:
     }
 
     void run() {
-        ioc.run();
+        _ioc.run();
     }
 };
 
 class Session : public std::enable_shared_from_this<Session> {
 private:
-    websocket::stream<tcp::socket> ws;
-    beast::flat_buffer buffer;
+    websocket::stream<tcp::socket> _ws;
+    beast::flat_buffer _buffer;
 
 public:
-    explicit Session(tcp::socket socket) : ws(std::move(socket)) {}
+    explicit Session(tcp::socket socket) : _ws(std::move(socket)) {}
 
     void start() {
-        ws.async_accept(
+        _ws.async_accept(
             [self = shared_from_this()](beast::error_code ec) {
                 if (!ec) {
                     self->read();
@@ -101,13 +101,13 @@ public:
     }
 
     void read() {
-        ws.async_read(
-            buffer,
+        _ws.async_read(
+            _buffer,
             [self = shared_from_this()](beast::error_code ec, std::size_t bytes) {
                 if (!ec) {
                     // Handle received message
-                    self->handleMessage(beast::buffers_to_string(self->buffer.data()));
-                    self->buffer.consume(self->buffer.size());
+                    self->handleMessage(beast::buffers_to_string(self->_buffer.data()));
+                    self->_buffer.consume(self->_buffer.size());
                     self->read();
                 }
             });
@@ -115,7 +115,7 @@ public:
 
     void handleMessage(const std::string& message) {
         // Handle game logic here
-        ws.async_write(
+        _ws.async_write(
             net::buffer(message),
             [self = shared_from_this()](beast::error_code ec, std::size_t bytes) {
                 if (!ec) {
