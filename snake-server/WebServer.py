@@ -19,6 +19,12 @@ async def forward_to_universe(message):
         await websocket.send(message)
         response = await websocket.recv()
         return response
+    
+async def prepare_json_for_universe(id, message):
+    data = json.loads(message)
+    data["id"] = id
+    return json.dumps(data)
+
 
 async def handle_client(websocket):
     try:
@@ -52,32 +58,29 @@ async def handle_client(websocket):
         
         print(f"Match found between {player1.remote_address} and {player2.remote_address}")
         # Register players as worlds in Racket universe
-        register_world1 = await forward_to_universe(json.dumps({   # Code muss überprüft werden
-            "type": "register",
-            "player": 1,
-            "id": str(id(player1))
-        }))
+        register_world1 = await forward_to_universe(json.dumps({  
+            "type": "connect",
+            "player": 1}))
         
         register_world2 = await forward_to_universe(json.dumps({
-            "type": "register",
-            "player": 2,
-            "id": str(id(player2))
-        }))
+            "type": "connect",
+            "player": 2}))
 
-        print("Notified Racket of player registration")   # Code muss angepasst werden
+        print("Notified Racket of player registration")   
+
         # Notify players of successful registration
-        await player1.send(json.dumps({"status": "connected", "player": 1}))
-        await player2.send(json.dumps({"status": "connected", "player": 2}))
+        await player1.send(json.dumps({"gameStatus": "connected"}))
+        await player2.send(json.dumps({"gameStatus": "connected"}))
 
         print("Entering while-Loop")
 
         # Continuously receive and send messages
         while True:
-            message1 = await player1.recv()
+            message1 = await player1.recv()   
             message2 = await player2.recv()
 
-            response1 = await forward_to_universe(message1)
-            response2 = await forward_to_universe(message2)
+            response1 = await forward_to_universe(prepare_json_for_universe(1, message1))
+            response2 = await forward_to_universe(prepare_json_for_universe(2, message2))
 
             data1 = json.loads(response1)
             data2 = json.loads(response2)
