@@ -47,28 +47,28 @@ function testMain(){
 
         console.log("Parsed data", data);
 
-        if(data.status == "waiting"){
+        if(data.gameStatus == "waiting"){
             initializeWaitingMode();
         }
         else
         {
-            if (data.status == "connected"){
+            if (data.gameStatus == "connected"){
                 initializeGame();
                 _STARTGAME = false;
             }
     
-            else if(_WORLD.getStatus() == 'tie' || _WORLD.getStatus() == 'win' || _WORLD.getStatus == 'loose'){
+            else if(data.gameStatus == 'tie' || data.gameStatus == 'win' || data.gameStatus == 'loose'){
                 drawResult();
                 _SOCKET.onmessage = null;
             }
             else{
-                console.log("ID", data.status[0]);
-                _WORLD.setID(data.status[0]);
+                console.log("Snake1", data.status[0]);
+                _WORLD.setSnake1(data.status[0]);
 
-                console.log("Snakes", data.status[1]);
-                _WORLD.setSnakes(data.status[1]);
+                console.log("Snake2", data.status[1]);
+                _WORLD.setSnake2(data.status[1]);
 
-                console.log("Items", data);
+                console.log("Items", data);  // Ab hier weiter korrigieren
                 _WORLD.setItems(data[2]);
 
                 console.log("Timer", data);
@@ -226,11 +226,10 @@ function drawResult(){
 
 
 class World{
-    constructor(id, snakes, items, timer, status){
+    constructor(id, snake1, snake2, items, timer, status){
         this.id = id;
-        this.snakes = snakes;
-        this.snake1 = snakes[0];
-        this.snake2 = snakes[1];
+        this.snake1 = snake1;
+        this.snake2 = snake2;
         this.items = items;
         this.timer = timer;
         this.status = status;
@@ -268,10 +267,12 @@ class World{
         this.id = newID;
     }
 
-    setSnakes(newSnakes){
-        this.snakes = newSnakes;
-        this.snake1 = newSnakes[0];
-        this.snake2 = newSnakes[1];
+    setSnake1(newSnake1){
+        this.snake1 = newSnake1;
+    }
+
+    setSnake2(newSnake2){
+        this.snake2 = newSnake2;
     }
 
     setItems(newItems){
