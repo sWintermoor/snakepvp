@@ -13,7 +13,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 matchmaking_queue = []
 lock = threading.Lock()
 
-async def forward_to_racket(message):
+async def forward_to_universe(message):
     uri = "ws://localhost:9092"
     async with websockets.connect(uri) as websocket:
         await websocket.send(message)
@@ -30,7 +30,7 @@ async def handle_client(websocket):
             print(f"Queue size: {len(matchmaking_queue)}")
 
         # Send initial acknowledgment
-        await websocket.send(json.dumps({"status": "waiting"}))
+        await websocket.send(json.dumps({"gameStatus": "waiting"})) 
 
         # Wait until two clients are connected
         while len(matchmaking_queue) < 2:
@@ -42,29 +42,29 @@ async def handle_client(websocket):
         player2 = matchmaking_queue.pop(0)
 
         # Start Racket server first
-        racket_started = await execute_racket_file(
-            os.path.join(BASE_DIR, '../snake-racket/launch-snake-pvp-universe.rkt')
+        racket_started = await execute_universe(
+            os.path.join(BASE_DIR, 'universe.cpp')
         )
 
         if not racket_started:
-            print("Failed to start Racket server")
+            print("Failed to start Universe")
             return
         
         print(f"Match found between {player1.remote_address} and {player2.remote_address}")
         # Register players as worlds in Racket universe
-        register_world1 = await forward_to_racket(json.dumps({
+        register_world1 = await forward_to_universe(json.dumps({   # Code muss überprüft werden
             "type": "register",
             "player": 1,
             "id": str(id(player1))
         }))
         
-        register_world2 = await forward_to_racket(json.dumps({
+        register_world2 = await forward_to_universe(json.dumps({
             "type": "register",
             "player": 2,
             "id": str(id(player2))
         }))
 
-        print("Notified Racket of player registration")
+        print("Notified Racket of player registration")   # Code muss angepasst werden
         # Notify players of successful registration
         await player1.send(json.dumps({"status": "connected", "player": 1}))
         await player2.send(json.dumps({"status": "connected", "player": 2}))
@@ -76,8 +76,8 @@ async def handle_client(websocket):
             message1 = await player1.recv()
             message2 = await player2.recv()
 
-            response1 = await forward_to_racket(message1)
-            response2 = await forward_to_racket(message2)
+            response1 = await forward_to_universe(message1)
+            response2 = await forward_to_universe(message2)
 
             data1 = json.loads(response1)
             data2 = json.loads(response2)
@@ -135,14 +135,28 @@ def start_ws_server():
     loop.run_until_complete(run_ws_server())
 
 
-async def execute_racket_file(filepath):
+async def execute_universe(filepath):
     """
     Execute a Racket file using subprocess and return its output or errors.
     """
     try:
+        # Compile C++ file
+        compile_process = subprocess.run(
+            ['cl', '/EHcs', filepath],
+            capture_output=True,
+            text=True
+        )
+
+        if compile.returncode != 0:
+            print(f"Error compiling C++ file: {compile_process}")
+            return False
+        
+        # Get executable name (remove .cpp and add .exe)
+        exe_path = filepath.replace('.cpp', '.exe')
+
         # Run the Racket file
         process = subprocess.Popen(
-            ['racket', filepath],  # Command to execute the Racket file
+            [exe_path],  # Command to execute the compiled file
             stdout=subprocess.PIPE,  # Capture standard output
             stderr=subprocess.PIPE   # Capture standard error
         )
