@@ -188,15 +188,15 @@ public:
         }
     }
 
-    void sendMessageClient(list<pair<int,int>> snake1Coordinates, list<pair<int,int>> snake2Coordinates, list<std::string> fruitTypes, list<int> fruitX, list<int> fruitY, int timer, std::string gameStatus1, std::string gameStatus2) {
+    void sendMessageClient(list<pair<int,int>> snake1Coordinates, list<pair<int,int>> snake2Coordinates, list<std::string> fruitsTypes, list<int> fruitsX, list<int> fruitsY, int timer, std::string gameStatus1, std::string gameStatus2) {
         // Send game state to clients
         // Format: {"snake1": [[x1, y1], [x2, y2], ...], "snake2": [[x1, y1], [x2, y2], ...], "fruit": [[x, y]], "timer": timer}
         json message1 = {
             {"snake1", snake1Coordinates},
             {"snake2", snake2Coordinates},
-            {"fruitTypes", fruitTypes},
-            {"fruitX", fruitX},
-            {"fruitY", fruitY},
+            {"fruitsTypes", fruitsTypes},
+            {"fruitsX", fruitsX},
+            {"fruitsY", fruitsY},
             {"timer", timer},
             {"gameStatus", gameStatus1}
         };
@@ -204,9 +204,9 @@ public:
         json message2 = {
             {"snake1", snake1Coordinates},
             {"snake2", snake2Coordinates},
-            {"fruitTypes", fruitTypes},
-            {"fruitX", fruitX},
-            {"fruitY", fruitY},
+            {"fruitTypes", fruitsTypes},
+            {"fruitX", fruitsX},
+            {"fruitY", fruitsY},
             {"timer", timer},
             {"gameStatus", gameStatus2}
         };
@@ -366,13 +366,13 @@ class Universe{
         void setFinalScore(){
             int collisionStatus = checkCollisions(_snake1, _snake2);
             if (collisionStatus == 0){
-                _session.sendMessageClient(_snake1.getCoordinates(), _snake2.getCoordinates(), _fruits.getFruitTypes(), _fruits.getFruitX(), _fruits.getFruitY(), _timer, "draw", "draw");
+                _session.sendMessageClient(_snake1.getCoordinates(), _snake2.getCoordinates(), _fruits.getFruitsTypes(), _fruits.getFruitsX(), _fruits.getFruitsY(), _timer, "draw", "draw");
             }
             else if (collisionStatus == 1){
-                _session.sendMessageClient(_snake1.getCoordinates(), _snake2.getCoordinates(), _fruits.getFruitTypes(), _fruits.getFruitX(), _fruits.getFruitY(), _timer, "lose", "win");
+                _session.sendMessageClient(_snake1.getCoordinates(), _snake2.getCoordinates(), _fruits.getFruitsTypes(), _fruits.getFruitsX(), _fruits.getFruitsY(), _timer, "lose", "win");
             }
             else{
-                _session.sendMessageClient(_snake1.getCoordinates(), _snake2.getCoordinates(), _fruits.getFruitTypes(), _fruits.getFruitX(), _fruits.getFruitY(), _timer, "win", "lose");
+                _session.sendMessageClient(_snake1.getCoordinates(), _snake2.getCoordinates(), _fruits.getFruitsTypes(), _fruits.getFruitsX(), _fruits.getFruitsY(), _timer, "win", "lose");
             }
         }
 
@@ -381,7 +381,7 @@ class Universe{
             int randomY = rand() % GRID_SIZE;
             list<pair<int, int>> snake1Coordinates = _snake1.getCoordinates();
             list<pair<int, int>> snake2Coordinates = _snake2.getCoordinates();
-            list<pair<int, int>> _fruitCoordinates = _fruits.getFruitCoordinates(); 
+            list<pair<int, int>> _fruitCoordinates = _fruits.getFruitsCoordinates(); 
 
             while (find(snake1Coordinates.begin(), snake1Coordinates.end(), make_pair(randomX, randomY)) != snake1Coordinates.end() || find(snake2Coordinates.begin(), snake2Coordinates.end(), make_pair(randomX, randomY)) != snake2Coordinates.end() || find(_fruitCoordinates.begin(), _fruitCoordinates.end(), make_pair(randomX, randomY)) != _fruitCoordinates.end()){
                 randomX = rand() % GRID_SIZE;
@@ -426,7 +426,7 @@ class Universe{
         void updateClients(){
             list<pair<int, int>> snake1Coordinates = _snake1.getCoordinates();
             list<pair<int, int>> snake2Coordinates = _snake2.getCoordinates();
-            _session.sendMessageClient(snake1Coordinates, snake2Coordinates, _fruits.getFruitTypes(), _fruits.getFruitX(), _fruits.getFruitY(), _timer, "running", "running");
+            _session.sendMessageClient(snake1Coordinates, snake2Coordinates, _fruits.getFruitsTypes(), _fruits.getFruitsX(), _fruits.getFruitsY(), _timer, "running", "running");
         }
 
         void updateSnakeDirection(int id, std::string key){
@@ -616,25 +616,25 @@ class Fruit{
 class Fruits{
     private:
         list<Fruit> _fruits;
-        list<std::string> _fruitTypes;
-        list<int> _fruitX;
-        list<int> _fruitY;
+        list<std::string> _fruitsTypes;
+        list<int> _fruitsX;
+        list<int> _fruitsY;
         list<pair<int, int>> _fruitCoordinates;
 
     public:
         Fruits(Fruit fruit){
             _fruits.push_back(fruit);
-            _fruitTypes.push_back(fruit.getType());
-            _fruitX.push_back(fruit.getX());
-            _fruitY.push_back(fruit.getY());
+            _fruitsTypes.push_back(fruit.getType());
+            _fruitsX.push_back(fruit.getX());
+            _fruitsY.push_back(fruit.getY());
             _fruitCoordinates.push_back(make_pair(fruit.getX(), fruit.getY()));
         };
 
         void addFruit(Fruit fruit){
             _fruits.push_back(fruit);
-            _fruitTypes.push_back(fruit.getType());
-            _fruitX.push_back(fruit.getX());
-            _fruitY.push_back(fruit.getY());
+            _fruitsTypes.push_back(fruit.getType());
+            _fruitsX.push_back(fruit.getX());
+            _fruitsY.push_back(fruit.getY());
             _fruitCoordinates.push_back(make_pair(fruit.getX(), fruit.getY()));
         };
 
@@ -643,9 +643,9 @@ class Fruits{
             if (it != _fruits.end()){
                 int index = distance(_fruits.begin(), it);
                 _fruits.erase(it);
-                _fruitTypes.erase(next(_fruitTypes.begin(), index));
-                _fruitX.erase(next(_fruitX.begin(), index));
-                _fruitY.erase(next(_fruitY.begin(), index));
+                _fruitsTypes.erase(next(_fruitsTypes.begin(), index));
+                _fruitsX.erase(next(_fruitsX.begin(), index));
+                _fruitsY.erase(next(_fruitsY.begin(), index));
                 _fruitCoordinates.erase(next(_fruitCoordinates.begin(), index));
                 return true;
             }
@@ -658,19 +658,19 @@ class Fruits{
             return _fruits;
         };
 
-        list<std::string> getFruitTypes(){
-            return _fruitTypes;
+        list<std::string> getFruitsTypes(){
+            return _fruitsTypes;
         };
 
-        list<int> getFruitX(){
-            return _fruitX;
+        list<int> getFruitsX(){
+            return _fruitsX;
         };
 
-        list<int> getFruitY(){
-            return _fruitY;
+        list<int> getFruitsY(){
+            return _fruitsY;
         };
 
-        list<pair<int, int>> getFruitCoordinates(){
+        list<pair<int, int>> getFruitsCoordinates(){
             return _fruitCoordinates;
         };
 };

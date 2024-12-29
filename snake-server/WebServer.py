@@ -47,12 +47,14 @@ async def handle_client(websocket):
         player1 = matchmaking_queue.pop(0)
         player2 = matchmaking_queue.pop(0)
 
+        print("universe file path: ", os.path.join(BASE_DIR, 'universe.cpp'))
+
         # Start Racket server first
-        racket_started = await execute_universe(
+        universe_started = await execute_universe(
             os.path.join(BASE_DIR, 'universe.cpp')
         )
 
-        if not racket_started:
+        if not universe_started:
             print("Failed to start Universe")
             return
         

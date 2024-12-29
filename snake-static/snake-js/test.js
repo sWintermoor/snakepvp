@@ -25,7 +25,7 @@ function testMain(){
 
     console.log("Entered main")
 
-    _WORLD = new World(0, [], [], "0:00", "waiting");
+    _WORLD = new World(0, [], [], [], "0:00", "waiting");
 
     _STARTGAME = true;
 
@@ -62,20 +62,22 @@ function testMain(){
                 _SOCKET.onmessage = null;
             }
             else{
-                console.log("Snake1", data.status[0]);
-                _WORLD.setSnake1(data.status[0]);
+                console.log("Snake1", data.snake1Coordinates);
+                _WORLD.setSnake1(data.snake1Coordinates);
 
-                console.log("Snake2", data.status[1]);
-                _WORLD.setSnake2(data.status[1]);
+                console.log("Snake2", data.snake2Coordinates);
+                _WORLD.setSnake2(data.snake2Coordinates);
 
-                console.log("Items", data);  // Ab hier weiter korrigieren
-                _WORLD.setItems(data[2]);
+                console.log("fruitsTypes", data.fruitsTypes); 
+                console.log("fruitsX", data.fruitsX);
+                console.log("fruitsY", data.fruitsY);
+                _WORLD.setFruits(data.fruitTypes, data.fruitsX, data.fruitsY);
 
-                console.log("Timer", data);
-                _WORLD.setTimer(data[3]);
+                console.log("Timer", data.timer);
+                _WORLD.setTimer(data.timer);
 
-                console.log("Status", data);
-                _WORLD.setStatus(data[4]);
+                console.log("Status", data.gameStatus);
+                _WORLD.setStatus(data.gameStatus);
     
                 drawPlayer();
                 drawScore();
@@ -226,21 +228,17 @@ function drawResult(){
 
 
 class World{
-    constructor(id, snake1, snake2, items, timer, status){
+    constructor(id, snake1, snake2, fruits, timer, status){
         this.id = id;
         this.snake1 = snake1;
         this.snake2 = snake2;
-        this.items = items;
+        this.fruits = fruits;
         this.timer = timer;
         this.status = status;
     }
 
     getID(){
         return this.id;
-    }
-
-    getSnakes(){
-        return this.snakes;
     }
 
     getSnake1(){
@@ -251,8 +249,8 @@ class World{
         return this.snake2;
     }
 
-    getItems(){
-        return this.items;
+    getFruits(){
+        return this.fruits;
     }
 
     getTimer(){
@@ -275,8 +273,11 @@ class World{
         this.snake2 = newSnake2;
     }
 
-    setItems(newItems){
-        this.items = newItems;
+    setFruits(newFruitsTypes, newFruitsX, newFruitsY){
+        this.fruits = [];
+        for (let i=0; i < newFruitsTypes.length; i++){
+            this.fruits.push(new Item(newFruitsTypes[i], newFruitsX[i], newFruitsY[i]));
+        }
     }
 
     setTimer(newTimer){
