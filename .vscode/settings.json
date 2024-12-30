@@ -111,5 +111,8 @@
         "vector": "cpp",
         "xhash": "cpp",
         "xtree": "cpp"
-    }
+    },
+    "cmake.configureArgs": [
+        "-DCMAKE_TOOLCHAIN_FILE=C:/Users/Mark Oliver/Desktop/Projekt/SnakePvPProjekt/snakepvp/vcpkg/vcpkg/scripts/buildsystems/vcpkg.cmake"
+    ],
 }
