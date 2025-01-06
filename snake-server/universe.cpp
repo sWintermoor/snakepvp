@@ -287,7 +287,7 @@ class Universe{
         std::string _gameState;
 
     public:
-        Universe(Session& session, Snake snake1, Snake snake2, Fruits fruit):
+        Universe(Snake snake1, Snake snake2, Fruits fruit):
             // Constructor
             _snake1(snake1),
             _snake2(snake2),
