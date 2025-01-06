@@ -70,6 +70,17 @@ class Fruit{
         int getY(){
             return _y;
         };
+
+        // Definieren, wie der Gleich-Operator für Früchte funktioniert
+        bool operator==(const Fruit& other) const {
+            return _type == other._type && 
+                   _x == other._x && 
+                   _y == other._y;
+        }
+
+        bool operator!=(const Fruit& other) const {
+            return !(*this == other);
+        }
 };
 
 class Fruits{
@@ -276,8 +287,7 @@ class Snake{
 //Initale Schlangen und Früchte
 Snake _SNAKE1(SNAKE_ID1, SNAKE_COORDINATES1, "red", BOOST_DURATION_INITIAL, IMMUNITY_DURATION_INITIAL, "right", VELOCITY_NORMAL, SCORE_INITIAL, BANANA_INITIAL, BLUEBERRY_INITIAL);
 Snake _SNAKE2(SNAKE_ID2, SNAKE_COORDINATES2, "blue", BOOST_DURATION_INITIAL, IMMUNITY_DURATION_INITIAL, "left", VELOCITY_NORMAL, SCORE_INITIAL, BANANA_INITIAL, BLUEBERRY_INITIAL);
-Fruit FRUIT("apple", std::floor(GRID_SIZE / 2), std::floor(GRID_SIZE / 2));
-list<Fruit> FRUITS_INITIAL = {FRUIT}; // Liste mit Früchten
+Fruit FRUIT_INITIAL("apple", std::floor(GRID_SIZE / 2), std::floor(GRID_SIZE / 2));
 
 class Universe{
     private:
@@ -514,8 +524,7 @@ public:
                                 self -> _universe = std::make_unique<Universe>(
                                 _SNAKE1, 
                                 _SNAKE2, 
-                                FRUITS_INITIAL, 
-                                TIMER_INITIAL);
+                                FRUIT_INITIAL);
                                 self->read_client1();
                                 self->read_client2();
                             }
@@ -678,7 +687,8 @@ public:
                         std::cout << "Second player connected" << std::endl;
                         auto session = std::make_shared<Session>(
                             std::move(*first_socket),
-                            std::move(socket)
+                            std::move(socket),
+                            TIMER_INITIAL
                         );
                         session->start();
                         first_socket.reset();
