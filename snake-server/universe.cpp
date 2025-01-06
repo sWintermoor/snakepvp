@@ -2,6 +2,7 @@
 #include <list>
 #include <cmath>
 #include <utility> // Für std::pair
+#include <tuple>
 #include <boost/beast/core.hpp>
 #include <boost/beast/websocket.hpp>
 #include <boost/asio/ip/tcp.hpp> 
@@ -280,56 +281,46 @@ list<Fruit> FRUITS_INITIAL = {FRUIT}; // Liste mit Früchten
 
 class Universe{
     private:
-        Session& _session;
         Snake _snake1;
         Snake _snake2;
         Fruits _fruits;
-        int _timer;
         std::string _gameState;
 
     public:
-        Universe(Session& session, Snake snake1, Snake snake2, Fruits fruit, int timer):
+        Universe(Session& session, Snake snake1, Snake snake2, Fruits fruit):
             // Constructor
-            _session(session),
             _snake1(snake1),
             _snake2(snake2),
-            _fruits(fruit),
-            _timer(timer)
+            _fruits(fruit)
         {
             _gameState = "running";
-            tick();
         };
 
-        void tick(){
+        bool universeTick(bool timerPermission){
             // Tick function
-            _timer -= 1;
-            if (_timer == 0){
-                // End of game
+            if (checkCollisions() == -1){
+
+                if (timerPermission || checkBooster(_snake1)){
+                    int updateConsumption = checkFruit(_snake1);
+                    _snake1.update(timerPermission, updateConsumption);
+                    if (updateConsumption > 0){
+                        spawnFruits();
+                    }
+                }
+                if (timerPermission || checkBooster(_snake2)){
+                    int updateConsumption = checkFruit(_snake2);
+                    _snake2.update(timerPermission, updateConsumption);
+                    if (updateConsumption > 0){
+                        spawnFruits();
+                    }
+                }
+                return true;                    
             }
             else{
-                if (checkCollisions(_snake1, _snake2) == -1){
-                    bool timerPermission = (_timer % GAME_SPEED == 0);
-
-                    if (timerPermission || checkBooster(_snake1)){
-                        int updateConsumption = checkFruit(_snake1);
-                        _snake1.update(timerPermission, updateConsumption);
-                        if (updateConsumption > 0){
-                            spawnFruits();
-                        }
-                    }
-                    if (timerPermission || checkBooster(_snake2)){
-                        int updateConsumption = checkFruit(_snake2);
-                        _snake2.update(timerPermission, updateConsumption);
-                        if (updateConsumption > 0){
-                            spawnFruits();
-                        }
-                    }                    
-                }
-                else{
-                    setFinalScore();
-                }
-                updateClients();
+                return false;
+                //setFinalScore();
             }
+            //updateClients();
         };
 
         bool checkBooster(Snake snake){
@@ -341,17 +332,17 @@ class Universe{
             }
         };
 
-        int checkCollisions(Snake snake1, Snake snake2){
-            pair<int, int> head1 = snake1.getHead();
-            pair<int, int> head2 = snake2.getHead();
+        int checkCollisions(){
+            pair<int, int> head1 = _snake1.getHead();
+            pair<int, int> head2 = _snake2.getHead();
             int collision = -1;
 
             if (head1.first == head2.first && head1.second == head2.second){
                 collision = 0;
             }
             else{
-                list<pair<int, int>> body1 = snake1.getCoordinates();
-                list<pair<int, int>> body2 = snake2.getCoordinates();
+                list<pair<int, int>> body1 = _snake1.getCoordinates();
+                list<pair<int, int>> body2 = _snake2.getCoordinates();
                 body1.pop_front();
                 body2.pop_front();
 
@@ -412,16 +403,16 @@ class Universe{
             return consumedFruit;
         };
 
-        void setFinalScore(){
-            int collisionStatus = checkCollisions(_snake1, _snake2);
-            if (collisionStatus == 0){
-                _session.sendMessageClient(_snake1.getCoordinates(), _snake2.getCoordinates(), _fruits.getFruitsTypes(), _fruits.getFruitsX(), _fruits.getFruitsY(), _timer, "draw", "draw");
+        std::tuple<list<pair<int, int>>, list<pair<int, int>>, list<std::string>, list<int>, list<int>, std::string, std::string> finalMessageToSend(){
+            int collisionStatus = checkCollisions();
+            if (collisionStatus == -1 || collisionStatus == 0){
+                return {_snake1.getCoordinates(), _snake2.getCoordinates(), _fruits.getFruitsTypes(), _fruits.getFruitsX(), _fruits.getFruitsY(), "draw", "draw"};
             }
             else if (collisionStatus == 1){
-                _session.sendMessageClient(_snake1.getCoordinates(), _snake2.getCoordinates(), _fruits.getFruitsTypes(), _fruits.getFruitsX(), _fruits.getFruitsY(), _timer, "lose", "win");
+                return {_snake1.getCoordinates(), _snake2.getCoordinates(), _fruits.getFruitsTypes(), _fruits.getFruitsX(), _fruits.getFruitsY(), "lose", "win"};
             }
             else{
-                _session.sendMessageClient(_snake1.getCoordinates(), _snake2.getCoordinates(), _fruits.getFruitsTypes(), _fruits.getFruitsX(), _fruits.getFruitsY(), _timer, "win", "lose");
+                return {_snake1.getCoordinates(), _snake2.getCoordinates(), _fruits.getFruitsTypes(), _fruits.getFruitsX(), _fruits.getFruitsY(), "win", "lose"};
             }
         }
 
@@ -472,10 +463,10 @@ class Universe{
             }
         }
 
-        void updateClients(){
+        std::tuple<list<pair<int, int>>, list<pair<int, int>>, list<std::string>, list<int>, list<int>, std::string, std::string> getStatusWhileRunning(){
             list<pair<int, int>> snake1Coordinates = _snake1.getCoordinates();
             list<pair<int, int>> snake2Coordinates = _snake2.getCoordinates();
-            _session.sendMessageClient(snake1Coordinates, snake2Coordinates, _fruits.getFruitsTypes(), _fruits.getFruitsX(), _fruits.getFruitsY(), _timer, "running", "running");
+            return {snake1Coordinates, snake2Coordinates, _fruits.getFruitsTypes(), _fruits.getFruitsX(), _fruits.getFruitsY(), "running", "running"};
         }
 
         void updateSnakeDirection(int id, std::string key){
@@ -505,11 +496,13 @@ private:
     beast::flat_buffer _buffer1;
     beast::flat_buffer _buffer2;
     std::unique_ptr<Universe> _universe;
+    int _timer;
 
 public:
-    explicit Session(tcp::socket socket1, tcp::socket socket2) : 
+    explicit Session(tcp::socket socket1, tcp::socket socket2, int timerInput) : 
     _ws1(std::move(socket1)),
     _ws2(std::move(socket2)),
+    _timer(timerInput),
     _universe(nullptr) {}
 
     void start() {
@@ -521,7 +514,6 @@ public:
                         [self](beast::error_code ec) {
                             if (!ec) {
                                 self -> _universe = std::make_unique<Universe>(
-                                *self, 
                                 _SNAKE1, 
                                 _SNAKE2, 
                                 FRUITS_INITIAL, 
@@ -533,6 +525,50 @@ public:
                     );
                 }
             });
+    }
+
+    void sessionTick(){
+        _timer -= 1;
+
+        if(_timer == 0){
+            //End of game
+        }
+        else{
+            bool timerPermission = (_timer % GAME_SPEED == 0);
+            bool endOfGame = _universe->universeTick(timerPermission);
+
+            if (endOfGame){
+                setFinalScore();
+            }
+        }
+
+        updateClients();
+    }
+
+    void setFinalScore(){
+        list<pair<int, int>> snake1Coordinates; 
+        list<pair<int, int>> snake2Coordinates; 
+        list<std::string> fruitsTypes; 
+        list<int> fruitsX; 
+        list<int> fruitsY; 
+        std::string gameStatus1; 
+        std::string gameStatus2;
+
+        tie(snake1Coordinates, snake2Coordinates, fruitsTypes, fruitsX, fruitsY, gameStatus1, gameStatus2) = _universe->finalMessageToSend();
+        sendMessageClient(snake1Coordinates, snake2Coordinates, fruitsTypes, fruitsX, fruitsY, _timer, gameStatus1, gameStatus2);
+    }
+
+    void updateClients(){
+        list<pair<int, int>> snake1Coordinates; 
+        list<pair<int, int>> snake2Coordinates; 
+        list<std::string> fruitsTypes; 
+        list<int> fruitsX; 
+        list<int> fruitsY; 
+        std::string gameStatus1; 
+        std::string gameStatus2;
+
+        tie(snake1Coordinates, snake2Coordinates, fruitsTypes, fruitsX, fruitsY, gameStatus1, gameStatus2 ) = _universe->getStatusWhileRunning();
+        sendMessageClient(snake1Coordinates, snake2Coordinates, fruitsTypes, fruitsX, fruitsY, _timer, gameStatus1, gameStatus2);
     }
 
     void read_client1() {
