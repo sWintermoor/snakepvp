@@ -15,12 +15,6 @@ using tcp = boost::asio::ip::tcp;
 using json = nlohmann::json;
 using namespace std;
 
-class Session;
-class Universe;
-class Snake;
-class Fruit;
-class Fruits;
-
 // Spielgeschwindigkeit
 int GAME_SPEED = 18; 
 
@@ -46,188 +40,243 @@ int SCORE_INITIAL = 0;
 int BANANA_INITIAL = 0;
 int BLUEBERRY_INITIAL = 0;
 
+// Initiale Listen und Werte für Früchte und Timer
+int TIMER_INITIAL = 180*GAME_SPEED; // Timer in Sekunden
+int TICK_VALUE = 1 / GAME_SPEED; // Zeitwert für Ticks
+
+class Fruit{
+    private:
+        std::string _type;
+        int _x;
+        int _y;
+
+    public:
+        Fruit(std::string type, int x, int y):
+            // Constructor
+            _type(type),
+            _x(x),
+            _y(y)
+        {};
+
+        std::string getType(){
+            return _type;
+        };
+
+        int getX(){
+            return _x;
+        };
+
+        int getY(){
+            return _y;
+        };
+};
+
+class Fruits{
+    private:
+        list<Fruit> _fruits;
+        list<std::string> _fruitsTypes;
+        list<int> _fruitsX;
+        list<int> _fruitsY;
+        list<pair<int, int>> _fruitCoordinates;
+
+    public:
+        Fruits(Fruit fruit){
+            _fruits.push_back(fruit);
+            _fruitsTypes.push_back(fruit.getType());
+            _fruitsX.push_back(fruit.getX());
+            _fruitsY.push_back(fruit.getY());
+            _fruitCoordinates.push_back(make_pair(fruit.getX(), fruit.getY()));
+        };
+
+        void addFruit(Fruit fruit){
+            _fruits.push_back(fruit);
+            _fruitsTypes.push_back(fruit.getType());
+            _fruitsX.push_back(fruit.getX());
+            _fruitsY.push_back(fruit.getY());
+            _fruitCoordinates.push_back(make_pair(fruit.getX(), fruit.getY()));
+        };
+
+        bool tryRemoveFruit(Fruit fruit){
+            list<Fruit>::iterator it = find(_fruits.begin(), _fruits.end(), fruit);
+            if (it != _fruits.end()){
+                int index = distance(_fruits.begin(), it);
+                _fruits.erase(it);
+                _fruitsTypes.erase(next(_fruitsTypes.begin(), index));
+                _fruitsX.erase(next(_fruitsX.begin(), index));
+                _fruitsY.erase(next(_fruitsY.begin(), index));
+                _fruitCoordinates.erase(next(_fruitCoordinates.begin(), index));
+                return true;
+            }
+            else{
+                return false;
+            }
+        };
+
+        list<Fruit> getFruits(){
+            return _fruits;
+        };
+
+        list<std::string> getFruitsTypes(){
+            return _fruitsTypes;
+        };
+
+        list<int> getFruitsX(){
+            return _fruitsX;
+        };
+
+        list<int> getFruitsY(){
+            return _fruitsY;
+        };
+
+        list<pair<int, int>> getFruitsCoordinates(){
+            return _fruitCoordinates;
+        };
+};
+
+class Snake{
+    private:
+        int _id;
+        list<pair<int, int>> _coordinates;
+        std::string _color;
+        int _boostDuration;
+        int _immunityDuration;
+        std::string _direction;
+        int _velocity;
+        int _score;
+        int _banana;
+        int _blueberry;
+
+    public:
+        Snake(int id, list<pair<int, int>> coordinates, std::string color, int boostDuration, int immunityDuration, std::string direction, int velocity, int score, int banana, int blueberry):
+            // Constructor
+            _id(id), 
+            _coordinates(coordinates), 
+            _color(color), 
+            _boostDuration(boostDuration), 
+            _immunityDuration(immunityDuration), 
+            _direction(direction), 
+            _velocity(velocity), 
+            _score(score), 
+            _banana(banana), 
+            _blueberry(blueberry)
+        {};
+
+        void update(bool changeImmunityBooster, int fruitConsumption){
+            // Update function
+            bool appleConsumption = (fruitConsumption == 0);
+
+            modifyBooster(changeImmunityBooster);
+            modifyImmunity(changeImmunityBooster);
+            move(appleConsumption);
+        };
+
+        void modifyBooster(bool changeImmunityBooster){
+            // Check booster function
+            if (_boostDuration > 0 && changeImmunityBooster){
+                _boostDuration -= 1;
+            }
+        };
+
+         void changeBoost(int additionalBoostDuration){
+            // Change boost function
+            _boostDuration += additionalBoostDuration;
+        };
+
+        bool checkImmunity(){
+            if (getImmunityDuration() > 0){
+                return true;
+            }
+            else{
+                return false;
+            }
+        };
+
+        void modifyImmunity(bool changeImmunityBooster){
+            // Check immunity function
+            if (_immunityDuration > 0 && changeImmunityBooster){
+                _immunityDuration -= 1;
+            }
+        };
+
+        void move(bool appleConsumption){
+            // Move function
+            pair<int, int> head = getHead();
+            pair<int, int> newHead;
+            if (_direction == "up"){
+                newHead = make_pair(head.first, (head.second - 1) % GRID_SIZE);
+            }
+            else if (_direction == "down"){
+                newHead = make_pair(head.first, (head.second + 1) % GRID_SIZE);
+            }
+            else if (_direction == "left"){
+                newHead = make_pair((head.first - 1) % GRID_SIZE, head.second);
+            }
+            else if (_direction == "right"){
+                newHead = make_pair((head.first + 1) % GRID_SIZE, head.second);
+            }
+            _coordinates.push_front(newHead);
+
+            if (!appleConsumption){
+                _coordinates.pop_back();
+            }
+        };
+
+        void setDirection(std::string newDirection){
+            // Set direction function
+            _direction = newDirection;
+        };
+
+        void setScore(int newScore){
+            // Set score function
+            _score = newScore;
+        };
+
+        void setBanana(int newBanana){
+            // Set banana function
+            _banana = newBanana;
+        };
+
+        void setBlueberry(int newBlueberry){
+            // Set blueberry function
+            _blueberry = newBlueberry;
+        };
+
+        pair<int, int> getHead(){
+            return _coordinates.front();
+        };
+
+        list<pair<int, int>> getCoordinates(){
+            return _coordinates;
+        };
+
+        int getBoostDuration(){
+            return _boostDuration;
+        };
+
+        int getImmunityDuration(){
+            return _immunityDuration;
+        };
+
+        int getScore(){
+            return _score;
+        };
+
+        int getBanana(){
+            return _banana;
+        };
+
+        int getBlueberry(){
+            return _blueberry;
+        };
+};
+
+// Code ist unschön positioniert
 
 //Initale Schlangen und Früchte
 Snake _SNAKE1(SNAKE_ID1, SNAKE_COORDINATES1, "red", BOOST_DURATION_INITIAL, IMMUNITY_DURATION_INITIAL, "right", VELOCITY_NORMAL, SCORE_INITIAL, BANANA_INITIAL, BLUEBERRY_INITIAL);
 Snake _SNAKE2(SNAKE_ID2, SNAKE_COORDINATES2, "blue", BOOST_DURATION_INITIAL, IMMUNITY_DURATION_INITIAL, "left", VELOCITY_NORMAL, SCORE_INITIAL, BANANA_INITIAL, BLUEBERRY_INITIAL);
 Fruit FRUIT("apple", std::floor(GRID_SIZE / 2), std::floor(GRID_SIZE / 2));
-
-// Initiale Listen und Werte für Welten, Schlangen, Früchte und Timer
 list<Fruit> FRUITS_INITIAL = {FRUIT}; // Liste mit Früchten
-int TIMER_INITIAL = 180*GAME_SPEED; // Timer in Sekunden
-int TICK_VALUE = 1 / GAME_SPEED; // Zeitwert für Ticks
-
-// Funktionen für die Spiellogik
-
-int main(){
-    // Main function
-
-    WebSocketServer server;
-    server.run();
-
-    return 0;
-};
-
-class WebSocketServer {
-private:
-    net::io_context _ioc;
-    tcp::acceptor _acceptor;
-    std::optional<tcp::socket> first_socket;
-    std::mutex mutex;
-    
-public:
-    WebSocketServer() : 
-        _acceptor(_ioc, tcp::endpoint(tcp::v4(), 9092)) {
-        accept();
-    }
-
-    void accept() {
-        _acceptor.async_accept(
-            [this](beast::error_code ec, tcp::socket socket) {
-                if (!ec) {
-                    std::lock_guard<std::mutex> lock(mutex);
-                    if (!first_socket){
-                        // Erster Client
-                        first_socket.emplace(std::move(socket));
-                        std::cout << "First player connected" << std::endl;
-                    }
-                    else{
-                        // Zweiter Client und Start der Session
-                        std::cout << "Second player connected" << std::endl;
-                        auto session = std::make_shared<Session>(
-                            std::move(*first_socket),
-                            std::move(socket)
-                        );
-                        session->start();
-                        first_socket.reset();
-                    }
-                }
-                accept();
-            });
-    }
-
-    void run() {
-        _ioc.run();
-    }
-};
-
-class Session : public std::enable_shared_from_this<Session> {
-private:
-    websocket::stream<tcp::socket> _ws1;
-    websocket::stream<tcp::socket> _ws2;
-    beast::flat_buffer _buffer1;
-    beast::flat_buffer _buffer2;
-    std::unique_ptr<Universe> _universe;
-
-public:
-    explicit Session(tcp::socket socket1, tcp::socket socket2) : 
-    _ws1(std::move(socket1)),
-    _ws2(std::move(socket2)),
-    _universe(nullptr) {}
-
-    void start() {
-        auto self = shared_from_this();
-        _ws1.async_accept(
-            [self](beast::error_code ec) {
-                if (!ec) {
-                    self->_ws2.async_accept(
-                        [self](beast::error_code ec) {
-                            if (!ec) {
-                                self -> _universe = std::make_unique<Universe>(
-                                *self, 
-                                _SNAKE1, 
-                                _SNAKE2, 
-                                FRUITS_INITIAL, 
-                                TIMER_INITIAL);
-                                self->read_client1();
-                                self->read_client2();
-                            }
-                        }
-                    );
-                }
-            });
-    }
-
-    void read_client1() {
-        _ws1.async_read(
-            _buffer1,
-            [self = shared_from_this()](beast::error_code ec, std::size_t bytes) {
-                if (!ec) {
-                    // Handle received message
-                    self->handleMessage(1, beast::buffers_to_string(self->_buffer1.data()));
-                    self->_buffer1.consume(self->_buffer1.size());
-                    self->read_client1();
-                }
-            });
-    }
-
-    void read_client2() {
-        _ws2.async_read(
-            _buffer2,
-            [self = shared_from_this()](beast::error_code ec, std::size_t bytes) {
-                if (!ec) {
-                    // Handle received message
-                    self->handleMessage(2, beast::buffers_to_string(self->_buffer2.data()));
-                    self->_buffer2.consume(self->_buffer2.size());
-                    self->read_client2();
-                }
-            });
-    }
-
-    void handleMessage(int id, const std::string& message) {
-        // Handle game logic here
-        try{
-            json Data = json::parse(message);
-            if (Data.contains("key")){
-                _universe->updateSnakeDirection(id, Data["direction"]);
-            }
-        }
-        catch (const json::exception& e) {
-        // Handle JSON parsing errors
-        std::cerr << "JSON parsing error: " << e.what() << std::endl;
-        }
-    }
-
-    void sendMessageClient(list<pair<int,int>> snake1Coordinates, list<pair<int,int>> snake2Coordinates, list<std::string> fruitsTypes, list<int> fruitsX, list<int> fruitsY, int timer, std::string gameStatus1, std::string gameStatus2) {
-        // Send game state to clients
-        // Format: {"snake1": [[x1, y1], [x2, y2], ...], "snake2": [[x1, y1], [x2, y2], ...], "fruit": [[x, y]], "timer": timer}
-        json message1 = {
-            {"snake1", snake1Coordinates},
-            {"snake2", snake2Coordinates},
-            {"fruitsTypes", fruitsTypes},
-            {"fruitsX", fruitsX},
-            {"fruitsY", fruitsY},
-            {"timer", timer},
-            {"gameStatus", gameStatus1}
-        };
-
-        json message2 = {
-            {"snake1", snake1Coordinates},
-            {"snake2", snake2Coordinates},
-            {"fruitTypes", fruitsTypes},
-            {"fruitX", fruitsX},
-            {"fruitY", fruitsY},
-            {"timer", timer},
-            {"gameStatus", gameStatus2}
-        };
-
-        _ws1.async_write(
-            net::buffer(message1.dump()),
-            [self = shared_from_this()](beast::error_code ec, std::size_t bytes) {
-                if (!ec) {
-                    // Message sent successfully
-                }
-            });
-
-        _ws2.async_write(
-            net::buffer(message2.dump()),
-            [self = shared_from_this()](beast::error_code ec, std::size_t bytes) {
-                if (!ec) {
-                    // Message sent successfully
-                }
-            });
-    }
-};
 
 class Universe{
     private:
@@ -449,228 +498,174 @@ class Universe{
         };
 };
 
-class Snake{
-    private:
-        int _id;
-        list<pair<int, int>> _coordinates;
-        std::string _color;
-        int _boostDuration;
-        int _immunityDuration;
-        std::string _direction;
-        int _velocity;
-        int _score;
-        int _banana;
-        int _blueberry;
+class Session : public std::enable_shared_from_this<Session> {
+private:
+    websocket::stream<tcp::socket> _ws1;
+    websocket::stream<tcp::socket> _ws2;
+    beast::flat_buffer _buffer1;
+    beast::flat_buffer _buffer2;
+    std::unique_ptr<Universe> _universe;
 
-    public:
-        Snake(int id, list<pair<int, int>> coordinates, std::string color, int boostDuration, int immunityDuration, std::string direction, int velocity, int score, int banana, int blueberry):
-            // Constructor
-            _id(id), 
-            _coordinates(coordinates), 
-            _color(color), 
-            _boostDuration(boostDuration), 
-            _immunityDuration(immunityDuration), 
-            _direction(direction), 
-            _velocity(velocity), 
-            _score(score), 
-            _banana(banana), 
-            _blueberry(blueberry)
-        {};
+public:
+    explicit Session(tcp::socket socket1, tcp::socket socket2) : 
+    _ws1(std::move(socket1)),
+    _ws2(std::move(socket2)),
+    _universe(nullptr) {}
 
-        void update(bool changeImmunityBooster, int fruitConsumption){
-            // Update function
-            bool appleConsumption = (fruitConsumption == 0);
+    void start() {
+        auto self = shared_from_this();
+        _ws1.async_accept(
+            [self](beast::error_code ec) {
+                if (!ec) {
+                    self->_ws2.async_accept(
+                        [self](beast::error_code ec) {
+                            if (!ec) {
+                                self -> _universe = std::make_unique<Universe>(
+                                *self, 
+                                _SNAKE1, 
+                                _SNAKE2, 
+                                FRUITS_INITIAL, 
+                                TIMER_INITIAL);
+                                self->read_client1();
+                                self->read_client2();
+                            }
+                        }
+                    );
+                }
+            });
+    }
 
-            modifyBooster(changeImmunityBooster);
-            modifyImmunity(changeImmunityBooster);
-            move(appleConsumption);
-        };
+    void read_client1() {
+        _ws1.async_read(
+            _buffer1,
+            [self = shared_from_this()](beast::error_code ec, std::size_t bytes) {
+                if (!ec) {
+                    // Handle received message
+                    self->handleMessage(1, beast::buffers_to_string(self->_buffer1.data()));
+                    self->_buffer1.consume(self->_buffer1.size());
+                    self->read_client1();
+                }
+            });
+    }
 
-        void modifyBooster(bool changeImmunityBooster){
-            // Check booster function
-            if (_boostDuration > 0 && changeImmunityBooster){
-                _boostDuration -= 1;
+    void read_client2() {
+        _ws2.async_read(
+            _buffer2,
+            [self = shared_from_this()](beast::error_code ec, std::size_t bytes) {
+                if (!ec) {
+                    // Handle received message
+                    self->handleMessage(2, beast::buffers_to_string(self->_buffer2.data()));
+                    self->_buffer2.consume(self->_buffer2.size());
+                    self->read_client2();
+                }
+            });
+    }
+
+    void handleMessage(int id, const std::string& message) {
+        // Handle game logic here
+        try{
+            json Data = json::parse(message);
+            if (Data.contains("key")){
+                _universe->updateSnakeDirection(id, Data["direction"]);
             }
+        }
+        catch (const json::exception& e) {
+        // Handle JSON parsing errors
+        std::cerr << "JSON parsing error: " << e.what() << std::endl;
+        }
+    }
+
+    void sendMessageClient(list<pair<int,int>> snake1Coordinates, list<pair<int,int>> snake2Coordinates, list<std::string> fruitsTypes, list<int> fruitsX, list<int> fruitsY, int timer, std::string gameStatus1, std::string gameStatus2) {
+        // Send game state to clients
+        // Format: {"snake1": [[x1, y1], [x2, y2], ...], "snake2": [[x1, y1], [x2, y2], ...], "fruit": [[x, y]], "timer": timer}
+        json message1 = {
+            {"snake1", snake1Coordinates},
+            {"snake2", snake2Coordinates},
+            {"fruitsTypes", fruitsTypes},
+            {"fruitsX", fruitsX},
+            {"fruitsY", fruitsY},
+            {"timer", timer},
+            {"gameStatus", gameStatus1}
         };
 
-         void changeBoost(int additionalBoostDuration){
-            // Change boost function
-            _boostDuration += additionalBoostDuration;
+        json message2 = {
+            {"snake1", snake1Coordinates},
+            {"snake2", snake2Coordinates},
+            {"fruitTypes", fruitsTypes},
+            {"fruitX", fruitsX},
+            {"fruitY", fruitsY},
+            {"timer", timer},
+            {"gameStatus", gameStatus2}
         };
 
-        bool checkImmunity(){
-            if (getImmunityDuration() > 0){
-                return true;
-            }
-            else{
-                return false;
-            }
-        };
+        _ws1.async_write(
+            net::buffer(message1.dump()),
+            [self = shared_from_this()](beast::error_code ec, std::size_t bytes) {
+                if (!ec) {
+                    // Message sent successfully
+                }
+            });
 
-        void modifyImmunity(bool changeImmunityBooster){
-            // Check immunity function
-            if (_immunityDuration > 0 && changeImmunityBooster){
-                _immunityDuration -= 1;
-            }
-        };
-
-        void move(bool appleConsumption){
-            // Move function
-            pair<int, int> head = getHead();
-            pair<int, int> newHead;
-            if (_direction == "up"){
-                newHead = make_pair(head.first, (head.second - 1) % GRID_SIZE);
-            }
-            else if (_direction == "down"){
-                newHead = make_pair(head.first, (head.second + 1) % GRID_SIZE);
-            }
-            else if (_direction == "left"){
-                newHead = make_pair((head.first - 1) % GRID_SIZE, head.second);
-            }
-            else if (_direction == "right"){
-                newHead = make_pair((head.first + 1) % GRID_SIZE, head.second);
-            }
-            _coordinates.push_front(newHead);
-
-            if (!appleConsumption){
-                _coordinates.pop_back();
-            }
-        };
-
-        void setDirection(std::string newDirection){
-            // Set direction function
-            _direction = newDirection;
-        };
-
-        void setScore(int newScore){
-            // Set score function
-            _score = newScore;
-        };
-
-        void setBanana(int newBanana){
-            // Set banana function
-            _banana = newBanana;
-        };
-
-        void setBlueberry(int newBlueberry){
-            // Set blueberry function
-            _blueberry = newBlueberry;
-        };
-
-        pair<int, int> getHead(){
-            return _coordinates.front();
-        };
-
-        list<pair<int, int>> getCoordinates(){
-            return _coordinates;
-        };
-
-        int getBoostDuration(){
-            return _boostDuration;
-        };
-
-        int getImmunityDuration(){
-            return _immunityDuration;
-        };
-
-        int getScore(){
-            return _score;
-        };
-
-        int getBanana(){
-            return _banana;
-        };
-
-        int getBlueberry(){
-            return _blueberry;
-        };
+        _ws2.async_write(
+            net::buffer(message2.dump()),
+            [self = shared_from_this()](beast::error_code ec, std::size_t bytes) {
+                if (!ec) {
+                    // Message sent successfully
+                }
+            });
+    }
 };
 
-class Fruit{
-    private:
-        std::string _type;
-        int _x;
-        int _y;
+class WebSocketServer {
+private:
+    net::io_context _ioc;
+    tcp::acceptor _acceptor;
+    std::optional<tcp::socket> first_socket;
+    std::mutex mutex;
+    
+public:
+    WebSocketServer() : 
+        _acceptor(_ioc, tcp::endpoint(tcp::v4(), 9092)) {
+        accept();
+    }
 
-    public:
-        Fruit(std::string type, int x, int y):
-            // Constructor
-            _type(type),
-            _x(x),
-            _y(y)
-        {};
+    void accept() {
+        _acceptor.async_accept(
+            [this](beast::error_code ec, tcp::socket socket) {
+                if (!ec) {
+                    std::lock_guard<std::mutex> lock(mutex);
+                    if (!first_socket){
+                        // Erster Client
+                        first_socket.emplace(std::move(socket));
+                        std::cout << "First player connected" << std::endl;
+                    }
+                    else{
+                        // Zweiter Client und Start der Session
+                        std::cout << "Second player connected" << std::endl;
+                        auto session = std::make_shared<Session>(
+                            std::move(*first_socket),
+                            std::move(socket)
+                        );
+                        session->start();
+                        first_socket.reset();
+                    }
+                }
+                accept();
+            });
+    }
 
-        std::string getType(){
-            return _type;
-        };
-
-        int getX(){
-            return _x;
-        };
-
-        int getY(){
-            return _y;
-        };
+    void run() {
+        _ioc.run();
+    }
 };
 
-class Fruits{
-    private:
-        list<Fruit> _fruits;
-        list<std::string> _fruitsTypes;
-        list<int> _fruitsX;
-        list<int> _fruitsY;
-        list<pair<int, int>> _fruitCoordinates;
+// Funktionen für die Spiellogik
 
-    public:
-        Fruits(Fruit fruit){
-            _fruits.push_back(fruit);
-            _fruitsTypes.push_back(fruit.getType());
-            _fruitsX.push_back(fruit.getX());
-            _fruitsY.push_back(fruit.getY());
-            _fruitCoordinates.push_back(make_pair(fruit.getX(), fruit.getY()));
-        };
+int main(){
+    // Main function
 
-        void addFruit(Fruit fruit){
-            _fruits.push_back(fruit);
-            _fruitsTypes.push_back(fruit.getType());
-            _fruitsX.push_back(fruit.getX());
-            _fruitsY.push_back(fruit.getY());
-            _fruitCoordinates.push_back(make_pair(fruit.getX(), fruit.getY()));
-        };
+    WebSocketServer server;
+    server.run();
 
-        bool tryRemoveFruit(Fruit fruit){
-            list<Fruit>::iterator it = find(_fruits.begin(), _fruits.end(), fruit);
-            if (it != _fruits.end()){
-                int index = distance(_fruits.begin(), it);
-                _fruits.erase(it);
-                _fruitsTypes.erase(next(_fruitsTypes.begin(), index));
-                _fruitsX.erase(next(_fruitsX.begin(), index));
-                _fruitsY.erase(next(_fruitsY.begin(), index));
-                _fruitCoordinates.erase(next(_fruitCoordinates.begin(), index));
-                return true;
-            }
-            else{
-                return false;
-            }
-        };
-
-        list<Fruit> getFruits(){
-            return _fruits;
-        };
-
-        list<std::string> getFruitsTypes(){
-            return _fruitsTypes;
-        };
-
-        list<int> getFruitsX(){
-            return _fruitsX;
-        };
-
-        list<int> getFruitsY(){
-            return _fruitsY;
-        };
-
-        list<pair<int, int>> getFruitsCoordinates(){
-            return _fruitCoordinates;
-        };
+    return 0;
 };
