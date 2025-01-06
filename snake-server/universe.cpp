@@ -318,9 +318,7 @@ class Universe{
             }
             else{
                 return false;
-                //setFinalScore();
             }
-            //updateClients();
         };
 
         bool checkBooster(Snake snake){
@@ -657,7 +655,7 @@ private:
     net::io_context _ioc;
     tcp::acceptor _acceptor;
     std::optional<tcp::socket> first_socket;
-    std::mutex mutex;
+    std::mutex _mutex;
     
 public:
     WebSocketServer() : 
@@ -669,7 +667,7 @@ public:
         _acceptor.async_accept(
             [this](beast::error_code ec, tcp::socket socket) {
                 if (!ec) {
-                    std::lock_guard<std::mutex> lock(mutex);
+                    std::lock_guard<std::mutex> lock(_mutex);
                     if (!first_socket){
                         // Erster Client
                         first_socket.emplace(std::move(socket));
