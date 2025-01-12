@@ -707,9 +707,15 @@ public:
 
 int main(){
     // Main function
-
-    WebSocketServer server;
-    server.run();
-
-    return 0;
+    try {
+        std::cout << "Starting WebSocket server..." << std::endl;
+        WebSocketServer server;
+        std::cout << "WebSocket server running on port 9092" << std::endl;
+        server.run();
+    }
+    catch (std::exception const& e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+        return EXIT_FAILURE;
+    }
+    return EXIT_SUCCESS;
 };
