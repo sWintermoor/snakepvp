@@ -1,7 +1,7 @@
 {
-    "cmake.configureSettings": {
-        "CMAKE_TOOLCHAIN_FILE": "${workspaceFolder}/vcpkg/scripts/buildsystems/vcpkg.cmake"
-    },
+    "cmake.configureArgs": [
+        "-DCMAKE_TOOLCHAIN_FILE=C:/Users/Mark Oliver/Desktop/Projekt/SnakePvPProjekt/snakepvp/vcpkg/scripts/buildsystems/vcpkg.cmake"
+    ],
     "files.associations": {
         "xstring": "cpp",
         "list": "cpp",

@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD 17)
 add_definitions(-D_WIN32_WINNT=0x0601)
 
 # Set vcpkg toolchain before any find_package calls
-set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake" 
+set(CMAKE_TOOLCHAIN_FILE "" 
     CACHE STRING "Vcpkg toolchain file")
 
 find_package(Boost REQUIRED COMPONENTS system thread beast)
