@@ -1,0 +1,22 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run Universe",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "C:/Users/Mark Oliver/Desktop/Projekt/SnakePvPProjekt/snakepvp/snake-server/universe.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "C:/Users/Mark Oliver/Desktop/Projekt/SnakePvPProjekt/snakepvp",
+            "environment": [
+                {
+                    "name": "PATH",
+                    "value": "C:/Users/Mark Oliver/Desktop/Projekt/SnakePvPProjekt/snakepvp/vcpkg/installed/x64-windows/bin;${env:PATH}"
+                }
+            ],
+            "externalConsole": false,
+            "MIMode": "gdb"
+        }
+    ]
+}
