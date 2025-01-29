@@ -139,61 +139,26 @@ def start_ws_server():
 
 
 async def execute_universe(filepath):
-    """
-    Execute a Universe using subprocess and return its output or errors.
-    """
+    """Start pre-built universe.exe"""
     try:
-        # Debug print absolute path
-        abs_path = os.path.abspath(filepath)
-        print(f"Looking for file at: {abs_path}")
-
-        # Check if file exists
-        if not os.path.exists(abs_path):
-            print(f"Error: File not found at {abs_path}")
-            return False
-
-        # Add VS Developer Command Prompt path
-        vs_path = r"C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Auxiliary/Build"
-        os.environ['PATH'] = vs_path + os.pathsep + os.environ['PATH']
-
-        ## Run vcvars64.bat first
-        subprocess.run(
-            [os.path.join(vs_path, 'vcvars64.bat')],
-            shell=True
-        )
-
-        # Compile with full path to cl.exe
-        cl_path = r"C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.38.33130\bin/Hostx64/x64/cl.exe"
-        compile_process = subprocess.run(
-            [cl_path, '/EHsc', abs_path],
-            capture_output=True,
-            encoding='cp1252',
-            errors='replace',
-            #text=True
-        )
-
-        # Log compilation output
-        print("Compiler output:", compile_process.stdout)
-        print("Compiler errors:", compile_process.stderr)
-
-        if compile_process.returncode != 0:
-            print(f"Error compiling C++ file: {compile_process}")
-            return False
+        # Use the Debug build from CMake
+        exe_path = os.path.join(BASE_DIR, "../build/Debug/universe.exe")
         
-        # Get executable name (remove .cpp and add .exe)
-        exe_path = filepath.replace('.cpp', '.exe')
-
-        # Run the Racket file
+        if not os.path.exists(exe_path):
+            print(f"Error: universe.exe not found at {exe_path}")
+            return False
+            
+        # Start the pre-built executable
         process = subprocess.Popen(
-            [exe_path],  # Command to execute the compiled file
-            stdout=subprocess.PIPE,  # Capture standard output
-            stderr=subprocess.PIPE   # Capture standard error
+            [exe_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
         )
 
-    	# Wait for server to start (Adding delay)
+        # Wait for server startup
         await asyncio.sleep(2)
 
-        # Verify that the racket server is running
+        # Test connection
         try:
             async with websockets.connect('ws://localhost:9092') as ws:
                 await ws.close()
