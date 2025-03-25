@@ -5,10 +5,10 @@
             "name": "Run Universe",
             "type": "cppdbg",
             "request": "launch",
-            "program": "C:/Users/Mark Oliver/Desktop/Projekt/SnakePvPProjekt/snakepvp/snake-server/universe.exe",
+            "program": "${workspaceFolder}/out/build/Debug/universe.exe",
             "args": [],
             "stopAtEntry": false,
-            "cwd": "C:/Users/Mark Oliver/Desktop/Projekt/SnakePvPProjekt/snakepvp",
+            "cwd": "${workspaceFolder}",
             "environment": [
                 {
                     "name": "PATH",
@@ -16,7 +16,6 @@
                 }
             ],
             "externalConsole": false,
-            "MIMode": "gdb"
         }
     ]
 }

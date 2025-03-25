@@ -27,6 +27,7 @@ async def prepare_json_for_universe(id, message):
 
 
 async def handle_client(websocket):
+    print("Start handle_client")
     try:
         print(f"New connection attempt from {websocket.remote_address}")
 
@@ -47,15 +48,20 @@ async def handle_client(websocket):
         player1 = matchmaking_queue.pop(0)
         player2 = matchmaking_queue.pop(0)
 
-        # Start Racket server first
-        relative_path = '..\\out\\build\\universeCMake\\Debug\\universe.exe'
+        print(f"Queue size: {len(matchmaking_queue)}")
+        print(f"Match found between {player1.remote_address} and {player2.remote_address}")
+
+        # Start Universe server first
         universe_started = await execute_universe(
-            "C:/Users/Mark Oliver/Desktop/Projekt/SnakePvPProjekt/snakepvp/out/build/universeCMake/Debug/universe.exe"
+             "C:/Users/Mark Oliver/Desktop/Projekt/SnakePvPProjekt/snakepvp/out/build/universeCMake/Debug/universe.exe"
         )
 
         if not universe_started:
             print("Failed to start Universe")
             return
+        
+        else:
+            print("Universe started successfully")
         
         print(f"Match found between {player1.remote_address} and {player2.remote_address}")
         # Register players as worlds in Racket universe
@@ -142,16 +148,13 @@ def start_ws_server():
 async def execute_universe(filepath):
     """Start pre-built universe.exe"""
     try:
-        # Use the Debug build from CMake
-        exe_path = os.path.join(BASE_DIR, "../build/Debug/universe.exe")
-        
-        if not os.path.exists(exe_path):
-            print(f"Error: universe.exe not found at {exe_path}")
+        if not os.path.exists(filepath):
+            print(f"Error: universe.exe not found at {filepath}")
             return False
             
         # Start the pre-built executable
         process = subprocess.Popen(
-            [exe_path],
+            [filepath],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE
         )
