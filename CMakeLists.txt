@@ -17,12 +17,12 @@ set(CMAKE_TOOLCHAIN_FILE "C:/Users/Mark Oliver/Desktop/Projekt/SnakePvPProjekt/s
 add_definitions(-D_WIN32_WINNT=0x0601)
 
 # Find required packages
-find_package(Boost REQUIRED COMPONENTS system thread beast)
+find_package(Boost REQUIRED COMPONENTS beast system thread)
 find_package(nlohmann_json REQUIRED)
 
 # Define the executable
-add_executable(universe 
-    snake-server/universe.cpp
+add_executable( universe
+    "C:/Users/Mark Oliver/Desktop/Projekt/SnakePvPProjekt/snakepvp/snake-server/universe.cpp"
 )
 
 # Add include directories
@@ -35,6 +35,5 @@ target_link_libraries(universe PRIVATE
     Boost::beast
     Boost::system
     Boost::thread
-    Boost::boost
     nlohmann_json::nlohmann_json
 )
