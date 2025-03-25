@@ -48,8 +48,9 @@ async def handle_client(websocket):
         player2 = matchmaking_queue.pop(0)
 
         # Start Racket server first
+        relative_path = '..\\out\\build\\universeCMake\\Debug\\universe.exe'
         universe_started = await execute_universe(
-            os.path.join(BASE_DIR, 'universe.cpp')
+            "C:/Users/Mark Oliver/Desktop/Projekt/SnakePvPProjekt/snakepvp/out/build/universeCMake/Debug/universe.exe"
         )
 
         if not universe_started:
