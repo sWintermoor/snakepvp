@@ -155,8 +155,8 @@ async def execute_universe(filepath):
         # Start the pre-built executable
         process = subprocess.Popen(
             [filepath],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
+            # stdout=subprocess.PIPE,
+            # stderr=subprocess.PIPE
         )
 
         # Wait for server startup
@@ -165,7 +165,7 @@ async def execute_universe(filepath):
         # Test connection
         try:
             async with websockets.connect('ws://localhost:9092') as ws:
-                await ws.close()
+                # await ws.close()
                 print("Universe server is ready")
                 return True
         except:
