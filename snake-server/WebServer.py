@@ -180,9 +180,13 @@ async def create_universe_connection(filepath):
         persistent_ws2_universe = None
 
         try:
-            persistent_ws1_universe = await websockets.connect('ws://localhost:9092')
-            persistent_ws2_universe = await websockets.connect('ws://localhost:9092')
+            persistent_ws1_universe, persistent_ws2_universe = await asyncio.gather(
+                websockets.connect('ws://localhost:9092'),
+                websockets.connect('ws://localhost:9092')
+            )
+
             print("Persistent connections to Universe established")
+            
         except Exception as e:
             print(f"Error establishing persistent connection: {e}")
 

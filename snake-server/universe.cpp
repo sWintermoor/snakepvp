@@ -675,6 +675,13 @@ public:
     void accept() {
         _acceptor.async_accept(
             [this](beast::error_code ec, tcp::socket socket) {
+                try {
+                    auto remote = socket.remote_endpoint();
+                    std::cout << "Connection from " << remote.address().to_string() 
+                              << ":" << remote.port() << std::endl;
+                } catch (std::exception &e) {
+                    std::cerr << "Failed to get remote endpoint: " << e.what() << std::endl;
+                }
                 if (!ec) {
                     std::lock_guard<std::mutex> lock(_mutex);
                     if (!first_socket){
