@@ -13,12 +13,10 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 matchmaking_queue = []
 lock = threading.Lock()
 
-async def forward_to_universe(message):
-    uri = "ws://localhost:9092"
-    async with websockets.connect(uri) as websocket:
-        await websocket.send(message)
-        response = await websocket.recv()
-        return response
+async def forward_to_universe(websocket, message):
+    await websocket.send(message)
+    response = await websocket.recv()
+    return response
     
 async def prepare_json_for_universe(id, message):
     data = json.loads(message)
@@ -52,24 +50,28 @@ async def handle_client(websocket):
         print(f"Match found between {player1.remote_address} and {player2.remote_address}")
 
         # Start Universe server first
-        universe_started = await execute_universe(
-             "C:/Users/Mark Oliver/Desktop/Projekt/SnakePvPProjekt/snakepvp/out/build/universeCMake/Debug/universe.exe"
+        persistent_ws1_universe, persistent_ws2_universe = await create_universe_connection(
+              "C:/Users/Mark Oliver/Desktop/Projekt/SnakePvPProjekt/snakepvp/out/build/universeCMake/Debug/universe.exe"
         )
 
+        """
         if not universe_started:
             print("Failed to start Universe")
             return
         
         else:
             print("Universe started successfully")
+        """
         
         print(f"Match found between {player1.remote_address} and {player2.remote_address}")
         # Register players as worlds in Racket universe
-        register_world1 = await forward_to_universe(json.dumps({  
+        register_world1 = await forward_to_universe(persistent_ws1_universe, json.dumps({  
             "type": "connect",
             "player": 1}))
         
-        register_world2 = await forward_to_universe(json.dumps({
+        print("First connection established in WebServer")
+        
+        register_world2 = await forward_to_universe(persistent_ws2_universe, json.dumps({
             "type": "connect",
             "player": 2}))
 
@@ -86,8 +88,8 @@ async def handle_client(websocket):
             message1 = await player1.recv()   
             message2 = await player2.recv()
 
-            response1 = await forward_to_universe(prepare_json_for_universe(1, message1))
-            response2 = await forward_to_universe(prepare_json_for_universe(2, message2))
+            response1 = await forward_to_universe(persistent_ws1_universe, prepare_json_for_universe(1, message1))
+            response2 = await forward_to_universe(persistent_ws2_universe, prepare_json_for_universe(2, message2))
 
             data1 = json.loads(response1)
             data2 = json.loads(response2)
@@ -145,7 +147,7 @@ def start_ws_server():
     loop.run_until_complete(run_ws_server())
 
 
-async def execute_universe(filepath):
+async def create_universe_connection(filepath):
     """Start pre-built universe.exe"""
     try:
         if not os.path.exists(filepath):
@@ -162,6 +164,7 @@ async def execute_universe(filepath):
         # Wait for server startup
         await asyncio.sleep(2)
 
+        """
         # Test connection
         try:
             async with websockets.connect('ws://localhost:9092') as ws:
@@ -171,6 +174,19 @@ async def execute_universe(filepath):
         except:
             print("Failed to connect to Universe")
             return False
+        """
+
+        persistent_ws1_universe = None
+        persistent_ws2_universe = None
+
+        try:
+            persistent_ws1_universe = await websockets.connect('ws://localhost:9092')
+            persistent_ws2_universe = await websockets.connect('ws://localhost:9092')
+            print("Persistent connections to Universe established")
+        except Exception as e:
+            print(f"Error establishing persistent connection: {e}")
+
+        return persistent_ws1_universe, persistent_ws2_universe
             
     except Exception as e:
         print(f"Error starting Universe: {e}")
