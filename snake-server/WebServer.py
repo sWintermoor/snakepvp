@@ -63,7 +63,7 @@ async def handle_client(websocket):
             print("Universe started successfully")
         """
         
-        print(f"Match found between {player1.remote_address} and {player2.remote_address}")
+        print(f"Match starting between {player1.remote_address} and {player2.remote_address}")
         # Register players as worlds in Racket universe
         register_world1 = await forward_to_universe(persistent_ws1_universe, json.dumps({  
             "type": "connect",
@@ -186,7 +186,7 @@ async def create_universe_connection(filepath):
             )
 
             print("Persistent connections to Universe established")
-            
+
         except Exception as e:
             print(f"Error establishing persistent connection: {e}")
 
