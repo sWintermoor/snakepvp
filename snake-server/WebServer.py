@@ -103,13 +103,18 @@ async def handle_client(websocket):
 
             # message2 = await player2.recv()
 
-            print(f"WebServer: Received message from player1: {message1}")
-            print(f"WebServer: Received message from player2: {message2}")
+            print(f"WebServer: Received message from player1: {message1}, type: {type(message1)}")
+            print(f"WebServer: Received message from player2: {message2}, type: {type(message2)}")
 
             print("WebServer: Forwarding messages to Universe")
+            
+            print("WebServer: Forwarding messages to Universe")
+            prepared_message1 = await prepare_json_for_universe(1, message1)
+            prepared_message2 = await prepare_json_for_universe(2, message2)
+
             response1, response2 = await asyncio.gather(
-                forward_to_universe(persistent_ws1_universe, prepare_json_for_universe(1, message1)),
-                forward_to_universe(persistent_ws2_universe, prepare_json_for_universe(2, message2))
+                forward_to_universe(persistent_ws1_universe, prepared_message1),
+                forward_to_universe(persistent_ws2_universe, prepared_message2)
             )
 
             data1 = json.loads(response1)

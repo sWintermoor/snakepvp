@@ -41,6 +41,8 @@ function testMain(){
     
     _SOCKET.onmessage = (event) => {
 
+        console.log("test");
+
         console.log("Received data", event.data);
 
         const data = JSON.parse(event.data);
@@ -55,12 +57,9 @@ function testMain(){
         else
         {
             if (data.gameStatus == "connected"){
-                console.log("a");	
                 initializeGame();
-                console.log("b");
                 _STARTGAME = false;
-                console.log("c");
-                const startMessage = _SOCKET.send(JSON.stringify({key: "start"}));
+                const startMessage = (JSON.stringify({key: "start"}));
                 console.log("Attempting to send start message:", startMessage);
     
                 try {
