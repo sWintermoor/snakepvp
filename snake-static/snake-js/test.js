@@ -55,6 +55,7 @@ function testMain(){
             if (data.gameStatus == "connected"){
                 initializeGame();
                 _STARTGAME = false;
+                _SOCKET.send(JSON.stringify({key: "start"}));
             }
     
             else if(data.gameStatus == 'tie' || data.gameStatus == 'win' || data.gameStatus == 'loose'){

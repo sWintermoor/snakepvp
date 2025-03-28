@@ -521,6 +521,7 @@ public:
                     self->_ws2.async_accept(
                         [self](beast::error_code ec) {
                             if (!ec) {
+                                std::cout << "Universe: Creating Universe Object" << std::endl;
                                 self -> _universe = std::make_unique<Universe>(
                                 _SNAKE1, 
                                 _SNAKE2, 
@@ -550,6 +551,9 @@ public:
         }
 
         updateClients();
+        net::post(_ws1.get_executor(), [self = shared_from_this()](){
+            self->sessionTick();
+        });
     }
 
     void setFinalScore(){
@@ -584,8 +588,10 @@ public:
             [self = shared_from_this()](beast::error_code ec, std::size_t bytes) {
                 if (!ec) {
                     // Handle received message
+                    std::cout << "Universe: Client 1 is reading" << std::endl;
                     self->handleMessage(1, beast::buffers_to_string(self->_buffer1.data()));
-                    self->_buffer1.consume(self->_buffer1.size());
+                    self->_buffer1.consume(self->_buffer1.size()); // Clear buffer
+                    std::cout << "Universe: Client 1 finished" << std::endl;
                     self->read_client1();
                 }
             });
@@ -597,8 +603,10 @@ public:
             [self = shared_from_this()](beast::error_code ec, std::size_t bytes) {
                 if (!ec) {
                     // Handle received message
+                    std::cout << "Universe: Client 2 is reading" << std::endl;
                     self->handleMessage(2, beast::buffers_to_string(self->_buffer2.data()));
                     self->_buffer2.consume(self->_buffer2.size());
+                    std::cout << "Universe: Client 2 finished" << std::endl;
                     self->read_client2();
                 }
             });
@@ -609,12 +617,17 @@ public:
         try{
             json Data = json::parse(message);
             if (Data.contains("key")){
-                _universe->updateSnakeDirection(id, Data["direction"]);
+                if (Data["key"] == "start"){
+                    sessionTick();
+                }
+                else{
+                    _universe->updateSnakeDirection(id, Data["direction"]);
+                }
             }
         }
         catch (const json::exception& e) {
         // Handle JSON parsing errors
-        std::cerr << "JSON parsing error: " << e.what() << std::endl;
+        std::cerr << "Universe: JSON parsing error: " << e.what() << std::endl;
         }
     }
 
@@ -677,21 +690,21 @@ public:
             [this](beast::error_code ec, tcp::socket socket) {
                 try {
                     auto remote = socket.remote_endpoint();
-                    std::cout << "Connection from " << remote.address().to_string() 
+                    std::cout << "Universe: Connection from " << remote.address().to_string() 
                               << ":" << remote.port() << std::endl;
                 } catch (std::exception &e) {
-                    std::cerr << "Failed to get remote endpoint: " << e.what() << std::endl;
+                    std::cerr << "Universe: Failed to get remote endpoint: " << e.what() << std::endl;
                 }
                 if (!ec) {
                     std::lock_guard<std::mutex> lock(_mutex);
                     if (!first_socket){
                         // Erster Client
                         first_socket.emplace(std::move(socket));
-                        std::cout << "First player connected" << std::endl;
+                        std::cout << "Universe: First player connected" << std::endl;
                     }
                     else{
                         // Zweiter Client und Start der Session
-                        std::cout << "Second player connected" << std::endl;
+                        std::cout << "Universe: Second player connected" << std::endl;
                         auto session = std::make_shared<Session>(
                             std::move(*first_socket),
                             std::move(socket),
@@ -715,13 +728,13 @@ public:
 int main(){
     // Main function
     try {
-        std::cout << "Starting WebSocket server..." << std::endl;
+        std::cout << "Universe: Starting WebSocket server..." << std::endl;
         WebSocketServer server;
-        std::cout << "WebSocket server running on port 9092" << std::endl;
+        std::cout << "Universe: WebSocket server running on port 9092" << std::endl;
         server.run();
     }
     catch (std::exception const& e) {
-        std::cerr << "Error: " << e.what() << std::endl;
+        std::cerr << "Universe: Error: " << e.what() << std::endl;
         return EXIT_FAILURE;
     }
     return EXIT_SUCCESS;
