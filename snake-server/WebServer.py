@@ -86,11 +86,6 @@ async def handle_client(websocket):
 
         print("WebServer: Notifing players of registration and starting game")   
 
-        persistent_ws1_universe, persistent_ws2_universe = await asyncio.gather(
-                websockets.connect('ws://localhost:9092'),
-                websockets.connect('ws://localhost:9092')
-            )
-
         # Notify players of successful registration
         await player1.send(json.dumps({"gameStatus": "connected"}))
         await player2.send(json.dumps({"gameStatus": "connected"}))

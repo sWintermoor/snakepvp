@@ -25,6 +25,8 @@ add_executable( universe
     "C:/Users/Mark Oliver/Desktop/Projekt/SnakePvPProjekt/snakepvp/snake-server/universe.cpp"
 )
 
+target_compile_options(universe PRIVATE /bigobj)
+
 # Add include directories
 target_include_directories(universe PRIVATE
     ${Boost_INCLUDE_DIRS}
