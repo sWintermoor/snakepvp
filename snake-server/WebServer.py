@@ -95,13 +95,13 @@ async def handle_client(websocket):
         # Continuously receive and send messages
         while True:
             print("WebServer: Waiting for messages from players")
-            # message1, message2 = await asyncio.gather(player1.recv(), player2.recv())
+            message1, message2 = await asyncio.gather(player1.recv(), player2.recv())
 
-            message1 = await player1.recv()
+            # message1 = await player1.recv()
 
-            print("a")
+            # print("a")
 
-            message2 = await player2.recv()
+            # message2 = await player2.recv()
 
             print(f"WebServer: Received message from player1: {message1}")
             print(f"WebServer: Received message from player2: {message2}")

@@ -47,15 +47,28 @@ function testMain(){
 
         console.log("Parsed data", data);
 
+        console.log("Type of gameStatus:", typeof data.gameStatus);
+
         if(data.gameStatus == "waiting"){
             initializeWaitingMode();
         }
         else
         {
             if (data.gameStatus == "connected"){
+                console.log("a");	
                 initializeGame();
+                console.log("b");
                 _STARTGAME = false;
-                _SOCKET.send(JSON.stringify({key: "start"}));
+                console.log("c");
+                const startMessage = _SOCKET.send(JSON.stringify({key: "start"}));
+                console.log("Attempting to send start message:", startMessage);
+    
+                try {
+                    _SOCKET.send(startMessage);
+                    console.log("Start message sent successfully");
+                } catch (error) {
+                    console.error("Error sending start message:", error);
+                }
             }
     
             else if(data.gameStatus == 'tie' || data.gameStatus == 'win' || data.gameStatus == 'loose'){
