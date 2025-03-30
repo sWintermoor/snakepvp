@@ -512,7 +512,7 @@ private:
     bool _writing2 = false;
     std::mutex _write_mutex1;
     std::mutex _write_mutex2;
-    std::atomic<bool> _preparedForNextTick{false};
+    std::atomic<bool> _tickScheduled{false};
     std::atomic<bool> _processingTick{false};
     std::atomic<bool> _gameStarted{false};
 
@@ -520,9 +520,7 @@ private:
         std::lock_guard<std::mutex> lock(_write_mutex1);
         std::cout << "do_write1: Queue size = " << _write_queue1.size() << ", writing = " << _writing1 << std::endl;
         if (_write_queue1.empty() || _writing1){
-            if (!_writing1){
-                prepareForNextTick();
-            }
+            checkQueueAndScheduleNextTick();
             return;
         }
         
@@ -546,9 +544,7 @@ private:
         std::lock_guard<std::mutex> lock(_write_mutex2);
         std::cout << "do_write2: Queue size = " << _write_queue2.size() << ", writing = " << _writing2 << std::endl;
         if (_write_queue2.empty() || _writing2){
-            if (!_writing2){
-                prepareForNextTick();
-            }
+            checkQueueAndScheduleNextTick();
             return;
         }
         
@@ -568,13 +564,16 @@ private:
             });
     }
 
-    void prepareForNextTick() {
-        std::lock_guard<std::mutex> lock(_write_mutex1); // Verwende einen Mutex für beide Streams
-        if (!_preparedForNextTick && !_writing1 && !_writing2) {
-            _preparedForNextTick.store(true);
+    void checkQueueAndScheduleNextTick() {
+        std::lock_guard<std::mutex> lock1(_write_mutex1);
+        std::lock_guard<std::mutex> lock2(_write_mutex2);
+        
+        if (!_writing1 && !_writing2 && 
+            _write_queue1.empty() && _write_queue2.empty() && 
+            !_tickScheduled) {
+            _tickScheduled = true;
             net::post(_ws1.get_executor(), [self = shared_from_this()]() {
-                std::lock_guard<std::mutex> lock(self->_write_mutex1);
-                self->_preparedForNextTick.store(false);
+                self->_tickScheduled = false;
                 self->sessionTick();
             });
         }
@@ -639,6 +638,7 @@ public:
         }
         catch (const std::exception& e) {
             std::cerr << "Universe: Error in sessionTick: " << e.what() << std::endl;
+            _processingTick.store(false);
         }
         _processingTick.store(false);
     }
@@ -704,11 +704,12 @@ public:
         try{
             json Data = json::parse(message);
             if (Data.contains("key") && !_gameStarted.exchange(true)){
-                if (Data["key"] == "start"){
+                if (Data["key"] == "start" && !_tickScheduled){
                     std::cout << "Universe: Starting session for client" << std::endl;
+                    _tickScheduled = true;
                     sessionTick();
                 }
-                else{
+                else if (!Data.contains("key")){
                     _universe->updateSnakeDirection(id, Data["direction"]);
                 }
             }
