@@ -7,6 +7,7 @@
 #include <boost/beast/websocket.hpp>
 #include <boost/asio/ip/tcp.hpp> 
 #include <thread>
+#include <queue>
 #include <nlohmann/json.hpp>
 
 namespace beast = boost::beast;
@@ -324,10 +325,10 @@ class Universe{
                         spawnFruits();
                     }
                 }
-                return true;                    
+                return false;                    
             }
             else{
-                return false;
+                return true;
             }
         };
 
@@ -505,6 +506,79 @@ private:
     beast::flat_buffer _buffer2;
     std::unique_ptr<Universe> _universe;
     int _timer;
+    std::queue<std::string> _write_queue1;
+    std::queue<std::string> _write_queue2;
+    bool _writing1 = false;
+    bool _writing2 = false;
+    std::mutex _write_mutex1;
+    std::mutex _write_mutex2;
+    std::atomic<bool> _preparedForNextTick{false};
+    std::atomic<bool> _processingTick{false};
+    std::atomic<bool> _gameStarted{false};
+
+    void do_write1() {
+        std::lock_guard<std::mutex> lock(_write_mutex1);
+        std::cout << "do_write1: Queue size = " << _write_queue1.size() << ", writing = " << _writing1 << std::endl;
+        if (_write_queue1.empty() || _writing1){
+            if (!_writing1){
+                prepareForNextTick();
+            }
+            return;
+        }
+        
+        _writing1 = true;
+        std::cout << "do_write1: Starting async_write" << std::endl;
+        auto self = shared_from_this();
+        _ws1.async_write(
+            net::buffer(_write_queue1.front()),
+            [self](beast::error_code ec, std::size_t bytes) {
+                std::lock_guard<std::mutex> lock(self->_write_mutex1);
+                std::cout << "do_write1: async_write completed, ec = " << ec.message() << std::endl;
+                if (!ec) {
+                    self->_write_queue1.pop();
+                }
+                self->_writing1 = false;
+                self->do_write1(); // Check if more messages to send
+            });
+    }
+
+    void do_write2() {
+        std::lock_guard<std::mutex> lock(_write_mutex2);
+        std::cout << "do_write2: Queue size = " << _write_queue2.size() << ", writing = " << _writing2 << std::endl;
+        if (_write_queue2.empty() || _writing2){
+            if (!_writing2){
+                prepareForNextTick();
+            }
+            return;
+        }
+        
+        _writing2 = true;
+        std::cout << "do_write2: Starting async_write" << std::endl;
+        auto self = shared_from_this();
+        _ws2.async_write(
+            net::buffer(_write_queue2.front()),
+            [self](beast::error_code ec, std::size_t bytes) {
+                std::lock_guard<std::mutex> lock(self->_write_mutex2);
+                std::cout << "do_write2: async_write completed, ec = " << ec.message() << std::endl;
+                if (!ec) {
+                    self->_write_queue2.pop();
+                }
+                self->_writing2 = false;
+                self->do_write2(); // Check if more messages to send
+            });
+    }
+
+    void prepareForNextTick() {
+        std::lock_guard<std::mutex> lock(_write_mutex1); // Verwende einen Mutex für beide Streams
+        if (!_preparedForNextTick && !_writing1 && !_writing2) {
+            _preparedForNextTick.store(true);
+            net::post(_ws1.get_executor(), [self = shared_from_this()]() {
+                std::lock_guard<std::mutex> lock(self->_write_mutex1);
+                self->_preparedForNextTick.store(false);
+                self->sessionTick();
+            });
+        }
+    }
 
 public:
     explicit Session(tcp::socket socket1, tcp::socket socket2, int timerInput) : 
@@ -536,24 +610,37 @@ public:
     }
 
     void sessionTick(){
-        _timer -= 1;
-
-        if(_timer == 0){
-            //End of game
+        if (_processingTick.exchange(true)){
+            std::cout << "Universe: Already processing tick, skipping this one." << std::endl;
+            return;
         }
-        else{
-            bool timerPermission = (_timer % GAME_SPEED == 0);
-            bool endOfGame = _universe->universeTick(timerPermission);
 
-            if (endOfGame){
-                setFinalScore();
+        try {
+            _timer -= 1;
+            std::cout << "Universe: Beginn tick" << std::endl;
+
+            if(_timer == 0){
+                //End of game
             }
-        }
+            else{
+                std::cout << "Universe: a" << std::endl;
+                bool timerPermission = (_timer % GAME_SPEED == 0);
+                std::cout << "Universe: b" << std::endl;
+                bool endOfGame = _universe->universeTick(timerPermission);
+                std::cout << "Universe: c" << std::endl;
+                if (endOfGame){
+                    std::cout << "Setting final score" << std::endl;
+                    setFinalScore();
+                }
+            }
 
-        updateClients();
-        net::post(_ws1.get_executor(), [self = shared_from_this()](){
-            self->sessionTick();
-        });
+            std::cout << "Universe: End tick and start writing back" << std::endl;
+            updateClients();
+        }
+        catch (const std::exception& e) {
+            std::cerr << "Universe: Error in sessionTick: " << e.what() << std::endl;
+        }
+        _processingTick.store(false);
     }
 
     void setFinalScore(){
@@ -588,10 +675,10 @@ public:
             [self = shared_from_this()](beast::error_code ec, std::size_t bytes) {
                 if (!ec) {
                     // Handle received message
-                    std::cout << "Universe: Client 1 is reading" << std::endl;
+                    std::cout << "Universe: Reading messages from client 1" << std::endl;
                     self->handleMessage(1, beast::buffers_to_string(self->_buffer1.data()));
                     self->_buffer1.consume(self->_buffer1.size()); // Clear buffer
-                    std::cout << "Universe: Client 1 finished" << std::endl;
+                    std::cout << "Universe: Finished reading messages from client 1" << std::endl;
                     self->read_client1();
                 }
             });
@@ -603,10 +690,10 @@ public:
             [self = shared_from_this()](beast::error_code ec, std::size_t bytes) {
                 if (!ec) {
                     // Handle received message
-                    std::cout << "Universe: Client 2 is reading" << std::endl;
+                    std::cout << "Universe: Reading messages from client 2" << std::endl;
                     self->handleMessage(2, beast::buffers_to_string(self->_buffer2.data()));
                     self->_buffer2.consume(self->_buffer2.size());
-                    std::cout << "Universe: Client 2 finished" << std::endl;
+                    std::cout << "Universe: Finished reading messages from client 2" << std::endl;
                     self->read_client2();
                 }
             });
@@ -616,8 +703,9 @@ public:
         // Handle game logic here
         try{
             json Data = json::parse(message);
-            if (Data.contains("key")){
+            if (Data.contains("key") && !_gameStarted.exchange(true)){
                 if (Data["key"] == "start"){
+                    std::cout << "Universe: Starting session for client" << std::endl;
                     sessionTick();
                 }
                 else{
@@ -654,21 +742,20 @@ public:
             {"gameStatus", gameStatus2}
         };
 
-        _ws1.async_write(
-            net::buffer(message1.dump()),
-            [self = shared_from_this()](beast::error_code ec, std::size_t bytes) {
-                if (!ec) {
-                    // Message sent successfully
-                }
-            });
-
-        _ws2.async_write(
-            net::buffer(message2.dump()),
-            [self = shared_from_this()](beast::error_code ec, std::size_t bytes) {
-                if (!ec) {
-                    // Message sent successfully
-                }
-            });
+        std::cout << "Universe: Pushing message for client 1 to _write_queue1" << std::endl;
+        {
+            std::lock_guard<std::mutex> lock(_write_mutex1);
+            _write_queue1.push(message1.dump());
+            std::cout << "Universe: Starting writing operation for client 1" << std::endl;
+            do_write1();
+        }
+        std::cout << "Universe: Pushing message for client 2 to _write_queue2" << std::endl;
+        {
+            std::lock_guard<std::mutex> lock(_write_mutex2);
+            std::cout << "Universe: Starting writing operation for client 2" << std::endl;
+            _write_queue2.push(message2.dump());
+            do_write2();
+        }
     }
 };
 

@@ -105,8 +105,6 @@ async def handle_client(websocket):
 
             print(f"WebServer: Received message from player1: {message1}, type: {type(message1)}")
             print(f"WebServer: Received message from player2: {message2}, type: {type(message2)}")
-
-            print("WebServer: Forwarding messages to Universe")
             
             print("WebServer: Forwarding messages to Universe")
             prepared_message1 = await prepare_json_for_universe(1, message1)
