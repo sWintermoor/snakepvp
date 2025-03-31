@@ -517,6 +517,7 @@ private:
     std::atomic<bool> _gameStarted{false};
 
     void do_write1() {
+        std::cout << "Universe: Locking writing for Client1" << std::endl;
         std::lock_guard<std::mutex> lock(_write_mutex1);
         std::cout << "do_write1: Queue size = " << _write_queue1.size() << ", writing = " << _writing1 << std::endl;
         if (_write_queue1.empty() || _writing1){
@@ -541,7 +542,8 @@ private:
     }
 
     void do_write2() {
-        std::lock_guard<std::mutex> lock(_write_mutex2);
+        // std::cout << "Universe: Locking writing for Client2" << std::endl;
+        // std::lock_guard<std::mutex> lock(_write_mutex2);
         std::cout << "do_write2: Queue size = " << _write_queue2.size() << ", writing = " << _writing2 << std::endl;
         if (_write_queue2.empty() || _writing2){
             checkQueueAndScheduleNextTick();
@@ -565,13 +567,22 @@ private:
     }
 
     void checkQueueAndScheduleNextTick() {
-        std::lock_guard<std::mutex> lock1(_write_mutex1);
-        std::lock_guard<std::mutex> lock2(_write_mutex2);
-        
-        if (!_writing1 && !_writing2 && 
-            _write_queue1.empty() && _write_queue2.empty() && 
-            !_tickScheduled) {
-            _tickScheduled = true;
+        bool schedule = false;
+        {
+            std::cout << "Universe: Locking for next tick" << std::endl;
+            std::lock_guard<std::mutex> lock1(_write_mutex1);
+            std::lock_guard<std::mutex> lock2(_write_mutex2);
+            if (!_writing1 && !_writing2 &&
+                _write_queue1.empty() && _write_queue2.empty() &&
+                !_tickScheduled) {
+                _tickScheduled = true;
+                schedule = true;
+            }
+        } 
+
+        std::cout << "Universe: Unlocking for next tick" << std::endl;
+
+        if (schedule) {
             net::post(_ws1.get_executor(), [self = shared_from_this()]() {
                 self->_tickScheduled = false;
                 self->sessionTick();
@@ -623,10 +634,13 @@ public:
             }
             else{
                 std::cout << "Universe: a" << std::endl;
+                std::this_thread::sleep_for(std::chrono::seconds(2));
                 bool timerPermission = (_timer % GAME_SPEED == 0);
                 std::cout << "Universe: b" << std::endl;
+                std::this_thread::sleep_for(std::chrono::seconds(2));
                 bool endOfGame = _universe->universeTick(timerPermission);
                 std::cout << "Universe: c" << std::endl;
+                std::this_thread::sleep_for(std::chrono::seconds(2));
                 if (endOfGame){
                     std::cout << "Setting final score" << std::endl;
                     setFinalScore();
@@ -703,15 +717,12 @@ public:
         // Handle game logic here
         try{
             json Data = json::parse(message);
-            if (Data.contains("key") && !_gameStarted.exchange(true)){
-                if (Data["key"] == "start" && !_tickScheduled){
-                    std::cout << "Universe: Starting session for client" << std::endl;
-                    _tickScheduled = true;
-                    sessionTick();
-                }
-                else if (!Data.contains("key")){
-                    _universe->updateSnakeDirection(id, Data["direction"]);
-                }
+            if (Data.contains("key") && Data["key"] == "start" && _gameStarted.exchange(true)){
+                std::cout << "Universe: Starting session for clients" << std::endl;
+                checkQueueAndScheduleNextTick();
+            }
+            else if (Data.contains("key")){
+                _universe->updateSnakeDirection(id, Data["direction"]);
             }
         }
         catch (const json::exception& e) {
@@ -747,16 +758,22 @@ public:
         {
             std::lock_guard<std::mutex> lock(_write_mutex1);
             _write_queue1.push(message1.dump());
-            std::cout << "Universe: Starting writing operation for client 1" << std::endl;
-            do_write1();
         }
         std::cout << "Universe: Pushing message for client 2 to _write_queue2" << std::endl;
         {
             std::lock_guard<std::mutex> lock(_write_mutex2);
-            std::cout << "Universe: Starting writing operation for client 2" << std::endl;
             _write_queue2.push(message2.dump());
-            do_write2();
         }
+
+        std::cout << "Universe: Starting writing operation for client 1" << std::endl;
+        net::post(_ws1.get_executor(), [self = shared_from_this()]() {
+            self->do_write1();
+        });
+
+        std::cout << "Universe: Starting writing operation for client 2" << std::endl;
+        net::post(_ws2.get_executor(), [self = shared_from_this()]() {
+            self->do_write2();
+        });
     }
 };
 
