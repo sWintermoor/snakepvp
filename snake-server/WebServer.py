@@ -115,6 +115,9 @@ async def handle_client(websocket):
                 forward_to_universe(persistent_ws2_universe, prepared_message2)
             )
 
+            print(f"WebServer: Raw response1: {response1}")
+            print(f"Webserver: Raw response2: {response2}")
+
             data1 = json.loads(response1)
             data2 = json.loads(response2)
 
@@ -122,6 +125,7 @@ async def handle_client(websocket):
             print(f"WebServer: Received data from player2: {data2}")
 
             # Example of sending a message back to the clients
+            print("WebServer: Sending data from Universe back to players")
             asyncio.gather(player1.send(json.dumps(data1)), player2.send(json.dumps(data2)))
 
     except websockets.ConnectionClosed as e:
