@@ -75,16 +75,16 @@ function testMain(){
                 _SOCKET.onmessage = null;
             }
             else{
-                console.log("Snake1", data.snake1Coordinates);
-                _WORLD.setSnake1(data.snake1Coordinates);
+                console.log("Snake1 Coordinates", data.snake1);
+                _WORLD.setSnake1(data.snake1);
 
-                console.log("Snake2", data.snake2Coordinates);
-                _WORLD.setSnake2(data.snake2Coordinates);
+                console.log("Snake2 Coordinates", data.snake2);
+                _WORLD.setSnake2(data.snake2);
 
                 console.log("fruitsTypes", data.fruitsTypes); 
                 console.log("fruitsX", data.fruitsX);
                 console.log("fruitsY", data.fruitsY);
-                _WORLD.setFruits(data.fruitTypes, data.fruitsX, data.fruitsY);
+                _WORLD.setFruits(data.fruitsTypes, data.fruitsX, data.fruitsY);
 
                 console.log("Timer", data.timer);
                 _WORLD.setTimer(data.timer);
@@ -97,7 +97,6 @@ function testMain(){
                 drawTimer();
                 drawSnakes();
                 drawFoods();
-                keyHandler();
             }
         }
     };
@@ -193,15 +192,17 @@ function drawCoordinate([x, y]){
 }
 
 function drawFoods(){
-    for (const food in _ITEMS){
+    console.log("Drawing foods", _WORLD.getFruits());
+    _WORLD.getFruits().forEach(food => {
+        console.log("Drawing food", food);
         drawSpecificFood(food);
-    }
+    });
 }
 
 function drawSpecificFood(food){
-    x = food[0];
-    y = food[1];
-    type = food[2];
+    let x = food.getXCoordinate();
+    let y = food.getYCoordinate();
+    let type = food.getType();
 
     if (type == "apple"){
         drawApple(x, y);
@@ -322,6 +323,18 @@ class Item{
         this.type = type;
         this.xCoordinate = xCoordinate;
         this.yCoordinate = yCoordinate;
+    }
+
+    getType(){
+        return this.type;
+    }
+    
+    getXCoordinate(){
+        return this.xCoordinate;
+    }
+
+    getYCoordinate(){
+        return this.yCoordinate;
     }
 }
 
