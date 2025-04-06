@@ -517,54 +517,97 @@ private:
     std::atomic<bool> _gameStarted{false};
 
     void do_write1() {
-        std::cout << "Universe: Locking writing for Client1" << std::endl;
-        std::lock_guard<std::mutex> lock(_write_mutex1);
-        std::cout << "Universe: do_write1: Queue size = " << _write_queue1.size() << ", writing = " << _writing1 << std::endl;
-        if (_write_queue1.empty() || _writing1){
-            checkQueueAndScheduleNextTick();
-            return;
+        bool should_write = false;
+        {
+            std::cout << "Universe: Locking writing for Client1" << std::endl;
+            std::lock_guard<std::mutex> lock(_write_mutex1);
+            std::cout << "Universe: do_write1: Queue size = " << _write_queue1.size() << ", writing = " << _writing1 << std::endl;
+            if (!_write_queue1.empty() && !_writing1){
+                _writing1 = true;
+                should_write = true;
+            }
         }
         
-        _writing1 = true;
-        std::cout << "Universe: do_write1: Starting async_write" << std::endl;
+        if (should_write){
+            std::cout << "Universe: do_write1: Starting async_write" << std::endl;
         auto self = shared_from_this();
         _ws1.async_write(
             net::buffer(_write_queue1.front()),
             [self](beast::error_code ec, std::size_t bytes) {
-                std::lock_guard<std::mutex> lock(self->_write_mutex1);
                 std::cout << "Universe: do_write1: async_write completed, ec = " << ec.message() << std::endl;
-                if (!ec) {
-                    self->_write_queue1.pop();
+                bool check_next = false;
+                {
+                    std::lock_guard<std::mutex> lock(self->_write_mutex1);
+                    if (ec) {
+                        std::cerr << "Universe: do_write1 error: " 
+                             << ec.message() 
+                             << " (code: " << ec.value() << ")" 
+                             << std::endl;
+                    }
+                    else {
+                        std::cout << "Universe: async_write_1 success." << std::endl;
+                        self->_write_queue1.pop();
+                    }
+                    self->_writing1 = false;
+                    check_next = !self->_write_queue1.empty();
                 }
-                self->_writing1 = false;
-                self->do_write1(); // Check if more messages to send
+                if (check_next) {
+                    net::post(self-> _ws1.get_executor(), [self]() {
+                        self->do_write1(); // Check if more messages to send
+                    });
+                }
             });
+        }
+        else {
+            checkQueueAndScheduleNextTick();
+        }
     }
 
     void do_write2() {
-        // std::cout << "Universe: Locking writing for Client2" << std::endl;
-        // std::lock_guard<std::mutex> lock(_write_mutex2);
-        std::cout << "Universe: do_write2: Queue size = " << _write_queue2.size() << ", writing = " << _writing2 << std::endl;
-        std::lock_guard<std::mutex> lock(_write_mutex2);
-        if (_write_queue2.empty() || _writing2){
-            checkQueueAndScheduleNextTick();
-            return;
+        bool should_write = false;
+        {
+            std::cout << "Universe: Locking writing for Client2" << std::endl;
+            std::lock_guard<std::mutex> lock(_write_mutex2);
+            std::cout << "Universe: do_write2: Queue size = " << _write_queue2.size() << ", writing = " << _writing2 << std::endl;
+            if (!_write_queue2.empty() && !_writing2){
+                _writing2 = true;
+                should_write = true;
+            }
         }
-        
-        _writing2 = true;
-        std::cout << "Universe: do_write2: Starting async_write" << std::endl;
-        auto self = shared_from_this();
-        _ws2.async_write(
-            net::buffer(_write_queue2.front()),
-            [self](beast::error_code ec, std::size_t bytes) {
-                std::lock_guard<std::mutex> lock(self->_write_mutex2);
-                std::cout << "Universe: do_write2: async_write completed, ec = " << ec.message() << std::endl;
-                if (!ec) {
-                    self->_write_queue2.pop();
-                }
-                self->_writing2 = false;
-                self->do_write2(); // Check if more messages to send
-            });
+
+        if (should_write){
+            std::cout << "Universe: do_write2: Starting async_write" << std::endl;
+            auto self = shared_from_this();
+            _ws2.async_write(
+                net::buffer(_write_queue2.front()),
+                [self](beast::error_code ec, std::size_t bytes) {
+                    std::cout << "Universe: do_write2: async_write completed, ec = " << ec.message() << std::endl;
+                    bool check_next = false;
+                    {
+                        std::lock_guard<std::mutex> lock(self->_write_mutex2);
+                        if (ec) {
+                            std::cerr << "Universe: do_write2 error: " 
+                                 << ec.message() 
+                                 << " (code: " << ec.value() << ")" 
+                                 << std::endl;
+                        }
+                        else {
+                            std::cout << "Universe: async_write_2 success." << std::endl;
+                            self->_write_queue2.pop();
+                        }
+                        self->_writing2 = false;
+                        check_next = !self->_write_queue2.empty();
+                    }
+                    if (check_next) {
+                        net::post(self-> _ws2.get_executor(), [self]() {
+                            self->do_write2(); // Check if more messages to send
+                        });
+                    }
+                });
+        }
+        else {
+            checkQueueAndScheduleNextTick();
+        }
     }
 
     void checkQueueAndScheduleNextTick() {
