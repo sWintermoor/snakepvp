@@ -4,6 +4,8 @@ const CELLSIZE = GAMESIZE*6;
 const WIDTH = GRIDSIZE*CELLSIZE;
 const HEIGHT = GRIDSIZE*CELLSIZE;
 const IMAGE = document.getElementById("gameImage");
+const SNAKE1COLOR = "green";
+const SNAKE2COLOR = "blue";
 
 var _SOCKET;
 
@@ -14,6 +16,8 @@ var _CONTEXT;
 //var _SNAKE1;
 //var _SNAKE2;
 var _WORLD;
+var _SNAKE1;
+var _SNAKE2;
 
 var _STARTGAME;
 
@@ -25,7 +29,10 @@ function testMain(){
 
     console.log("Entered main")
 
-    _WORLD = new World(0, [], [], [], "0:00", "waiting");
+    _SNAKE1 = new Snake([], SNAKE1COLOR);
+    _SNAKE2 = new Snake([], SNAKE2COLOR);
+
+    _WORLD = new World(0, _SNAKE1, _SNAKE2, [], "0:00", "waiting");
 
     _STARTGAME = true;
 
@@ -75,11 +82,11 @@ function testMain(){
                 _SOCKET.onmessage = null;
             }
             else{
-                console.log("Snake1 Coordinates", data.snake1);
-                _WORLD.setSnake1(data.snake1);
+                console.log("Snake1 Coordinates", data.snake1Coordinates);
+                _WORLD.setSnake1Coordinates(data.snake1Coordinates);
 
-                console.log("Snake2 Coordinates", data.snake2);
-                _WORLD.setSnake2(data.snake2);
+                console.log("Snake2 Coordinates", data.snake2Coordinates);
+                _WORLD.setSnake2Coordinates(data.snake2Coordinates);
 
                 console.log("fruitsTypes", data.fruitsTypes); 
                 console.log("fruitsX", data.fruitsX);
@@ -182,13 +189,14 @@ function drawSnakes(){
 
 function drawSnake(snakeInput){
     console.log("Drawing snake", snakeInput);
-    for (const coordinate in snakeInput[1]){
+    snakeInput.getCoordinates().forEach(coordinate => {
+        _CONTEXT.fillStyle = snakeInput.getColor(); // oder verschiedene Farben für verschiedene Schlangen
         drawCoordinate(coordinate);
-    }
+    });
 }
 
 function drawCoordinate([x, y]){
-    _CONTEXT.fillRect(x, y, (x+CELLSIZE), (y+CELLSIZE));
+    _CONTEXT.fillRect(x, y, CELLSIZE, CELLSIZE);
 }
 
 function drawFoods(){
@@ -263,6 +271,14 @@ class World{
         return this.snake2;
     }
 
+    getSnake1Coordinates(){
+        return this.snake1.getCoordinates();
+    }
+
+    getSnake2Coordinates(){
+        return this.snake2.getCoordinates();
+    }
+
     getFruits(){
         return this.fruits;
     }
@@ -287,6 +303,14 @@ class World{
         this.snake2 = newSnake2;
     }
 
+    setSnake1Coordinates(newSnake1Coordinates){
+        this.snake1.setCoordinates(newSnake1Coordinates);
+    }
+
+    setSnake2Coordinates(newSnake2Coordinates){
+        this.snake2.setCoordinates(newSnake2Coordinates);
+    }
+
     setFruits(newFruitsTypes, newFruitsX, newFruitsY){
         this.fruits = [];
         for (let i=0; i < newFruitsTypes.length; i++){
@@ -304,17 +328,25 @@ class World{
 }
 
 class Snake{
-    constructor(id, coordinates, color, boostDuration, immunityDuration, direction, velocity, score, banana, blueberry){
-        this.id = id;
+    constructor(coordinates, color){
         this.coordinates = coordinates;
         this.color = color;
-        this.boostDuration = boostDuration;
-        this.immunityDuration = immunityDuration;
-        this.direction = direction;
-        this.velocity = velocity;
-        this.score = score;
-        this.banana = banana;
-        this.blueberry = blueberry
+    }
+
+    setCoordinates(newCoordinates){
+        this.coordinates = newCoordinates;
+    }
+
+    setColor(newColor){
+        this.color = newColor;
+    }
+
+    getCoordinates(){
+        return this.coordinates;
+    }
+
+    getColor(){
+        return this.color;
     }
 }
 

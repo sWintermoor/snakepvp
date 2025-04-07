@@ -22,7 +22,7 @@ int GAME_SPEED = 18;
 
 // Spielfeldparameter
 int GAME_SIZE = 5; // Spielgröße
-int GRID_SIZE = 5 * GAME_SIZE; // Spielfeldgröße: hier 25x25 Zellen
+int GRID_SIZE = 5 * GAME_SIZE; // Spielfeldgröße: hier 25x25 Zellen#
 int CELL_SIZE = 6 * GAME_SIZE; // Jede Zelle ist hier 30x30 Pixel groß
 int WIDTH = GRID_SIZE * CELL_SIZE; // Gesambtbreite des Spielfelds in Pixeln
 int HEIGHT = GRID_SIZE * CELL_SIZE; // Gesamthöhe des Spielfelds in Pixeln
@@ -30,8 +30,8 @@ int HEIGHT = GRID_SIZE * CELL_SIZE; // Gesamthöhe des Spielfelds in Pixeln
 // Werte für ID, Farbe, Geschwindigkeit, Geschwindigkeitsdauer, Score und Bananen der Schlangen
 int SNAKE_ID1 = 1;
 int SNAKE_ID2 = 2;
-list<pair<int, int>> SNAKE_COORDINATES1 =  {make_pair(1, 0), make_pair(0, 0)};
-list<pair<int, int>> SNAKE_COORDINATES2 =  {make_pair(GRID_SIZE - 2, GRID_SIZE - 1), make_pair(GRID_SIZE - 1, GRID_SIZE - 1)};
+list<pair<int, int>> SNAKE_COORDINATES1 =  {make_pair(CELL_SIZE * 1, CELL_SIZE * 0), make_pair(CELL_SIZE * 0, CELL_SIZE * 0)};
+list<pair<int, int>> SNAKE_COORDINATES2 =  {make_pair(CELL_SIZE * GRID_SIZE - CELL_SIZE * 2, CELL_SIZE * GRID_SIZE - CELL_SIZE * 1), make_pair(CELL_SIZE * GRID_SIZE - CELL_SIZE * 1, CELL_SIZE * GRID_SIZE - CELL_SIZE * 1)};
 int VELOCITY_NORMAL = 3;
 int BOOST = 1;
 int BOOST_DURATION_INITIAL = 0;
@@ -773,8 +773,8 @@ public:
         // Send game state to clients
         // Format: {"snake1": [[x1, y1], [x2, y2], ...], "snake2": [[x1, y1], [x2, y2], ...], "fruit": [[x, y]], "timer": timer}
         json message1 = {
-            {"snake1", snake1Coordinates},
-            {"snake2", snake2Coordinates},
+            {"snake1Coordinates", snake1Coordinates},
+            {"snake2Coordinates", snake2Coordinates},
             {"fruitsTypes", fruitsTypes},
             {"fruitsX", fruitsX},
             {"fruitsY", fruitsY},
@@ -783,8 +783,8 @@ public:
         };
 
         json message2 = {
-            {"snake1", snake1Coordinates},
-            {"snake2", snake2Coordinates},
+            {"snake1Coordinates", snake1Coordinates},
+            {"snake2Coordinates", snake2Coordinates},
             {"fruitsTypes", fruitsTypes},
             {"fruitsX", fruitsX},
             {"fruitsY", fruitsY},
