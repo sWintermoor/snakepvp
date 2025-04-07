@@ -288,7 +288,7 @@ class Snake{
 //Initale Schlangen und Früchte
 Snake _SNAKE1(SNAKE_ID1, SNAKE_COORDINATES1, "red", BOOST_DURATION_INITIAL, IMMUNITY_DURATION_INITIAL, "right", VELOCITY_NORMAL, SCORE_INITIAL, BANANA_INITIAL, BLUEBERRY_INITIAL);
 Snake _SNAKE2(SNAKE_ID2, SNAKE_COORDINATES2, "blue", BOOST_DURATION_INITIAL, IMMUNITY_DURATION_INITIAL, "left", VELOCITY_NORMAL, SCORE_INITIAL, BANANA_INITIAL, BLUEBERRY_INITIAL);
-Fruit FRUIT_INITIAL("apple", std::floor(GRID_SIZE / 2), std::floor(GRID_SIZE / 2));
+Fruit FRUIT_INITIAL("apple", std::floor(CELL_SIZE * GRID_SIZE / 2), std::floor(CELL_SIZE * GRID_SIZE / 2));
 
 class Universe{
     private:
@@ -677,14 +677,8 @@ public:
                 //End of game
             }
             else{
-                std::cout << "Universe: a" << std::endl;
-                std::this_thread::sleep_for(std::chrono::seconds(2));
                 bool timerPermission = (_timer % GAME_SPEED == 0);
-                std::cout << "Universe: b" << std::endl;
-                std::this_thread::sleep_for(std::chrono::seconds(2));
                 bool endOfGame = _universe->universeTick(timerPermission);
-                std::cout << "Universe: c" << std::endl;
-                std::this_thread::sleep_for(std::chrono::seconds(2));
                 if (endOfGame){
                     std::cout << "Setting final score" << std::endl;
                     setFinalScore();
