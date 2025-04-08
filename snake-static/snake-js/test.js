@@ -82,28 +82,30 @@ function testMain(){
                 _SOCKET.onmessage = null;
             }
             else{
-                console.log("Snake1 Coordinates", data.snake1Coordinates);
-                _WORLD.setSnake1Coordinates(data.snake1Coordinates);
+                if (!data.gameStatus == "no_update"){
+                    console.log("Snake1 Coordinates", data.snake1Coordinates);
+                    _WORLD.setSnake1Coordinates(data.snake1Coordinates);
 
-                console.log("Snake2 Coordinates", data.snake2Coordinates);
-                _WORLD.setSnake2Coordinates(data.snake2Coordinates);
+                    console.log("Snake2 Coordinates", data.snake2Coordinates);
+                    _WORLD.setSnake2Coordinates(data.snake2Coordinates);
 
-                console.log("fruitsTypes", data.fruitsTypes); 
-                console.log("fruitsX", data.fruitsX);
-                console.log("fruitsY", data.fruitsY);
-                _WORLD.setFruits(data.fruitsTypes, data.fruitsX, data.fruitsY);
+                    console.log("fruitsTypes", data.fruitsTypes); 
+                    console.log("fruitsX", data.fruitsX);
+                    console.log("fruitsY", data.fruitsY);
+                    _WORLD.setFruits(data.fruitsTypes, data.fruitsX, data.fruitsY);
 
-                console.log("Timer", data.timer);
-                _WORLD.setTimer(data.timer);
+                    console.log("Timer", data.timer);
+                    _WORLD.setTimer(data.timer);
 
-                console.log("Status", data.gameStatus);
-                _WORLD.setStatus(data.gameStatus);
-    
-                drawPlayer();
-                drawScore();
-                drawTimer();
-                drawSnakes();
-                drawFoods();
+                    console.log("Status", data.gameStatus);
+                    _WORLD.setStatus(data.gameStatus);
+        
+                    drawPlayer();
+                    drawScore();
+                    drawTimer();
+                    drawSnakes();
+                    drawFoods();
+                }
             }
         }
     };

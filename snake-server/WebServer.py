@@ -16,8 +16,6 @@ lock = threading.Lock()
 
 async def forward_to_universe(websocket, message):
     await websocket.send(message)
-    response = await websocket.recv()
-    return response
     
 async def prepare_json_for_universe(id, message):
     data = json.loads(message)
@@ -90,43 +88,119 @@ async def handle_client(websocket):
         await player1.send(json.dumps({"gameStatus": "connected"}))
         await player2.send(json.dumps({"gameStatus": "connected"}))
 
+        # Creating tasks for receiving messages from players.
+
+        message_queue1_client = asyncio.Queue()
+        message_queue2_client = asyncio.Queue()
+
+        async def receive_messages_client(client, queue, client_id):
+            while True:
+                try:
+                    message = await client.recv()
+                    await queue.put(message)
+                except websockets.ConnectionClosed:
+                    print(f"WebServer: Connection closed by client {client_id}")
+                    break
+        
+        receive_task1_client = asyncio.create_task(receive_messages_client(player1, message_queue1_client, "1"))
+        receive_task2_client = asyncio.create_task(receive_messages_client(player2, message_queue2_client, "2"))
+
+        # Creating tasks for receiving messages from Universe server.
+
+        message_queue1_universe = asyncio.Queue()
+        message_queue2_universe = asyncio.Queue()
+
+        async def receive_messages_universe(websocket, queue, websocket_id):
+            while True:
+                try:
+                    message = await websocket.recv()
+                    await queue.put(message)
+                except websockets.ConnectionClosed:
+                    print(f"WebServer: Connection closed by Universe {websocket_id}")
+                    break
+
+        receive_task1_universe = asyncio.create_task(receive_messages_universe(persistent_ws1_universe, message_queue1_universe, "1"))
+        receive_task2_universe = asyncio.create_task(receive_messages_universe(persistent_ws2_universe, message_queue2_universe, "2"))
+
         print("WebServer: Entering while-Loop")
 
         # Continuously receive and send messages
         while True:
-            print("WebServer: Waiting for messages from players")
-            message1, message2 = await asyncio.gather(player1.recv(), player2.recv())
+            try:
+                print("WebServer: Waiting for messages from players")
+                
+                messageFromClient1 = None
+                messageFromClient2 = None
 
-            # message1 = await player1.recv()
+                messageFromUniverse1 = None
+                messageFromUniverse2 = None
 
-            # print("a")
+                dataToClient1 = None	
+                dataToClient2 = None
 
-            # message2 = await player2.recv()
+                try:
+                    messageFromClient1 = message_queue1_client.get_nowait()
+                except asyncio.QueueEmpty:
+                    pass
 
-            print(f"WebServer: Received message from player1: {message1}, type: {type(message1)}")
-            print(f"WebServer: Received message from player2: {message2}, type: {type(message2)}")
-            
-            print("WebServer: Forwarding messages to Universe")
-            prepared_message1 = await prepare_json_for_universe(1, message1)
-            prepared_message2 = await prepare_json_for_universe(2, message2)
+                try:
+                    messageFromClient2 = message_queue2_client.get_nowait()
+                except asyncio.QueueEmpty:
+                    pass
 
-            response1, response2 = await asyncio.gather(
-                forward_to_universe(persistent_ws1_universe, prepared_message1),
-                forward_to_universe(persistent_ws2_universe, prepared_message2)
-            )
+                if messageFromClient1 or messageFromClient2:
+                    # Process available messages
+                    if messageFromClient1:
+                        print(f"WebServer: Received message from player1: {messageFromClient1}, type: {type(messageFromClient1)}")
+                        print("WebServer: Forwarding message 1 to Universe")
+                        preparedMessageFromClient1 = await prepare_json_for_universe(1, messageFromClient1)
+                        await forward_to_universe(persistent_ws1_universe, preparedMessageFromClient1)
+                    
+                    if messageFromClient2:
+                        print(f"WebServer: Received message from player2: {messageFromClient2}, type: {type(messageFromClient2)}")
+                        print("WebServer: Forwarding message 2 to Universe")
+                        preparedMessageFromClient2 = await prepare_json_for_universe(2, messageFromClient2)
+                        await forward_to_universe(persistent_ws2_universe, preparedMessageFromClient2)
 
-            print(f"WebServer: Raw response1: {response1}")
-            print(f"Webserver: Raw response2: {response2}")
+                await asyncio.sleep(3)
 
-            data1 = json.loads(response1)
-            data2 = json.loads(response2)
+                try:
+                    messageFromUniverse1 = message_queue1_universe.get_nowait()
+                except asyncio.QueueEmpty:
+                    pass
 
-            print(f"WebServer: Received data from player1: {data1}")
-            print(f"WebServer: Received data from player2: {data2}")
+                try:
+                    messageFromUniverse2 = message_queue2_universe.get_nowait()
+                except asyncio.QueueEmpty:
+                    pass
 
-            # Example of sending a message back to the clients
-            print("WebServer: Sending data from Universe back to players")
-            asyncio.gather(player1.send(json.dumps(data1)), player2.send(json.dumps(data2)))
+                if messageFromUniverse1 or messageFromUniverse2:
+                    # Process available messages from Universe
+                    if messageFromUniverse1:
+                        print(f"WebServer: Received message from Universe1: {messageFromUniverse1}, type: {type(messageFromUniverse1)}")
+                        dataToClient1 = json.loads(messageFromUniverse1)
+                        print(f"WebServer: Received data from player1: {dataToClient1}")
+
+                    if messageFromUniverse2:
+                        print(f"WebServer: Received message from Universe2: {messageFromUniverse2}, type: {type(messageFromUniverse2)}")
+                        dataToClient2 = json.loads(messageFromUniverse2)
+                        print(f"WebServer: Received data from player2: {dataToClient2}")
+
+                await asyncio.sleep(3)
+
+                # Example of sending a message back to the clients
+                print("WebServer: Sending data from Universe back to players")
+                await asyncio.gather(
+                        player1.send(json.dumps(json.dumps(dataToClient1) if messageFromUniverse1 else {"gameStatus": "no_update"})),
+                        player2.send(json.dumps(json.dumps(dataToClient2) if messageFromUniverse2 else {"gameStatus": "no_update"}))
+                    )
+                
+                # Small delay to prevent busy-waiting
+                await asyncio.sleep(3)
+
+            except Exception as e:
+                print(f"WebServer: Error in event loop: {e}")
+                break
 
     except websockets.ConnectionClosed as e:
         print(f"WebServer: Connection closed by client {websocket.remote_address}. Clean: {e.code} Reason: {e.reason}")
