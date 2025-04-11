@@ -82,7 +82,9 @@ function testMain(){
                 _SOCKET.onmessage = null;
             }
             else{
-                if (!data.gameStatus == "no_update"){
+                console.log("Check for update")
+                if (data.gameStatus !== "no_update"){
+                    console.log("Doing update")
                     console.log("Snake1 Coordinates", data.snake1Coordinates);
                     _WORLD.setSnake1Coordinates(data.snake1Coordinates);
 

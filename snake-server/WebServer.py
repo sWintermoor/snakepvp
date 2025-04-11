@@ -162,7 +162,7 @@ async def handle_client(websocket):
                         preparedMessageFromClient2 = await prepare_json_for_universe(2, messageFromClient2)
                         await forward_to_universe(persistent_ws2_universe, preparedMessageFromClient2)
 
-                await asyncio.sleep(3)
+                await asyncio.sleep(1)
 
                 try:
                     messageFromUniverse1 = message_queue1_universe.get_nowait()
@@ -186,17 +186,17 @@ async def handle_client(websocket):
                         dataToClient2 = json.loads(messageFromUniverse2)
                         print(f"WebServer: Received data from player2: {dataToClient2}")
 
-                await asyncio.sleep(3)
+                await asyncio.sleep(1)
 
                 # Example of sending a message back to the clients
                 print("WebServer: Sending data from Universe back to players")
                 await asyncio.gather(
-                        player1.send(json.dumps(json.dumps(dataToClient1) if messageFromUniverse1 else {"gameStatus": "no_update"})),
-                        player2.send(json.dumps(json.dumps(dataToClient2) if messageFromUniverse2 else {"gameStatus": "no_update"}))
+                        player1.send(json.dumps(dataToClient1 if messageFromUniverse1 else {"gameStatus": "no_update"})),
+                        player2.send(json.dumps(dataToClient2 if messageFromUniverse2 else {"gameStatus": "no_update"}))
                     )
                 
                 # Small delay to prevent busy-waiting
-                await asyncio.sleep(3)
+                await asyncio.sleep(1)
 
             except Exception as e:
                 print(f"WebServer: Error in event loop: {e}")
