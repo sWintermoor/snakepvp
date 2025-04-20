@@ -9,6 +9,7 @@
 #include <thread>
 #include <queue>
 #include <nlohmann/json.hpp>
+#include <chrono>
 
 namespace beast = boost::beast;
 namespace websocket = beast::websocket;
@@ -18,7 +19,7 @@ using json = nlohmann::json;
 using namespace std;
 
 // Spielgeschwindigkeit
-int GAME_SPEED = 18; 
+int GAME_SPEED = 3; 
 
 // Spielfeldparameter
 int GAME_SIZE = 5; // Spielgröße
@@ -309,9 +310,12 @@ class Universe{
 
         bool universeTick(bool timerPermission){
             // Tick function
+            std::cout << "Universe: universeTick" << std::endl;
             if (checkCollisions() == -1){
+                std::cout << "Universe: No collision detected" << std::endl;
 
                 if (timerPermission || checkBooster(_snake1)){
+                    std::cout << "Universe: Update Snake1 and Fruits" << std::endl;
                     int updateConsumption = checkFruit(_snake1);
                     _snake1.update(timerPermission, updateConsumption);
                     if (updateConsumption > 0){
@@ -319,6 +323,7 @@ class Universe{
                     }
                 }
                 if (timerPermission || checkBooster(_snake2)){
+                    std::cout << "Universe: Update Snake2 and Fruits" << std::endl;
                     int updateConsumption = checkFruit(_snake2);
                     _snake2.update(timerPermission, updateConsumption);
                     if (updateConsumption > 0){
@@ -328,6 +333,7 @@ class Universe{
                 return false;                    
             }
             else{
+                std::cout << "Universe: Collision detected" << std::endl;
                 return true;
             }
         };
@@ -530,33 +536,34 @@ private:
         
         if (should_write){
             std::cout << "Universe: do_write1: Starting async_write" << std::endl;
-        auto self = shared_from_this();
-        _ws1.async_write(
-            net::buffer(_write_queue1.front()),
-            [self](beast::error_code ec, std::size_t bytes) {
-                std::cout << "Universe: do_write1: async_write completed, ec = " << ec.message() << std::endl;
-                bool check_next = false;
-                {
-                    std::lock_guard<std::mutex> lock(self->_write_mutex1);
-                    if (ec) {
-                        std::cerr << "Universe: do_write1 error: " 
-                             << ec.message() 
-                             << " (code: " << ec.value() << ")" 
-                             << std::endl;
+            auto self = shared_from_this();
+            _ws1.async_write(
+                net::buffer(_write_queue1.front()),
+                [self](beast::error_code ec, std::size_t bytes) {
+                    std::cout << "Universe: do_write1: async_write completed, ec = " << ec.message() << std::endl;
+                    bool check_next = false;
+                    {
+                        std::lock_guard<std::mutex> lock(self->_write_mutex1);
+                        if (ec) {
+                            std::cerr << "Universe: do_write1 error: " 
+                                << ec.message() 
+                                << " (code: " << ec.value() << ")" 
+                                << std::endl;
+                        }
+                        else {
+                            std::cout << "Universe: async_write_1 success." << std::endl;
+                            self->_write_queue1.pop();
+                        }
+                        self->_writing1 = false;
+                        check_next = !self->_write_queue1.empty();
                     }
-                    else {
-                        std::cout << "Universe: async_write_1 success." << std::endl;
-                        self->_write_queue1.pop();
+                    if (check_next) {
+                        net::post(self-> _ws1.get_executor(), [self]() {
+                            self->do_write1(); // Check if more messages to send
+                        });
                     }
-                    self->_writing1 = false;
-                    check_next = !self->_write_queue1.empty();
                 }
-                if (check_next) {
-                    net::post(self-> _ws1.get_executor(), [self]() {
-                        self->do_write1(); // Check if more messages to send
-                    });
-                }
-            });
+            );
         }
     }
 
@@ -600,7 +607,8 @@ private:
                             self->do_write2(); // Check if more messages to send
                         });
                     }
-                });
+                }
+            );
         }
     }
 
@@ -624,6 +632,12 @@ private:
             net::post(_ws1.get_executor(), [self = shared_from_this()]() {
                 self->_tickScheduled = false;
                 self->sessionTick();
+            });
+        }
+        else {
+            std::cout << "Universe: Not scheduling next tick, already scheduled or writing in progress." << std::endl;
+            net::post(_ws1.get_executor(), [self = shared_from_this()]() {
+                self->checkQueueAndScheduleNextTick();
             });
         }
     }
@@ -664,6 +678,9 @@ public:
         }
 
         try {
+            
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+
             _timer -= 1;
             std::cout << "Universe: Beginn tick" << std::endl;
 
@@ -671,10 +688,12 @@ public:
                 //End of game
             }
             else{
+                std::cout << "Universe: Timer: " << _timer << std::endl;
                 bool timerPermission = (_timer % GAME_SPEED == 0);
+                std::cout << "Universe: Timer permission: " << timerPermission << std::endl;
                 bool endOfGame = _universe->universeTick(timerPermission);
                 if (endOfGame){
-                    std::cout << "Setting final score" << std::endl;
+                    std::cout << "Universe: Setting final score" << std::endl;
                     setFinalScore();
                 }
                 else{
@@ -683,7 +702,7 @@ public:
                     // Plane den nächsten Tick
                     auto self = shared_from_this();
                     net::post(_ws1.get_executor(), [self]() {
-                        std::cout << "Trying to start next tick" << std::endl;
+                        std::cout << "Universe: Trying to start next tick" << std::endl;
                         self->checkQueueAndScheduleNextTick();
                     });
                 }
@@ -760,8 +779,10 @@ public:
                 std::cout << "Universe: Starting session for clients" << std::endl;
                 checkQueueAndScheduleNextTick();
             }
-            else if (Data.contains("key") && Data.contains("direction") && Data["direction"].is_string()){
-                _universe->updateSnakeDirection(id, Data["direction"]);
+            else{
+                if(Data.contains("direction") && Data["direction"].is_string()){
+                    _universe->updateSnakeDirection(id, Data["direction"]);
+                }
             }
         }
         catch (const json::exception& e) {

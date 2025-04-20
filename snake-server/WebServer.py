@@ -192,7 +192,7 @@ async def handle_client(websocket):
                 await asyncio.sleep(1)
 
                 # Example of sending a message back to the clients
-                print("WebServer: Sending data from Universe back to players")
+                print("WebServer: Sending data to players")
                 await asyncio.gather(
                         player1.send(json.dumps(dataToClient1 if messageFromUniverse1 else {"gameStatus": "no_update"})),
                         player2.send(json.dumps(dataToClient2 if messageFromUniverse2 else {"gameStatus": "no_update"}))
