@@ -318,7 +318,8 @@ class Universe{
                     std::cout << "Universe: Update Snake1 and Fruits" << std::endl;
                     int updateConsumption = checkFruit(_snake1);
                     _snake1.update(timerPermission, updateConsumption);
-                    if (updateConsumption > 0){
+                    if (updateConsumption > -1){
+                        std::cout << "Universe: Spawning fruits (snake1)" << std::endl;
                         spawnFruits();
                     }
                 }
@@ -326,7 +327,8 @@ class Universe{
                     std::cout << "Universe: Update Snake2 and Fruits" << std::endl;
                     int updateConsumption = checkFruit(_snake2);
                     _snake2.update(timerPermission, updateConsumption);
-                    if (updateConsumption > 0){
+                    if (updateConsumption > -1){
+                        std::cout << "Universe: Spawning fruits (snake2)" << std::endl;
                         spawnFruits();
                     }
                 }
@@ -394,7 +396,7 @@ class Universe{
             return collision;
         }
 
-        bool checkFruit(Snake snake){
+        int checkFruit(Snake snake){
             pair<int, int> head = snake.getHead();
             int consumedFruit = -1;
 
