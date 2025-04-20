@@ -19,7 +19,7 @@ using json = nlohmann::json;
 using namespace std;
 
 // Kommentare anzeigen
-// bool SHOW_COMMENTS = true;
+bool SHOW_COMMENTS = false;
 
 // Spielgeschwindigkeit
 int GAME_SPEED = 3; 
@@ -217,25 +217,30 @@ class Snake{
 
         void move(bool appleConsumption){
             // Move function
-            std::cout << "Universe: Move snake" << std::endl;
             pair<int, int> head = getHead();
             pair<int, int> newHead;
-            if (_direction == "up"){
+            if (_direction == "ArrowUp"){
                 newHead = make_pair(head.first, (head.second - 1*CELL_SIZE) % (GRID_SIZE*CELL_SIZE));
             }
-            else if (_direction == "down"){
+            else if (_direction == "ArrowDown"){
                 newHead = make_pair(head.first, (head.second + 1*CELL_SIZE) % (GRID_SIZE*CELL_SIZE));
             }
-            else if (_direction == "left"){
-                newHead = make_pair((head.first - 1*CELL_SIZE) % (GRID_SIZE*CELL_SIZE), head.second);
+            else if (_direction == "ArrowLeft"){
+                int new_head_first = (head.first - 1*CELL_SIZE) % (GRID_SIZE*CELL_SIZE);
+                if (new_head_first < 0){
+                    new_head_first = GRID_SIZE*CELL_SIZE - CELL_SIZE;
+                }
+                newHead = make_pair(new_head_first, head.second);
             }
-            else if (_direction == "right"){
+            else if (_direction == "ArrowRight"){
                 newHead = make_pair((head.first + 1*CELL_SIZE) % (GRID_SIZE*CELL_SIZE), head.second);
             }
             _coordinates.push_front(newHead);
 
+            std::cout << "Universe: Snake " << _id << " current direction: " << _direction << std::endl;
+
             if (!appleConsumption){
-                std::cout << "Universe: Remove last coordinates of snake" << std::endl;
+                if(SHOW_COMMENTS) std::cout << "Universe: Remove last coordinates of snake" << std::endl;
                 _coordinates.pop_back();
             }
         };
@@ -292,8 +297,8 @@ class Snake{
 // Code ist unschön positioniert
 
 //Initale Schlangen und Früchte
-Snake _SNAKE1(SNAKE_ID1, SNAKE_COORDINATES1, "red", BOOST_DURATION_INITIAL, IMMUNITY_DURATION_INITIAL, "right", VELOCITY_NORMAL, SCORE_INITIAL, BANANA_INITIAL, BLUEBERRY_INITIAL);
-Snake _SNAKE2(SNAKE_ID2, SNAKE_COORDINATES2, "blue", BOOST_DURATION_INITIAL, IMMUNITY_DURATION_INITIAL, "left", VELOCITY_NORMAL, SCORE_INITIAL, BANANA_INITIAL, BLUEBERRY_INITIAL);
+Snake _SNAKE1(SNAKE_ID1, SNAKE_COORDINATES1, "red", BOOST_DURATION_INITIAL, IMMUNITY_DURATION_INITIAL, "ArrowRight", VELOCITY_NORMAL, SCORE_INITIAL, BANANA_INITIAL, BLUEBERRY_INITIAL);
+Snake _SNAKE2(SNAKE_ID2, SNAKE_COORDINATES2, "blue", BOOST_DURATION_INITIAL, IMMUNITY_DURATION_INITIAL, "ArrowLeft", VELOCITY_NORMAL, SCORE_INITIAL, BANANA_INITIAL, BLUEBERRY_INITIAL);
 Fruit FRUIT_INITIAL("apple", std::floor(CELL_SIZE * GRID_SIZE / 2), std::floor(CELL_SIZE * GRID_SIZE / 2));
 
 class Universe{
@@ -317,14 +322,14 @@ class Universe{
             // Tick function
             std::cout << "Universe: universeTick" << std::endl;
             if (checkCollisions() == -1){
-                std::cout << "Universe: No collision detected" << std::endl;
+                if(SHOW_COMMENTS) std::cout << "Universe: No collision detected" << std::endl;
 
                 if (timerPermission || checkBooster(_snake1)){
                     std::cout << "Universe: Update Snake1 and Fruits" << std::endl;
                     int updateConsumption = checkFruit(_snake1);
                     _snake1.update(timerPermission, updateConsumption);
                     if (updateConsumption > -1){
-                        std::cout << "Universe: Spawning fruits (snake1)" << std::endl;
+                        if(SHOW_COMMENTS) std::cout << "Universe: Spawning fruits (snake1)" << std::endl;
                         spawnFruits();
                     }
                 }
@@ -333,14 +338,14 @@ class Universe{
                     int updateConsumption = checkFruit(_snake2);
                     _snake2.update(timerPermission, updateConsumption);
                     if (updateConsumption > -1){
-                        std::cout << "Universe: Spawning fruits (snake2)" << std::endl;
+                        if(SHOW_COMMENTS) std::cout << "Universe: Spawning fruits (snake2)" << std::endl;
                         spawnFruits();
                     }
                 }
                 return false;                    
             }
             else{
-                std::cout << "Universe: Collision detected" << std::endl;
+                if(SHOW_COMMENTS) std::cout << "Universe: Collision detected" << std::endl;
                 return true;
             }
         };
@@ -492,19 +497,21 @@ class Universe{
         }
 
         void updateSnakeDirection(int id, std::string key){
+            std::cout << "Universe: Setting new movement:" << key << std::endl;
             if (id == 1){
-                if (key == "up" || key == "down" || key == "left" || key == "right"){
+                if (key == "ArrowUp" || key == "ArrowDown" || key == "ArrowLeft" || key == "ArrowRight"){
+                    std::cout << "Universe: New Snake " << id << " direction: " << key << std::endl;
                     _snake1.setDirection(key);
                 }
-                else if (key == "space"){
+                else if (key == " "){
                     _snake1.changeBoost(BOOST_DURATION);
                 }
             }
             else if (id == 2){
-                if (key == "up" || key == "down" || key == "left" || key == "right"){
+                if (key == "ArrowUp" || key == "ArrowDown" || key == "ArrowLeft" || key == "ArrowRight"){
                     _snake2.setDirection(key);
                 }
-                else if (key == "space"){
+                else if (key == " "){
                     _snake2.changeBoost(BOOST_DURATION);
                 }
             }
@@ -577,9 +584,9 @@ private:
     void do_write2() {
         bool should_write = false;
         {
-            std::cout << "Universe: Locking writing for Client2" << std::endl;
+            if(SHOW_COMMENTS) std::cout << "Universe: Locking writing for Client2" << std::endl;
             std::lock_guard<std::mutex> lock(_write_mutex2);
-            std::cout << "Universe: do_write2: Queue size = " << _write_queue2.size() << ", writing = " << _writing2 << std::endl;
+            if(SHOW_COMMENTS) std::cout << "Universe: do_write2: Queue size = " << _write_queue2.size() << ", writing = " << _writing2 << std::endl;
             if (!_write_queue2.empty() && !_writing2){
                 _writing2 = true;
                 should_write = true;
@@ -622,7 +629,7 @@ private:
     void checkQueueAndScheduleNextTick() {
         bool schedule = false;
         {
-            std::cout << "Universe: Locking for next tick" << std::endl;
+            if(SHOW_COMMENTS) std::cout << "Universe: Locking for next tick" << std::endl;
             std::lock_guard<std::mutex> lock1(_write_mutex1);
             std::lock_guard<std::mutex> lock2(_write_mutex2);
             if (!_writing1 && !_writing2 &&
@@ -633,7 +640,7 @@ private:
             }
         } 
 
-        std::cout << "Universe: Unlocking for next tick" << std::endl;
+        if(SHOW_COMMENTS) std::cout << "Universe: Unlocking for next tick" << std::endl;
 
         if (schedule) {
             net::post(_ws1.get_executor(), [self = shared_from_this()]() {
@@ -642,7 +649,7 @@ private:
             });
         }
         else {
-            std::cout << "Universe: Not scheduling next tick, already scheduled or writing in progress." << std::endl;
+            if(SHOW_COMMENTS) std::cout << "Universe: Not scheduling next tick, already scheduled or writing in progress." << std::endl;
             net::post(_ws1.get_executor(), [self = shared_from_this()]() {
                 self->checkQueueAndScheduleNextTick();
             });
@@ -664,7 +671,7 @@ public:
                     self->_ws2.async_accept(
                         [self](beast::error_code ec) {
                             if (!ec) {
-                                std::cout << "Universe: Creating Universe Object" << std::endl;
+                                if(SHOW_COMMENTS) std::cout << "Universe: Creating Universe Object" << std::endl;
                                 self -> _universe = std::make_unique<Universe>(
                                 _SNAKE1, 
                                 _SNAKE2, 
@@ -680,27 +687,33 @@ public:
 
     void sessionTick(){
         if (_processingTick.exchange(true)){
-            std::cout << "Universe: Already processing tick, skipping this one." << std::endl;
+            if(SHOW_COMMENTS) std::cout << "Universe: Already processing tick, skipping this one." << std::endl;
             return;
         }
 
         try {
             // Sleeping
-            // std::this_thread::sleep_for(std::chrono::seconds(1));
+            std::this_thread::sleep_for(std::chrono::seconds(1));
 
             _timer -= 1;
-            std::cout << "Universe: Beginn tick" << std::endl;
+            if(SHOW_COMMENTS) std::cout << "Universe: Beginn tick" << std::endl;
+
+            // Damit derzeit Code nicht stoppt
 
             if(_timer == 0){
-                //End of game
+                _timer = TIMER_INITIAL; 
+            }
+
+            if(_timer == 0){
+                
             }
             else{
-                std::cout << "Universe: Timer: " << _timer << std::endl;
+                if(SHOW_COMMENTS) std::cout << "Universe: Timer: " << _timer << std::endl;
                 bool timerPermission = (_timer % GAME_SPEED == 0);
-                std::cout << "Universe: Timer permission: " << timerPermission << std::endl;
+                if(SHOW_COMMENTS) std::cout << "Universe: Timer permission: " << timerPermission << std::endl;
                 bool endOfGame = _universe->universeTick(timerPermission);
                 if (endOfGame){
-                    std::cout << "Universe: Setting final score" << std::endl;
+                    if(SHOW_COMMENTS) std::cout << "Universe: Setting final score" << std::endl;
                     setFinalScore();
                 }
                 else{
@@ -783,12 +796,13 @@ public:
         try{
             json Data = json::parse(message);
             if (Data.contains("key") && Data["key"] == "start" && _gameStarted.exchange(true)){
-                std::cout << "Universe: Starting session for clients" << std::endl;
+                if(SHOW_COMMENTS) std::cout << "Universe: Starting session for clients" << std::endl;
                 checkQueueAndScheduleNextTick();
             }
             else{
-                if(Data.contains("direction") && Data["direction"].is_string()){
-                    _universe->updateSnakeDirection(id, Data["direction"]);
+                if(Data.contains("movement") && Data["movement"].is_string()){
+                    std::cout << "Universe: Updating snake direction for client " << id << std::endl;
+                    _universe->updateSnakeDirection(id, Data["movement"]);
                 }
             }
         }
@@ -862,7 +876,7 @@ public:
             [this](beast::error_code ec, tcp::socket socket) {
                 try {
                     auto remote = socket.remote_endpoint();
-                    std::cout << "Universe: Connection from " << remote.address().to_string() 
+                    if(SHOW_COMMENTS) std::cout << "Universe: Connection from " << remote.address().to_string() 
                               << ":" << remote.port() << std::endl;
                 } catch (std::exception &e) {
                     std::cerr << "Universe: Failed to get remote endpoint: " << e.what() << std::endl;
@@ -872,11 +886,11 @@ public:
                     if (!first_socket){
                         // Erster Client
                         first_socket.emplace(std::move(socket));
-                        std::cout << "Universe: First player connected" << std::endl;
+                        if(SHOW_COMMENTS) std::cout << "Universe: First player connected" << std::endl;
                     }
                     else{
                         // Zweiter Client und Start der Session
-                        std::cout << "Universe: Second player connected" << std::endl;
+                        if(SHOW_COMMENTS) std::cout << "Universe: Second player connected" << std::endl;
                         auto session = std::make_shared<Session>(
                             std::move(*first_socket),
                             std::move(socket),
@@ -900,9 +914,9 @@ public:
 int main(){
     // Main function
     try {
-        std::cout << "Universe: Starting WebSocket server..." << std::endl;
+        if(SHOW_COMMENTS) std::cout << "Universe: Starting WebSocket server..." << std::endl;
         WebSocketServer server;
-        std::cout << "Universe: WebSocket server running on port 9092" << std::endl;
+        if(SHOW_COMMENTS) std::cout << "Universe: WebSocket server running on port 9092" << std::endl;
         server.run();
     }
     catch (std::exception const& e) {
