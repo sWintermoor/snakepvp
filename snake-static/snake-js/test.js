@@ -102,6 +102,8 @@ function testMain(){
                     console.log("Status", data.gameStatus);
                     _WORLD.setStatus(data.gameStatus);
         
+                    cleanBoard();
+                    drawGrid();
                     drawPlayer();
                     drawScore();
                     drawTimer();

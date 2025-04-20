@@ -214,6 +214,7 @@ class Snake{
 
         void move(bool appleConsumption){
             // Move function
+            std::cout << "Universe: Move snake" << std::endl;
             pair<int, int> head = getHead();
             pair<int, int> newHead;
             if (_direction == "up"){
@@ -230,8 +231,22 @@ class Snake{
             }
             _coordinates.push_front(newHead);
 
+            std::cout << "Universe: New coordinates of snake: ";
+            for(const auto& coord : _coordinates) {
+                std::cout << "(" << coord.first << "," << coord.second << ") ";
+            }
+            std::cout << std::endl;
+
             if (!appleConsumption){
+                std::cout << "Universe: Remove last coordinates of snake" << std::endl;
                 _coordinates.pop_back();
+
+                std::cout << "Universe: New coordinates of snake after removing: ";
+                for(const auto& coord : _coordinates) {
+                    std::cout << "(" << coord.first << "," << coord.second << ") ";
+                }
+                std::cout << std::endl;
+
             }
         };
 
