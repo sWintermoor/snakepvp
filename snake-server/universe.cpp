@@ -432,15 +432,15 @@ class Universe{
         }
 
         void spawnFruits(){
-            int randomX = rand() % GRID_SIZE;
-            int randomY = rand() % GRID_SIZE;
+            int randomX = (rand()*CELL_SIZE) % (GRID_SIZE*CELL_SIZE) + (CELL_SIZE/2);
+            int randomY = (rand()*CELL_SIZE) % (GRID_SIZE*CELL_SIZE) + (CELL_SIZE/2);
             list<pair<int, int>> snake1Coordinates = _snake1.getCoordinates();
             list<pair<int, int>> snake2Coordinates = _snake2.getCoordinates();
             list<pair<int, int>> _fruitCoordinates = _fruits.getFruitsCoordinates(); 
 
             while (find(snake1Coordinates.begin(), snake1Coordinates.end(), make_pair(randomX, randomY)) != snake1Coordinates.end() || find(snake2Coordinates.begin(), snake2Coordinates.end(), make_pair(randomX, randomY)) != snake2Coordinates.end() || find(_fruitCoordinates.begin(), _fruitCoordinates.end(), make_pair(randomX, randomY)) != _fruitCoordinates.end()){
-                randomX = rand() % GRID_SIZE;
-                randomY = rand() % GRID_SIZE;
+                randomX = (rand()*CELL_SIZE) % (GRID_SIZE*CELL_SIZE) + (CELL_SIZE/2);
+                randomY = (rand()*CELL_SIZE) % (GRID_SIZE*CELL_SIZE) + (CELL_SIZE/2);
             }
 
             int randomFruit = rand() % 6;
