@@ -15,6 +15,9 @@ players_cnt = 0       # Should prevent a double connection to the Universe serve
 lock = threading.Lock()
 
 async def forward_to_universe(websocket, message):
+    if not isinstance(message, str):
+        message = json.dumps(message)
+    print(f"WebServer: Sending message to universe: {message}, type: {type(message)}")
     await websocket.send(message)
     
 async def prepare_json_for_universe(id, message):

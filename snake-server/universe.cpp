@@ -558,9 +558,6 @@ private:
                 }
             });
         }
-        else {
-            checkQueueAndScheduleNextTick();
-        }
     }
 
     void do_write2() {
@@ -604,9 +601,6 @@ private:
                         });
                     }
                 });
-        }
-        else {
-            checkQueueAndScheduleNextTick();
         }
     }
 
@@ -683,10 +677,17 @@ public:
                     std::cout << "Setting final score" << std::endl;
                     setFinalScore();
                 }
+                else{
+                    std::cout << "Universe: Start to update clients" << std::endl;
+                    updateClients();
+                    // Plane den nächsten Tick
+                    auto self = shared_from_this();
+                    net::post(_ws1.get_executor(), [self]() {
+                        std::cout << "Trying to start next tick" << std::endl;
+                        self->checkQueueAndScheduleNextTick();
+                    });
+                }
             }
-
-            std::cout << "Universe: End tick and start writing back" << std::endl;
-            updateClients();
         }
         catch (const std::exception& e) {
             std::cerr << "Universe: Error in sessionTick: " << e.what() << std::endl;
@@ -752,14 +753,14 @@ public:
     }
 
     void handleMessage(int id, const std::string& message) {
-        // Handle game logic here
+        std::cout << "Universe: handleMessage received: '" << message << "' from client '" << id << "'" << std::endl;
         try{
             json Data = json::parse(message);
             if (Data.contains("key") && Data["key"] == "start" && _gameStarted.exchange(true)){
                 std::cout << "Universe: Starting session for clients" << std::endl;
                 checkQueueAndScheduleNextTick();
             }
-            else if (Data.contains("key")){
+            else if (Data.contains("key") && Data.contains("direction") && Data["direction"].is_string()){
                 _universe->updateSnakeDirection(id, Data["direction"]);
             }
         }
@@ -798,7 +799,7 @@ public:
             _write_queue1.push(message1.dump());
         }
         std::cout << "Universe: Pushing message for client 2 to _write_queue2" << std::endl;
-        {
+        { 
             std::lock_guard<std::mutex> lock(_write_mutex2);
             _write_queue2.push(message2.dump());
         }
