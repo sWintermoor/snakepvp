@@ -18,6 +18,9 @@ using tcp = boost::asio::ip::tcp;
 using json = nlohmann::json;
 using namespace std;
 
+// Kommentare anzeigen
+// bool SHOW_COMMENTS = true;
+
 // Spielgeschwindigkeit
 int GAME_SPEED = 3; 
 
@@ -231,22 +234,9 @@ class Snake{
             }
             _coordinates.push_front(newHead);
 
-            std::cout << "Universe: New coordinates of snake: ";
-            for(const auto& coord : _coordinates) {
-                std::cout << "(" << coord.first << "," << coord.second << ") ";
-            }
-            std::cout << std::endl;
-
             if (!appleConsumption){
                 std::cout << "Universe: Remove last coordinates of snake" << std::endl;
                 _coordinates.pop_back();
-
-                std::cout << "Universe: New coordinates of snake after removing: ";
-                for(const auto& coord : _coordinates) {
-                    std::cout << "(" << coord.first << "," << coord.second << ") ";
-                }
-                std::cout << std::endl;
-
             }
         };
 
@@ -695,8 +685,8 @@ public:
         }
 
         try {
-            
-            std::this_thread::sleep_for(std::chrono::seconds(1));
+            // Sleeping
+            // std::this_thread::sleep_for(std::chrono::seconds(1));
 
             _timer -= 1;
             std::cout << "Universe: Beginn tick" << std::endl;

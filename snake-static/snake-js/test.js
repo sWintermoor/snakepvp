@@ -171,6 +171,7 @@ function drawGrid(){
 
 function createKeyHandler(){
     document.addEventListener("keydown", (event) => {
+        console.log("keydown: ", event.key);
         const data = JSON.stringify({key: event.key});
         _SOCKET.send(data);
 });

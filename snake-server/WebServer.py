@@ -189,7 +189,7 @@ async def handle_client(websocket):
                         dataToClient2 = json.loads(messageFromUniverse2)
                         print(f"WebServer: Received data from player2: {dataToClient2}")
 
-                await asyncio.sleep(1)
+                await asyncio.sleep(0.01)
 
                 # Example of sending a message back to the clients
                 print("WebServer: Sending data to players")
@@ -199,7 +199,7 @@ async def handle_client(websocket):
                     )
                 
                 # Small delay to prevent busy-waiting
-                await asyncio.sleep(1)
+                await asyncio.sleep(0.01)
 
             except Exception as e:
                 print(f"WebServer: Error in event loop: {e}")
