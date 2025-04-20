@@ -217,16 +217,16 @@ class Snake{
             pair<int, int> head = getHead();
             pair<int, int> newHead;
             if (_direction == "up"){
-                newHead = make_pair(head.first, (head.second - 1) % GRID_SIZE);
+                newHead = make_pair(head.first, (head.second - 1*CELL_SIZE) % (GRID_SIZE*CELL_SIZE));
             }
             else if (_direction == "down"){
-                newHead = make_pair(head.first, (head.second + 1) % GRID_SIZE);
+                newHead = make_pair(head.first, (head.second + 1*CELL_SIZE) % (GRID_SIZE*CELL_SIZE));
             }
             else if (_direction == "left"){
-                newHead = make_pair((head.first - 1) % GRID_SIZE, head.second);
+                newHead = make_pair((head.first - 1*CELL_SIZE) % (GRID_SIZE*CELL_SIZE), head.second);
             }
             else if (_direction == "right"){
-                newHead = make_pair((head.first + 1) % GRID_SIZE, head.second);
+                newHead = make_pair((head.first + 1*CELL_SIZE) % (GRID_SIZE*CELL_SIZE), head.second);
             }
             _coordinates.push_front(newHead);
 
