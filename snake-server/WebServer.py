@@ -3,12 +3,14 @@ import websockets
 import json
 from aiohttp import web
 import os
-import socket 
 from socket import *
 import threading
 import subprocess
+from dotenv import load_dotenv
 
-SHOW_COMMENTS = False
+load_dotenv()
+
+SHOW_COMMENTS = True
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -62,7 +64,7 @@ async def handle_client(websocket):
 
         # Start Universe server first
         persistent_ws1_universe, persistent_ws2_universe = await create_universe_connection(
-              "C:/Users/Mark Oliver/Desktop/Projekt/SnakePvPProjekt/snakepvp/out/build/universeCMake/Debug/universe.exe"
+              os.getenv("UNIVERSE_PATH")
         )
 
         if SHOW_COMMENTS: print("WebServer: Notifing players of registration and starting game")   
@@ -145,7 +147,7 @@ async def handle_client(websocket):
                         preparedMessageFromClient2 = await prepare_json_for_universe(2, messageFromClient2)
                         await forward_to_universe(persistent_ws2_universe, preparedMessageFromClient2)
 
-                await asyncio.sleep(2)
+                await asyncio.sleep(0.001)
 
                 try:
                     messageFromUniverse1 = message_queue1_universe.get_nowait()
@@ -169,7 +171,7 @@ async def handle_client(websocket):
                         dataToClient2 = json.loads(messageFromUniverse2)
                         if SHOW_COMMENTS: print(f"WebServer: Received data from player2: {dataToClient2}")
 
-                await asyncio.sleep(2)
+                await asyncio.sleep(0.001)
 
                 # Example of sending a message back to the clients
                 if SHOW_COMMENTS: print("WebServer: Sending data to players")
@@ -179,7 +181,7 @@ async def handle_client(websocket):
                     )
                 
                 # Small delay to prevent busy-waiting
-                await asyncio.sleep(2)
+                await asyncio.sleep(0.001)
 
             except Exception as e:
                 if SHOW_COMMENTS: print(f"WebServer: Error in event loop: {e}")

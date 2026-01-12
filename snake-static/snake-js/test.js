@@ -25,7 +25,7 @@ PLAYBUTTON.addEventListener("click", testMain);
 
 function testMain(){
 
-    _SOCKET = new WebSocket('ws://192.168.2.117:5501');
+    _SOCKET = new WebSocket('ws://127.0.0.1:5501');
 
     console.log("Entered main")
 
