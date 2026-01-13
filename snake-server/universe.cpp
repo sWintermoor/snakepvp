@@ -220,7 +220,7 @@ class Snake{
             pair<int, int> head = getHead();
             pair<int, int> newHead;
             if (_direction == "ArrowUp"){
-                newHead = make_pair(head.first, (head.second - 1*CELL_SIZE) % (GRID_SIZE*CELL_SIZE));
+                newHead = make_pair(head.first, ((head.second - 1*CELL_SIZE) + (GRID_SIZE * CELL_SIZE)) % (GRID_SIZE*CELL_SIZE));
             }
             else if (_direction == "ArrowDown"){
                 newHead = make_pair(head.first, (head.second + 1*CELL_SIZE) % (GRID_SIZE*CELL_SIZE));
