@@ -449,15 +449,37 @@ class Universe{
         }
 
         void spawnFruits(){
-            int randomX = (rand()*CELL_SIZE) % (GRID_SIZE*CELL_SIZE) + (CELL_SIZE/2);
-            int randomY = (rand()*CELL_SIZE) % (GRID_SIZE*CELL_SIZE) + (CELL_SIZE/2);
+            std::cout << "Spawnging new fruit(s)" << std::endl;
+
+            int random_numberX = rand();
+            int random_numberY = rand();
+
+            if(random_numberX < 0){
+                random_numberX = -1 * random_numberX;
+            }
+            if(random_numberY < 0){
+                random_numberY = -1 * random_numberY;
+            }
+
+            int randomX = (random_numberX % (GRID_SIZE)) * CELL_SIZE + (CELL_SIZE/2);
+            int randomY = (random_numberY % (GRID_SIZE)) * CELL_SIZE + (CELL_SIZE/2);
             list<pair<int, int>> snake1Coordinates = _snake1.getCoordinates();
             list<pair<int, int>> snake2Coordinates = _snake2.getCoordinates();
             list<pair<int, int>> _fruitCoordinates = _fruits.getFruitsCoordinates(); 
 
-            while (find(snake1Coordinates.begin(), snake1Coordinates.end(), make_pair(randomX, randomY)) != snake1Coordinates.end() || find(snake2Coordinates.begin(), snake2Coordinates.end(), make_pair(randomX, randomY)) != snake2Coordinates.end() || find(_fruitCoordinates.begin(), _fruitCoordinates.end(), make_pair(randomX, randomY)) != _fruitCoordinates.end()){
-                randomX = (rand()*CELL_SIZE) % (GRID_SIZE*CELL_SIZE) + (CELL_SIZE/2);
-                randomY = (rand()*CELL_SIZE) % (GRID_SIZE*CELL_SIZE) + (CELL_SIZE/2);
+            while (find(snake1Coordinates.begin(), snake1Coordinates.end(), make_pair(randomX - FRUIT_SHIFT, randomY - FRUIT_SHIFT)) != snake1Coordinates.end() || find(snake2Coordinates.begin(), snake2Coordinates.end(), make_pair(randomX - FRUIT_SHIFT, randomY - FRUIT_SHIFT)) != snake2Coordinates.end() || find(_fruitCoordinates.begin(), _fruitCoordinates.end(), make_pair(randomX - FRUIT_SHIFT, randomY - FRUIT_SHIFT)) != _fruitCoordinates.end()){
+                int random_numberX = rand();
+                int random_numberY = rand();
+
+                if(random_numberX < 0){
+                    random_numberX = -1 * random_numberX;
+                }
+                if(random_numberY < 0){
+                    random_numberY = -1 * random_numberY;
+                }
+
+                int randomX = (random_numberX % (GRID_SIZE)) * CELL_SIZE + (CELL_SIZE/2);
+                int randomY = (random_numberY % (GRID_SIZE)) * CELL_SIZE + (CELL_SIZE/2);
             }
 
             int randomFruit = rand() % 6;
