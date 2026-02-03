@@ -21,7 +21,7 @@ using namespace std;
 // Kommentare anzeigen
 bool SHOW_COMMENTS = false;
 
-// Spielgeschwindigkeit
+// Spielgeschwindigkeitf
 int GAME_SPEED = 3; 
 
 // Spielfeldparameter
@@ -49,6 +49,9 @@ int BLUEBERRY_INITIAL = 0;
 // Initiale Listen und Werte für Früchte und Timer
 int TIMER_INITIAL = 180*GAME_SPEED; // Timer in Dezi-Sekunden
 int TICK_VALUE = 1 / GAME_SPEED; // Zeitwert für Ticks
+
+// Fruit Shift
+int FRUIT_SHIFT = 15;
 
 class Fruit{
     private:
@@ -320,12 +323,12 @@ class Universe{
 
         bool universeTick(bool timerPermission){
             // Tick function
-            std::cout << "Universe: universeTick" << std::endl;
+            if(SHOW_COMMENTS) std::cout << "Universe: universeTick" << std::endl;
             if (checkCollisions() == -1){
                 if(SHOW_COMMENTS) std::cout << "Universe: No collision detected" << std::endl;
 
                 if (timerPermission || checkBooster(_snake1)){
-                    std::cout << "Universe: Update Snake1 and Fruits" << std::endl;
+                    if(SHOW_COMMENTS) std::cout << "Universe: Update Snake1 and Fruits" << std::endl;
                     int updateConsumption = checkFruit(_snake1);
                     _snake1.update(timerPermission, updateConsumption);
                     if (updateConsumption > -1){
@@ -334,7 +337,7 @@ class Universe{
                     }
                 }
                 if (timerPermission || checkBooster(_snake2)){
-                    std::cout << "Universe: Update Snake2 and Fruits" << std::endl;
+                    if(SHOW_COMMENTS) std::cout << "Universe: Update Snake2 and Fruits" << std::endl;
                     int updateConsumption = checkFruit(_snake2);
                     _snake2.update(timerPermission, updateConsumption);
                     if (updateConsumption > -1){
@@ -411,7 +414,9 @@ class Universe{
             int consumedFruit = -1;
 
             for (Fruit fruit : _fruits.getFruits()){
-                if (head.first == fruit.getX() && head.second == fruit.getY()){
+                std::cout << "snakehead and fruit position: snakehead: " << head.first << ", " << head.second << "; fruit: " << (fruit.getX() - FRUIT_SHIFT) << ", " << (fruit.getY() - FRUIT_SHIFT) << std::endl;
+
+                if (head.first == (fruit.getX() - FRUIT_SHIFT) && head.second == (fruit.getY() - FRUIT_SHIFT)){
                     if (fruit.getType() == "apple"){
                         snake.setScore(snake.getScore() + 1);
                         consumedFruit = 0;
@@ -539,9 +544,9 @@ private:
     void do_write1() {
         bool should_write = false;
         {
-            std::cout << "Universe: Locking writing for Client1" << std::endl;
+            if(SHOW_COMMENTS) std::cout << "Universe: Locking writing for Client1" << std::endl;
             std::lock_guard<std::mutex> lock(_write_mutex1);
-            std::cout << "Universe: do_write1: Queue size = " << _write_queue1.size() << ", writing = " << _writing1 << std::endl;
+            if(SHOW_COMMENTS) std::cout << "Universe: do_write1: Queue size = " << _write_queue1.size() << ", writing = " << _writing1 << std::endl;
             if (!_write_queue1.empty() && !_writing1){
                 _writing1 = true;
                 should_write = true;
@@ -549,12 +554,12 @@ private:
         }
         
         if (should_write){
-            std::cout << "Universe: do_write1: Starting async_write" << std::endl;
+            if(SHOW_COMMENTS) std::cout << "Universe: do_write1: Starting async_write" << std::endl;
             auto self = shared_from_this();
             _ws1.async_write(
                 net::buffer(_write_queue1.front()),
                 [self](beast::error_code ec, std::size_t bytes) {
-                    std::cout << "Universe: do_write1: async_write completed, ec = " << ec.message() << std::endl;
+                    if(SHOW_COMMENTS) std::cout << "Universe: do_write1: async_write completed, ec = " << ec.message() << std::endl;
                     bool check_next = false;
                     {
                         std::lock_guard<std::mutex> lock(self->_write_mutex1);
@@ -565,7 +570,7 @@ private:
                                 << std::endl;
                         }
                         else {
-                            std::cout << "Universe: async_write_1 success." << std::endl;
+                            if(SHOW_COMMENTS) std::cout << "Universe: async_write_1 success." << std::endl;
                             self->_write_queue1.pop();
                         }
                         self->_writing1 = false;
@@ -594,12 +599,12 @@ private:
         }
 
         if (should_write){
-            std::cout << "Universe: do_write2: Starting async_write" << std::endl;
+            if(SHOW_COMMENTS) std::cout << "Universe: do_write2: Starting async_write" << std::endl;
             auto self = shared_from_this();
             _ws2.async_write(
                 net::buffer(_write_queue2.front()),
                 [self](beast::error_code ec, std::size_t bytes) {
-                    std::cout << "Universe: do_write2: async_write completed, ec = " << ec.message() << std::endl;
+                    if(SHOW_COMMENTS) std::cout << "Universe: do_write2: async_write completed, ec = " << ec.message() << std::endl;
                     bool check_next = false;
                     {
                         std::lock_guard<std::mutex> lock(self->_write_mutex2);
@@ -610,7 +615,7 @@ private:
                                  << std::endl;
                         }
                         else {
-                            std::cout << "Universe: async_write_2 success." << std::endl;
+                            if(SHOW_COMMENTS) std::cout << "Universe: async_write_2 success." << std::endl;
                             self->_write_queue2.pop();
                         }
                         self->_writing2 = false;
@@ -722,7 +727,7 @@ public:
                     // Plane den nächsten Tick
                     auto self = shared_from_this();
                     net::post(_ws1.get_executor(), [self]() {
-                        std::cout << "Universe: Trying to start next tick" << std::endl;
+                        if(SHOW_COMMENTS) std::cout << "Universe: Trying to start next tick" << std::endl;
                         self->checkQueueAndScheduleNextTick();
                     });
                 }
@@ -835,23 +840,23 @@ public:
             {"gameStatus", gameStatus2}
         };
 
-        std::cout << "Universe: Pushing message for client 1 to _write_queue1" << std::endl;
+        if(SHOW_COMMENTS) std::cout << "Universe: Pushing message for client 1 to _write_queue1" << std::endl;
         {
             std::lock_guard<std::mutex> lock(_write_mutex1);
             _write_queue1.push(message1.dump());
         }
-        std::cout << "Universe: Pushing message for client 2 to _write_queue2" << std::endl;
+        if(SHOW_COMMENTS) std::cout << "Universe: Pushing message for client 2 to _write_queue2" << std::endl;
         { 
             std::lock_guard<std::mutex> lock(_write_mutex2);
             _write_queue2.push(message2.dump());
         }
 
-        std::cout << "Universe: Starting writing operation for client 1" << std::endl;
+        if(SHOW_COMMENTS) std::cout << "Universe: Starting writing operation for client 1" << std::endl;
         net::post(_ws1.get_executor(), [self = shared_from_this()]() {
             self->do_write1();
         });
 
-        std::cout << "Universe: Starting writing operation for client 2" << std::endl;
+        if(SHOW_COMMENTS) std::cout << "Universe: Starting writing operation for client 2" << std::endl;
         net::post(_ws2.get_executor(), [self = shared_from_this()]() {
             self->do_write2();
         });
