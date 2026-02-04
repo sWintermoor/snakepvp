@@ -533,7 +533,7 @@ class Universe{
                     std::cout << "Universe: New Snake " << id << " direction: " << key << std::endl;
                     _snake1.setDirection(key);
                 }
-                else if (key == " "){
+                else if (key == "w"){
                     _snake1.changeBoost(BOOST_DURATION);
                 }
             }
@@ -541,7 +541,7 @@ class Universe{
                 if (key == "ArrowUp" || key == "ArrowDown" || key == "ArrowLeft" || key == "ArrowRight"){
                     _snake2.setDirection(key);
                 }
-                else if (key == " "){
+                else if (key == "w"){
                     _snake2.changeBoost(BOOST_DURATION);
                 }
             }
