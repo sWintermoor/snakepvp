@@ -199,7 +199,10 @@ class Snake{
 
          void changeBoost(int additionalBoostDuration){
             // Change boost function
-            _boostDuration += additionalBoostDuration;
+            if(_banana > 0){
+                _boostDuration += additionalBoostDuration;
+                _banana -= 1;
+            }
         };
 
         bool checkImmunity(){
@@ -327,18 +330,18 @@ class Universe{
             if (checkCollisions() == -1){
                 if(SHOW_COMMENTS) std::cout << "Universe: No collision detected" << std::endl;
 
-                if (timerPermission || checkBooster(_snake1)){
+                if (timerPermission || checkBooster(&_snake1)){
                     if(SHOW_COMMENTS) std::cout << "Universe: Update Snake1 and Fruits" << std::endl;
-                    int updateConsumption = checkFruit(_snake1);
+                    int updateConsumption = checkFruit(&_snake1);
                     _snake1.update(timerPermission, updateConsumption);
                     if (updateConsumption > -1){
                         if(SHOW_COMMENTS) std::cout << "Universe: Spawning fruits (snake1)" << std::endl;
                         spawnFruits();
                     }
                 }
-                if (timerPermission || checkBooster(_snake2)){
+                if (timerPermission || checkBooster(&_snake2)){
                     if(SHOW_COMMENTS) std::cout << "Universe: Update Snake2 and Fruits" << std::endl;
-                    int updateConsumption = checkFruit(_snake2);
+                    int updateConsumption = checkFruit(&_snake2);
                     _snake2.update(timerPermission, updateConsumption);
                     if (updateConsumption > -1){
                         if(SHOW_COMMENTS) std::cout << "Universe: Spawning fruits (snake2)" << std::endl;
@@ -353,8 +356,8 @@ class Universe{
             }
         };
 
-        bool checkBooster(Snake snake){
-            if (snake.getBoostDuration() > 0){
+        bool checkBooster(Snake *snake){
+            if (snake->getBoostDuration() > 0){
                 return true;
             }
             else{
@@ -409,8 +412,8 @@ class Universe{
             return collision;
         }
 
-        int checkFruit(Snake snake){
-            pair<int, int> head = snake.getHead();
+        int checkFruit(Snake *snake){
+            pair<int, int> head = snake->getHead();
             int consumedFruit = -1;
 
             for (Fruit fruit : _fruits.getFruits()){
@@ -418,15 +421,15 @@ class Universe{
 
                 if (head.first == (fruit.getX() - FRUIT_SHIFT) && head.second == (fruit.getY() - FRUIT_SHIFT)){
                     if (fruit.getType() == "apple"){
-                        snake.setScore(snake.getScore() + 1);
+                        snake->setScore(snake->getScore() + 1);
                         consumedFruit = 0;
                     }
                     else if (fruit.getType() == "banana"){
-                        snake.setBanana(snake.getBanana() + 1);
+                        snake->setBanana(snake->getBanana() + 1);
                         consumedFruit = 1;
                     }
                     else if (fruit.getType() == "blueberry"){
-                        snake.setBlueberry(snake.getBlueberry() + 1);
+                        snake->setBlueberry(snake->getBlueberry() + 1);
                         consumedFruit = 2;
                     }
                     _fruits.tryRemoveFruit(fruit);
