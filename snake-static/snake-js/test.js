@@ -129,12 +129,17 @@ function testMain(){
 
 function createBoard(){
     _BOARD=document.getElementById("gameCanvas");
+    _BOARD.setAttribute("tabindex", "0");
+
     _BOARD.width=WIDTH;
     _BOARD.height=HEIGHT;
     _CONTEXT=_BOARD.getContext("2d");
 
     IMAGE.style.display = "none";
     _BOARD.style.display = "block";
+
+    window.addEventListener('load', () => _BOARD.focus());
+    _BOARD.addEventListener('click', () => _BOARD.focus());
 }
 
 function initializeWaitingMode(){
