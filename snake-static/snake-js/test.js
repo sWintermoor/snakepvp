@@ -95,6 +95,7 @@ function testMain(){
                     console.log("fruitsX", data.fruitsX);
                     console.log("fruitsY", data.fruitsY);
                     _WORLD.setFruits(data.fruitsTypes, data.fruitsX, data.fruitsY);
+                    //_WORLD.setScore(data.apple1Score, data.banana1Score, data.blueberry1Score, data.apple2Score, data.banana2Score, data.blueberry2Score);
 
                     console.log("Timer", data.timer);
                     _WORLD.setTimer(data.timer);
@@ -108,7 +109,7 @@ function testMain(){
                     drawSnakes();
                     drawFoods();
                     // UI am Ende zeichnen, damit sie über allem liegt
-                    drawUI(); 
+                    drawUI(data.apple1Score, data.banana1Score, data.blueberry1Score, data.apple2Score, data.banana2Score, data.blueberry2Score); 
                 }
             }
         }
@@ -193,7 +194,7 @@ function createKeyHandler(){
 }
 
 // Zusammengefasste UI Funktion (Score + Timer)
-function drawUI(){
+function drawUI(apple1Score, banana1Score, blueberry1Score, apple2Score, banana2Score, blueberry2Score){
     // Top Bar Background
     _CONTEXT.fillStyle = "rgba(0, 0, 0, 0.6)";
     _CONTEXT.fillRect(0, 0, WIDTH, 40);
@@ -212,13 +213,18 @@ function drawUI(){
     _CONTEXT.textAlign = "left";
     // Score Logik fehlt im World Objekt, daher zeigen wir hier nur "P1" an oder Länge
     let s1Length = _WORLD.getSnake1Coordinates() ? _WORLD.getSnake1Coordinates().length : 0;
-    _CONTEXT.fillText("P1: " + s1Length, 10, 20);
+    //console.log("Snake1 Fruits for UI:", _WORLD.getFruits());
+    //let s1Bananas = 
+    //let s1Blueberries = _WORLD.getFruits().filter(f => f.getType() === "blueberry").length;
+    _CONTEXT.fillText("P1: P: " + s1Length + " Ba: " + banana1Score + " Bl: " + blueberry1Score, 10, 20);
 
     // Player 2 (Rechts)
     _CONTEXT.fillStyle = SNAKE2COLOR;
     _CONTEXT.textAlign = "right";
     let s2Length = _WORLD.getSnake2Coordinates() ? _WORLD.getSnake2Coordinates().length : 0;
-    _CONTEXT.fillText("P2: " + s2Length, WIDTH - 10, 20);
+    //let s2Bananas = _WORLD.getFruits().filter(f => f.getType() === "banana").length;
+    //let s2Blueberries = _WORLD.getFruits().filter(f => f.getType() === "blueberry").length;
+    _CONTEXT.fillText("P2: P: " + s2Length + " Ba: " + banana2Score + " Bl: " + blueberry2Score, WIDTH - 10, 20);
 }
 
 // Deine alten drawPlayer/drawScore/drawTimer brauchst du nicht mehr einzeln, 
@@ -400,6 +406,15 @@ class World{
         for (let i=0; i < newFruitsTypes.length; i++){
             this.fruits.push(new Item(newFruitsTypes[i], newFruitsX[i], newFruitsY[i]));
         }
+    }
+
+    setScore(apple1Score, banana1Score, blueberry1Score, apple2Score, banana2Score, blueberry2Score){
+        this.snake1.score = apple1Score;
+        this.snake1.banana = banana1Score;
+        this.snake1.blueberry = blueberry1Score;
+        this.snake2.score = apple2Score;
+        this.snake2.banana = banana2Score;
+        this.snake2.blueberry = blueberry2Score;
     }
 
     setTimer(newTimer){

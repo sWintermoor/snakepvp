@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-SHOW_COMMENTS = False
+SHOW_COMMENTS = True
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 

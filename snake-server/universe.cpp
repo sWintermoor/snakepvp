@@ -19,7 +19,7 @@ using json = nlohmann::json;
 using namespace std;
 
 // Kommentare anzeigen
-bool SHOW_COMMENTS = false;
+bool SHOW_COMMENTS = true;
 
 // Spielgeschwindigkeitf
 int GAME_SPEED = 3; 
@@ -520,10 +520,16 @@ class Universe{
             }
         }
 
-        std::tuple<list<pair<int, int>>, list<pair<int, int>>, list<std::string>, list<int>, list<int>, std::string, std::string> getStatusWhileRunning(){
+        std::tuple<list<pair<int, int>>, list<pair<int, int>>, list<std::string>, list<int>, list<int>, std::string, std::string, int, int, int, int, int, int> getStatusWhileRunning(){
             list<pair<int, int>> snake1Coordinates = _snake1.getCoordinates();
             list<pair<int, int>> snake2Coordinates = _snake2.getCoordinates();
-            return {snake1Coordinates, snake2Coordinates, _fruits.getFruitsTypes(), _fruits.getFruitsX(), _fruits.getFruitsY(), "running", "running"};
+            int snake1Score = _snake1.getScore();
+            int snake1Banana = _snake1.getBanana();
+            int snake1Blueberry = _snake1.getBlueberry();
+            int snake2Score = _snake2.getScore();
+            int snake2Banana = _snake2.getBanana();
+            int snake2Blueberry = _snake2.getBlueberry();
+            return {snake1Coordinates, snake2Coordinates, _fruits.getFruitsTypes(), _fruits.getFruitsX(), _fruits.getFruitsY(), "running", "running", snake1Score, snake1Banana, snake1Blueberry, snake2Score, snake2Banana, snake2Blueberry};
         }
 
         void updateSnakeDirection(int id, std::string key){
@@ -786,9 +792,10 @@ public:
         list<int> fruitsY; 
         std::string gameStatus1; 
         std::string gameStatus2;
+        int snake1Score, snake1Banana, snake1Blueberry, snake2Score, snake2Banana, snake2Blueberry;
 
-        tie(snake1Coordinates, snake2Coordinates, fruitsTypes, fruitsX, fruitsY, gameStatus1, gameStatus2 ) = _universe->getStatusWhileRunning();
-        sendMessageClient(snake1Coordinates, snake2Coordinates, fruitsTypes, fruitsX, fruitsY, _timer, gameStatus1, gameStatus2);
+        tie(snake1Coordinates, snake2Coordinates, fruitsTypes, fruitsX, fruitsY, gameStatus1, gameStatus2, snake1Score, snake1Banana, snake1Blueberry, snake2Score, snake2Banana, snake2Blueberry) = _universe->getStatusWhileRunning();
+        sendMessageClient(snake1Coordinates, snake2Coordinates, fruitsTypes, fruitsX, fruitsY, _timer, gameStatus1, gameStatus2, snake1Score, snake1Banana, snake1Blueberry, snake2Score, snake2Banana, snake2Blueberry);
     }
 
     void read_client1() {
@@ -842,7 +849,7 @@ public:
         }
     }
 
-    void sendMessageClient(list<pair<int,int>> snake1Coordinates, list<pair<int,int>> snake2Coordinates, list<std::string> fruitsTypes, list<int> fruitsX, list<int> fruitsY, int timer, std::string gameStatus1, std::string gameStatus2) {
+    void sendMessageClient(list<pair<int,int>> snake1Coordinates, list<pair<int,int>> snake2Coordinates, list<std::string> fruitsTypes, list<int> fruitsX, list<int> fruitsY, int timer, std::string gameStatus1, std::string gameStatus2, int snake1Score = 2, int snake1Banana = 0, int snake1Blueberry = 0, int snake2Score = 2, int snake2Banana = 0, int snake2Blueberry = 0){ 
         // Send game state to clients
         // Format: {"snake1": [[x1, y1], [x2, y2], ...], "snake2": [[x1, y1], [x2, y2], ...], "fruit": [[x, y]], "timer": timer}
         json message1 = {
@@ -852,7 +859,13 @@ public:
             {"fruitsX", fruitsX},
             {"fruitsY", fruitsY},
             {"timer", timer},
-            {"gameStatus", gameStatus1}
+            {"gameStatus", gameStatus1},
+            {"apple1Score", snake1Score},
+            {"banana1Score", snake1Banana},
+            {"blueberry1Score", snake1Blueberry},
+            {"apple2Score", snake2Score},
+            {"banana2Score", snake2Banana},
+            {"blueberry2Score", snake2Blueberry}
         };
 
         json message2 = {
@@ -862,7 +875,13 @@ public:
             {"fruitsX", fruitsX},
             {"fruitsY", fruitsY},
             {"timer", timer},
-            {"gameStatus", gameStatus2}
+            {"gameStatus", gameStatus2},
+            {"apple1Score", snake1Score},
+            {"banana1Score", snake1Banana},
+            {"blueberry1Score", snake1Blueberry},
+            {"apple2Score", snake2Score},
+            {"banana2Score", snake2Banana},
+            {"blueberry2Score", snake2Blueberry}
         };
 
         if(SHOW_COMMENTS) std::cout << "Universe: Pushing message for client 1 to _write_queue1" << std::endl;
