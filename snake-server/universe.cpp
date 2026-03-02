@@ -48,7 +48,7 @@ int BLUEBERRY_INITIAL = 0;
 
 // Initiale Listen und Werte für Früchte und Timer
 int TIMER_INITIAL = 180*GAME_SPEED; // Timer in Dezi-Sekunden
-int TICK_VALUE = 1 / GAME_SPEED; // Zeitwert für Ticks
+int TICK_PAUSE = 100; // in ms
 
 // Fruit Shift
 int FRUIT_SHIFT = 15;
@@ -729,7 +729,7 @@ public:
 
         try {
             // Sleeping
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            std::this_thread::sleep_for(std::chrono::milliseconds(TICK_PAUSE));
 
             _timer -= 1;
             if(SHOW_COMMENTS) std::cout << "Universe: Beginn tick" << std::endl;

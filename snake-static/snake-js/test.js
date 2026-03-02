@@ -4,9 +4,9 @@ const CELLSIZE = GAMESIZE*6;
 const WIDTH = GRIDSIZE*CELLSIZE;
 const HEIGHT = GRIDSIZE*CELLSIZE;
 const IMAGE = document.getElementById("gameImage");
-// Hex-Codes für Neon-Look
-const SNAKE1COLOR = "#00FF00"; // Neon Grün
-const SNAKE2COLOR = "#00FFFF"; // Neon Cyan
+
+const SNAKE1COLOR = "#00FF00"; 
+const SNAKE2COLOR = "#00FFFF"; 
 
 var _SOCKET;
 const PLAYBUTTON = document.getElementById("playButton");
@@ -18,17 +18,13 @@ var _SNAKE1;
 var _SNAKE2;
 var _STARTGAME;
 
+//TODO: send gamespeed and tick pause to frontend
+var _GAMESPEED;
+var _TICK_PAUSE;
+
 PLAYBUTTON.addEventListener("click", testMain);
 
-// ... (testMain Funktion bleibt gleich, Socket Logic ist ok) ...
-// Hier nur der relevante Teil für testMain, kopiere deinen existierenden Code
-// ABER: Entferne in testMain() das "initializeGame()" wenn "connected", 
-// da dies oft das Board zu früh löscht. Die Logik unten regelt das Zeichnen.
-// Ansonsten lass testMain wie es ist.
-
 function testMain(){
-    // ... dein bestehender Code ...
-    // Achte darauf, dass initializeGame() unten aktualisiert wird
     _SOCKET = new WebSocket('ws://127.0.0.1:5501');
     
     console.log("Entered main")
@@ -50,17 +46,16 @@ function testMain(){
         console.log("Connected to WebSocket server");
     };
 
-    // Beim socket.onmessage Teil:
     _SOCKET.onmessage = (event) => {
-        console.log("test");
+        //console.log("test");
 
-        console.log("Received data", event.data);
+        //console.log("Received data", event.data);
 
         const data = JSON.parse(event.data);
 
-        console.log("Parsed data", data);
+        //console.log("Parsed data", data);
 
-        console.log("Type of gameStatus:", typeof data.gameStatus);
+        //console.log("Type of gameStatus:", typeof data.gameStatus);
 
         if(data.gameStatus == "waiting"){
             initializeWaitingMode();
@@ -70,26 +65,25 @@ function testMain(){
                 initializeGame();
                 _STARTGAME = false;
                 const startMessage = (JSON.stringify({key: "start"}));
-                console.log("Attempting to send start message:", startMessage);
+                //console.log("Attempting to send start message:", startMessage);
                 try {
                     _SOCKET.send(startMessage);
                 } catch (error) { console.error(error); }
             }
             else if(data.gameStatus == 'tie' || data.gameStatus == 'win' || data.gameStatus == 'loose'){
-                // STATUS AUCH SETZEN DAMIT DRAWRESULT ZUGRIFF HAT
                  _WORLD.setStatus(data.gameStatus);
                 drawResult();
                 _SOCKET.onmessage = null;
             }
             else{
-                console.log("Check for update")
+                //console.log("Check for update")
                 if (data.gameStatus !== "no_update"){
                     console.log("Doing update")
                     console.log("Snake1 Coordinates", data.snake1Coordinates);
-                    _WORLD.setSnake1Coordinates(data.snake1Coordinates);
+                    _WORLD.checkSnake1Coordinates(data.snake1Coordinates);
 
                     console.log("Snake2 Coordinates", data.snake2Coordinates);
-                    _WORLD.setSnake2Coordinates(data.snake2Coordinates);
+                    _WORLD.checkSnake2Coordinates(data.snake2Coordinates);
 
                     console.log("fruitsTypes", data.fruitsTypes); 
                     console.log("fruitsX", data.fruitsX);
@@ -105,10 +99,9 @@ function testMain(){
         
                     // UPDATE LOOP
                     cleanBoard();
-                    drawGrid(); // Kann man weglassen für cleaneren Look, ich habe es dezenter gemacht
+                    drawGrid(); 
                     drawSnakes();
                     drawFoods();
-                    // UI am Ende zeichnen, damit sie über allem liegt
                     drawUI(data.apple1Score, data.banana1Score, data.blueberry1Score, data.apple2Score, data.banana2Score, data.blueberry2Score); 
                 }
             }
@@ -137,7 +130,7 @@ function createBoard(){
 
     IMAGE.style.display = "none";
     _BOARD.style.display = "block";
-    PLAYBUTTON.style.display = "none"; // Button ausblenden während Spiel
+    PLAYBUTTON.style.display = "none"; 
 
     window.addEventListener('load', () => _BOARD.focus());
     _BOARD.addEventListener('click', () => _BOARD.focus());
@@ -161,7 +154,6 @@ function initializeGame(){
 }
 
 function cleanBoard(){
-    // Dunkler Hintergrund statt weiß
     _CONTEXT.fillStyle = "#111"; 
     _CONTEXT.fillRect(0, 0, _BOARD.width, _BOARD.height);
     _BOARD.style.border = "2px solid #333";   
@@ -169,7 +161,6 @@ function cleanBoard(){
 
 function drawGrid(){
     _CONTEXT.beginPath();
-    // Sehr subtiles Grid
     _CONTEXT.strokeStyle = "rgba(255, 255, 255, 0.05)"; 
     _CONTEXT.lineWidth = 1;
 
@@ -183,8 +174,6 @@ function drawGrid(){
 }
 
 function createKeyHandler(){
-    // Um Mehrfach-Events zu vermeiden, besser prüfen ob Listener schon existiert
-    // Oder einfach document.onkeydown nutzen (quick fix)
     document.onkeydown = (event) => {
         const data = JSON.stringify({movement: event.key});
         if(_SOCKET && _SOCKET.readyState === WebSocket.OPEN) {
@@ -202,23 +191,22 @@ function drawUI(apple1Score, banana1Score, blueberry1Score, apple2Score, banana2
     _CONTEXT.font = "bold 20px 'Roboto Mono'";
     _CONTEXT.textBaseline = "middle";
     
-    // Timer (Mitte)
+    // Timer (center)
     _CONTEXT.fillStyle = "white";
     _CONTEXT.textAlign = "center";
     let timerText = _WORLD.getTimer() || "0:00";
     _CONTEXT.fillText(timerText, WIDTH/2, 20);
 
-    // Player 1 (Links)
+    // Player 1 (left)
     _CONTEXT.fillStyle = SNAKE1COLOR;
     _CONTEXT.textAlign = "left";
-    // Score Logik fehlt im World Objekt, daher zeigen wir hier nur "P1" an oder Länge
     let s1Length = _WORLD.getSnake1Coordinates() ? _WORLD.getSnake1Coordinates().length : 0;
     //console.log("Snake1 Fruits for UI:", _WORLD.getFruits());
     //let s1Bananas = 
     //let s1Blueberries = _WORLD.getFruits().filter(f => f.getType() === "blueberry").length;
     _CONTEXT.fillText("P1: P: " + s1Length + " Ba: " + banana1Score + " Bl: " + blueberry1Score, 10, 20);
 
-    // Player 2 (Rechts)
+    // Player 2 (right)
     _CONTEXT.fillStyle = SNAKE2COLOR;
     _CONTEXT.textAlign = "right";
     let s2Length = _WORLD.getSnake2Coordinates() ? _WORLD.getSnake2Coordinates().length : 0;
@@ -227,8 +215,6 @@ function drawUI(apple1Score, banana1Score, blueberry1Score, apple2Score, banana2
     _CONTEXT.fillText("P2: P: " + s2Length + " Ba: " + banana2Score + " Bl: " + blueberry2Score, WIDTH - 10, 20);
 }
 
-// Deine alten drawPlayer/drawScore/drawTimer brauchst du nicht mehr einzeln, 
-// da drawUI das übernimmt. Ich lasse sie leer stehen falls du sie referenzierst.
 function drawPlayer(){}
 function drawScore(){}
 function drawTimer(){}
@@ -246,21 +232,18 @@ function drawSnake(snakeInput, colorOverride){
 
     _CONTEXT.fillStyle = colorOverride || snakeInput.getColor();
     
-    // Glow Effekt
     _CONTEXT.shadowBlur = 10;
     _CONTEXT.shadowColor = colorOverride || snakeInput.getColor();
 
     coords.forEach(coordinate => {
-        // Etwas kleiner als die Zelle für einen Segment-Look
         _CONTEXT.fillRect(coordinate[0] + 1, coordinate[1] + 1, CELLSIZE - 2, CELLSIZE - 2);
     });
 
-    _CONTEXT.shadowBlur = 0; // Reset Glow für Performance und andere Objekte
+    _CONTEXT.shadowBlur = 0; 
 }
 
 
 function drawCoordinate([x, y]){
-    // Wird von drawSnake ersetzt
     _CONTEXT.fillRect(x, y, CELLSIZE, CELLSIZE);
 }
 
@@ -304,11 +287,10 @@ function drawSpecificFood(food){
         _CONTEXT.fill();
     }
     
-    _CONTEXT.restore(); // Schatteneinstellungen zurücksetzen
+    _CONTEXT.restore(); 
 }
 
 function drawResult(){
-    // Overlay zeichnen
     _CONTEXT.fillStyle = "rgba(0,0,0,0.7)";
     _CONTEXT.fillRect(0,0,WIDTH,HEIGHT);
 
@@ -391,6 +373,58 @@ class World{
 
     setSnake2(newSnake2){
         this.snake2 = newSnake2;
+    }
+
+    checkSnake1Coordinates(newSnake1Coordinates){
+        //console.log("newSnake1Coordinates: ", newSnake1Coordinates);
+        let head_new =  newSnake1Coordinates[0];
+
+        let snake_old = this.getSnake1Coordinates();
+        console.log("Old Snake1 coordinates: ", snake_old);
+
+        if(snake_old.length !== 0){
+            let head_old = snake_old[0];
+            console.log("Old Snake1 head coordinates: ", head_old);
+
+            let deviation0 = Math.abs(head_new[0] - head_old[0]);
+            let deviation1 = Math.abs(head_new[1] - head_old[1]);
+
+            console.log("Sanke1: Checking for deviation: 0:", deviation0, ", 1: ", deviation1);
+
+            if(deviation0 >= CELLSIZE || deviation1 >= CELLSIZE){
+                this.setSnake1Coordinates(newSnake1Coordinates);
+            }
+        }
+        else{
+            console.log("Old Snake1 is empty.")
+            this.setSnake1Coordinates(newSnake1Coordinates);
+        }
+    }
+
+    checkSnake2Coordinates(newSnake2Coordinates){
+       //console.log("newSnake2Coordinates: ", newSnake2Coordinates);
+        let head_new =  newSnake2Coordinates[0];
+
+        let snake_old = this.getSnake2Coordinates();
+        console.log("Old Snake2 coordinates: ", snake_old);
+
+        if(snake_old.length !== 0){
+            let head_old = snake_old[0];
+            console.log("Old Snake2 head coordinates: ", head_old);
+
+            let deviation0 = Math.abs(head_new[0] - head_old[0]);
+            let deviation1 = Math.abs(head_new[1] - head_old[1]);
+
+            console.log("Sanke2: Checking for deviation: 0:", deviation0, ", 1: ", deviation1);
+
+            if(deviation0 >= CELLSIZE || deviation1 >= CELLSIZE){
+                this.setSnake2Coordinates(newSnake2Coordinates);
+            }
+        }
+        else{
+            console.log("Old Snake2 is empty.")
+            this.setSnake2Coordinates(newSnake2Coordinates);
+        }
     }
 
     setSnake1Coordinates(newSnake1Coordinates){
