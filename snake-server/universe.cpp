@@ -298,6 +298,10 @@ class Snake{
         int getBlueberry(){
             return _blueberry;
         };
+
+        std::string getDirection(){
+            return _direction;
+        }
 };
 
 // Code ist unschön positioniert
@@ -520,7 +524,7 @@ class Universe{
             }
         }
 
-        std::tuple<list<pair<int, int>>, list<pair<int, int>>, list<std::string>, list<int>, list<int>, std::string, std::string, int, int, int, int, int, int> getStatusWhileRunning(){
+        std::tuple<list<pair<int, int>>, list<pair<int, int>>, list<std::string>, list<int>, list<int>, std::string, std::string, int, int, int, std::string, int, int, int, std::string> getStatusWhileRunning(){
             list<pair<int, int>> snake1Coordinates = _snake1.getCoordinates();
             list<pair<int, int>> snake2Coordinates = _snake2.getCoordinates();
             int snake1Score = _snake1.getScore();
@@ -529,7 +533,9 @@ class Universe{
             int snake2Score = _snake2.getScore();
             int snake2Banana = _snake2.getBanana();
             int snake2Blueberry = _snake2.getBlueberry();
-            return {snake1Coordinates, snake2Coordinates, _fruits.getFruitsTypes(), _fruits.getFruitsX(), _fruits.getFruitsY(), "running", "running", snake1Score, snake1Banana, snake1Blueberry, snake2Score, snake2Banana, snake2Blueberry};
+            std::string snake1Direction = _snake1.getDirection();
+            std::string snake2Direction = _snake2.getDirection();
+            return {snake1Coordinates, snake2Coordinates, _fruits.getFruitsTypes(), _fruits.getFruitsX(), _fruits.getFruitsY(), "running", "running", snake1Score, snake1Banana, snake1Blueberry, snake1Direction, snake2Score, snake2Banana, snake2Blueberry, snake2Direction};
         }
 
         void updateSnakeDirection(int id, std::string key){
@@ -793,9 +799,11 @@ public:
         std::string gameStatus1; 
         std::string gameStatus2;
         int snake1Score, snake1Banana, snake1Blueberry, snake2Score, snake2Banana, snake2Blueberry;
+        std::string snake1Direction;
+        std::string snake2Direction;
 
-        tie(snake1Coordinates, snake2Coordinates, fruitsTypes, fruitsX, fruitsY, gameStatus1, gameStatus2, snake1Score, snake1Banana, snake1Blueberry, snake2Score, snake2Banana, snake2Blueberry) = _universe->getStatusWhileRunning();
-        sendMessageClient(snake1Coordinates, snake2Coordinates, fruitsTypes, fruitsX, fruitsY, _timer, gameStatus1, gameStatus2, snake1Score, snake1Banana, snake1Blueberry, snake2Score, snake2Banana, snake2Blueberry);
+        tie(snake1Coordinates, snake2Coordinates, fruitsTypes, fruitsX, fruitsY, gameStatus1, gameStatus2, snake1Score, snake1Banana, snake1Blueberry, snake1Direction, snake2Score, snake2Banana, snake2Blueberry, snake2Direction) = _universe->getStatusWhileRunning();
+        sendMessageClient(snake1Coordinates, snake2Coordinates, fruitsTypes, fruitsX, fruitsY, _timer, gameStatus1, gameStatus2, snake1Score, snake1Banana, snake1Blueberry, snake1Direction, snake2Score, snake2Banana, snake2Blueberry, snake2Direction);
     }
 
     void read_client1() {
@@ -849,7 +857,8 @@ public:
         }
     }
 
-    void sendMessageClient(list<pair<int,int>> snake1Coordinates, list<pair<int,int>> snake2Coordinates, list<std::string> fruitsTypes, list<int> fruitsX, list<int> fruitsY, int timer, std::string gameStatus1, std::string gameStatus2, int snake1Score = 2, int snake1Banana = 0, int snake1Blueberry = 0, int snake2Score = 2, int snake2Banana = 0, int snake2Blueberry = 0){ 
+    void sendMessageClient(list<pair<int,int>> snake1Coordinates, list<pair<int,int>> snake2Coordinates, list<std::string> fruitsTypes, list<int> fruitsX, list<int> fruitsY, int timer, std::string gameStatus1, std::string gameStatus2, 
+        int snake1Score = 2, int snake1Banana = 0, int snake1Blueberry = 0, std::string snake1Direction = "ArrowRight", int snake2Score = 2, int snake2Banana = 0, int snake2Blueberry = 0, std::string snake2Direction = "ArrowLeft"){ 
         // Send game state to clients
         // Format: {"snake1": [[x1, y1], [x2, y2], ...], "snake2": [[x1, y1], [x2, y2], ...], "fruit": [[x, y]], "timer": timer}
         json message1 = {
@@ -863,9 +872,11 @@ public:
             {"apple1Score", snake1Score},
             {"banana1Score", snake1Banana},
             {"blueberry1Score", snake1Blueberry},
+            {"direction1", snake1Direction},
             {"apple2Score", snake2Score},
             {"banana2Score", snake2Banana},
-            {"blueberry2Score", snake2Blueberry}
+            {"blueberry2Score", snake2Blueberry},
+            {"direction2", snake2Direction}
         };
 
         json message2 = {
@@ -879,9 +890,11 @@ public:
             {"apple1Score", snake1Score},
             {"banana1Score", snake1Banana},
             {"blueberry1Score", snake1Blueberry},
+            {"direction1", snake1Direction},
             {"apple2Score", snake2Score},
             {"banana2Score", snake2Banana},
-            {"blueberry2Score", snake2Blueberry}
+            {"blueberry2Score", snake2Blueberry},
+            {"direction2", snake2Direction}
         };
 
         if(SHOW_COMMENTS) std::cout << "Universe: Pushing message for client 1 to _write_queue1" << std::endl;

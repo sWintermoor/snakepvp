@@ -19,8 +19,13 @@ var _SNAKE2;
 var _STARTGAME;
 
 //TODO: send gamespeed and tick pause to frontend
-var _GAMESPEED;
-var _TICK_PAUSE;
+const GAMESPEED = 3;
+const TICK_PAUSE = 100; //in ms
+const FPS = 3; // x10
+const SERVER_MOVE_INTERVAL = TICK_PAUSE * GAMESPEED; 
+const UPDATE_RATE = SERVER_MOVE_INTERVAL / FPS;      
+const SNAKE_SPEED = CELLSIZE / FPS;                  
+
 
 PLAYBUTTON.addEventListener("click", testMain);
 
@@ -69,6 +74,8 @@ function testMain(){
                 try {
                     _SOCKET.send(startMessage);
                 } catch (error) { console.error(error); }
+                // Starting the visual part of the game
+                _WORLD.tick(UPDATE_RATE, true);
             }
             else if(data.gameStatus == 'tie' || data.gameStatus == 'win' || data.gameStatus == 'loose'){
                  _WORLD.setStatus(data.gameStatus);
@@ -96,13 +103,11 @@ function testMain(){
 
                     console.log("Status", data.gameStatus);
                     _WORLD.setStatus(data.gameStatus);
-        
-                    // UPDATE LOOP
-                    cleanBoard();
-                    drawGrid(); 
-                    drawSnakes();
-                    drawFoods();
-                    drawUI(data.apple1Score, data.banana1Score, data.blueberry1Score, data.apple2Score, data.banana2Score, data.blueberry2Score); 
+
+                    _WORLD.update_tick(
+                        data.apple1Score, data.banana1Score, data.blueberry1Score, data.direction1, 
+                        data.apple2Score, data.banana2Score, data.blueberry2Score, data.direction2
+                    ) 
                 }
             }
         }
@@ -442,15 +447,6 @@ class World{
         }
     }
 
-    setScore(apple1Score, banana1Score, blueberry1Score, apple2Score, banana2Score, blueberry2Score){
-        this.snake1.score = apple1Score;
-        this.snake1.banana = banana1Score;
-        this.snake1.blueberry = blueberry1Score;
-        this.snake2.score = apple2Score;
-        this.snake2.banana = banana2Score;
-        this.snake2.blueberry = blueberry2Score;
-    }
-
     setTimer(newTimer){
         this.timer = newTimer;
     }
@@ -458,12 +454,111 @@ class World{
     setStatus(newStatus){
         this.status = newStatus;
     }
+
+    update_tick(apple1Score, banana1Score, blueberry1Score, direction1, apple2Score, banana2Score, blueberry2Score, direction2){
+        this.snake1.appleScore = apple1Score;
+        this.snake1.bananaScore = banana1Score;
+        this.snake1.blueberryScore = blueberry1Score;
+        this.snake1.setDirection(direction1);
+        this.snake2.appleScore = apple2Score;
+        this.snake2.bananaScore = banana2Score;
+        this.snake2.blueberryScore = blueberry2Score;
+        this.snake2.setDirection(direction2);
+    }
+
+    async tick(update_rate, continue_tick){
+        let tick = 0;
+        let change_direction_allowed = false;
+
+        while(continue_tick){
+            // UPDATE LOOP
+            if(tick === 0){
+                change_direction_allowed = true;
+            }
+            else{
+                change_direction_allowed = false;
+            }
+            
+            //logic
+            this._moveSnakes(change_direction_allowed);
+
+            //viusual
+            cleanBoard();
+            drawGrid(); 
+            drawSnakes();
+            drawFoods();
+            drawUI(this.snake1.getAppleScore(), this.snake1.getBananaScore(), this.snake1.getBlueberryScore(), this.snake2.getAppleScore(), this.snake2.getBananaScore(), this.snake2.getBlueberryScore());
+
+            //sleep
+            await this._sleep(update_rate);
+
+            tick = (tick + 1) % FPS;
+        }
+    }
+
+    // frontend logic for smoother game
+    _moveSnakes(change_direction_allowed) {
+    for (const snake of [this.snake1, this.snake2]) {
+        const coordinates = snake.getCoordinates();
+        if (coordinates.length === 0) continue;
+
+        if (change_direction_allowed) {
+            snake.setOldDirectionToDirection();
+        }
+
+        const direction = snake.getOldDirection();
+        const newCoordinates = coordinates.map(coord => [...coord]);
+
+        // moving head
+        let dx = 0, dy = 0;
+        if (direction === "ArrowUp")    dy = -SNAKE_SPEED;
+        else if (direction === "ArrowDown")  dy = SNAKE_SPEED;
+        else if (direction === "ArrowLeft")  dx = -SNAKE_SPEED;
+        else if (direction === "ArrowRight") dx = SNAKE_SPEED;
+
+        newCoordinates[0][0] = (newCoordinates[0][0] + dx + WIDTH)  % WIDTH;
+        newCoordinates[0][1] = (newCoordinates[0][1] + dy + HEIGHT) % HEIGHT;
+
+        // body is following 
+        for (let i = 1; i < newCoordinates.length; i++) {
+            const prev = newCoordinates[i - 1];
+            const curr = newCoordinates[i];
+
+            let vecX = prev[0] - curr[0];
+            vecX = ((vecX + WIDTH / 2) % WIDTH) - WIDTH / 2;
+            let vecY = prev[1] - curr[1];
+            vecY = ((vecY + HEIGHT / 2) % HEIGHT) - HEIGHT / 2;
+
+            const dist = Math.sqrt(vecX ** 2 + vecY ** 2);
+
+           
+            if (dist > CELLSIZE) {
+                const moveDist = Math.min(dist - CELLSIZE, SNAKE_SPEED);
+                const normX = vecX / dist;
+                const normY = vecY / dist;
+                curr[0] = (curr[0] + normX * moveDist + WIDTH)  % WIDTH;
+                curr[1] = (curr[1] + normY * moveDist + HEIGHT) % HEIGHT;
+            }
+        }
+
+        if (snake === this.snake1) this.setSnake1Coordinates(newCoordinates);
+        else this.setSnake2Coordinates(newCoordinates);
+    }}
+
+    async _sleep(update_rate){
+        return new Promise((resolve) => setTimeout(resolve, update_rate));
+    }
 }
 
 class Snake{
-    constructor(coordinates, color){
+    constructor(coordinates, color, direction){
         this.coordinates = coordinates;
         this.color = color;
+        this.appleScore = 2;
+        this.bananaScore = 0;
+        this.blueberryScore = 0;
+        this.direction = direction;
+        this.old_direction = direction;
     }
 
     setCoordinates(newCoordinates){
@@ -474,12 +569,59 @@ class Snake{
         this.color = newColor;
     }
 
+    setAppleScore(newScore){
+        this.appleScore = newScore;
+    }
+
+    setBananaScore(newScore){
+        this.bananaScore = newScore;
+    }
+
+    setBlueberryScore(newScore){
+        this.blueberryScore = newScore;
+    }
+
+    setDirection(newDirection){
+        if(this.direction != newDirection){
+            this.old_direction = this.direction;
+        }
+        this.direction = newDirection;
+    }
+
+    setOldDirectionToDirection(){
+        this.old_direction = this.direction;
+    }
+
     getCoordinates(){
         return this.coordinates;
     }
 
     getColor(){
         return this.color;
+    }
+
+    getAppleScore(){
+        return this.appleScore;
+    }
+
+    getBananaScore(){
+        return this.bananaScore;
+    }
+
+    getBlueberryScore(){
+        return this.blueberryScore;
+    }
+
+    getDirection(){
+        return this.direction;
+    }
+
+    getOldDirection(){
+        return this.old_direction;
+    }
+
+    getOldDirectionEqualsDirection(){
+        return (this.old_direction === this.direction);
     }
 }
 
