@@ -503,10 +503,10 @@ class World{
         if (coordinates.length === 0) continue;
 
         if (change_direction_allowed) {
-            snake.setOldDirectionToDirection();
+            snake.setAllowedDirectionToDirection();
         }
 
-        const direction = snake.getOldDirection();
+        const direction = snake.getAllowedDirection();
         const newCoordinates = coordinates.map(coord => [...coord]);
 
         // moving head
@@ -521,24 +521,40 @@ class World{
 
         // body is following 
         for (let i = 1; i < newCoordinates.length; i++) {
-            const prev = newCoordinates[i - 1];
-            const curr = newCoordinates[i];
+            const prev = coordinates[i-1]; 
+            const curr = newCoordinates[i];      
 
-            let vecX = prev[0] - curr[0];
-            vecX = ((vecX + WIDTH / 2) % WIDTH) - WIDTH / 2;
-            let vecY = prev[1] - curr[1];
-            vecY = ((vecY + HEIGHT / 2) % HEIGHT) - HEIGHT / 2;
+            let dx = prev[0] - curr[0];
+            let dy = prev[1] - curr[1];
 
-            const dist = Math.sqrt(vecX ** 2 + vecY ** 2);
+            // direction
+            let moveSign = 0
 
-           
-            if (dist > CELLSIZE) {
-                const moveDist = Math.min(dist - CELLSIZE, SNAKE_SPEED);
-                const normX = vecX / dist;
-                const normY = vecY / dist;
-                curr[0] = (curr[0] + normX * moveDist + WIDTH)  % WIDTH;
-                curr[1] = (curr[1] + normY * moveDist + HEIGHT) % HEIGHT;
+            if (Math.abs(dx) > Math.abs(dy)){
+                if(Math.abs(dx) > WIDTH/2){
+                    moveSign = -1 * Math.sign(dx)
+                }
+                else{
+                    moveSign = Math.sign(dx)
+                }
             }
+            else{
+                if(Math.abs(dy) > HEIGHT/2){
+                    moveSign = -1 * Math.sign(dy)
+                }
+                else{
+                    moveSign = Math.sign(dy)
+                }
+            }
+
+            if (Math.abs(dx) > Math.abs(dy)) {
+                newCoordinates[i][0] = (curr[0] + moveSign * SNAKE_SPEED + WIDTH) % WIDTH;
+                newCoordinates[i][1] = curr[1]; // Y bleibt unverändert
+            } else {
+                newCoordinates[i][0] = curr[0]; // X bleibt unverändert
+                newCoordinates[i][1] = (curr[1] + moveSign * SNAKE_SPEED + HEIGHT) % HEIGHT;
+            }
+            
         }
 
         if (snake === this.snake1) this.setSnake1Coordinates(newCoordinates);
@@ -559,6 +575,7 @@ class Snake{
         this.blueberryScore = 0;
         this.direction = direction;
         this.old_direction = direction;
+        this.allowed_direction = direction;
     }
 
     setCoordinates(newCoordinates){
@@ -583,13 +600,14 @@ class Snake{
 
     setDirection(newDirection){
         if(this.direction != newDirection){
-            this.old_direction = this.direction;
+            this.allowed_direction = this.direction;
         }
         this.direction = newDirection;
     }
 
-    setOldDirectionToDirection(){
-        this.old_direction = this.direction;
+    setAllowedDirectionToDirection(){
+        this.old_direction = this.allowed_direction;
+        this.allowed_direction = this.direction;
     }
 
     getCoordinates(){
@@ -620,8 +638,12 @@ class Snake{
         return this.old_direction;
     }
 
-    getOldDirectionEqualsDirection(){
-        return (this.old_direction === this.direction);
+    getAllowedDirection(){
+        return this.allowed_direction;
+    }
+
+    getAllowedDirectionEqualsDirection(){
+        return (this.allowed_direction === this.direction);
     }
 }
 
