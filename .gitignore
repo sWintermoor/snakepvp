@@ -17,3 +17,6 @@ src/snake-server/universe
 
 # VS Code
 .vscode/
+
+# Binaries
+bin/

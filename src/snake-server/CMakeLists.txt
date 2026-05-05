@@ -5,8 +5,7 @@ project(snake_game)
 set(CMAKE_CXX_STANDARD 17)
 
 # Set CMake policies
-cmake_policy(SET CMP0144 NEW) # For fine-grained interface and implementation visibility
-cmake_policy(SET CMP0167 NEW) # Fix for FindBoost policy deprecation
+cmake_policy(SET CMP0144 NEW)
 
 # Define the vcpkg toolchain file
 # Make sure the path to the vcpkg toolchain file is correctly set
@@ -19,8 +18,10 @@ if(WIN32)
 endif()
 
 # Find required packages
-find_package(Boost REQUIRED COMPONENTS beast system thread)
+find_package(Boost REQUIRED COMPONENTS system thread)
 find_package(nlohmann_json REQUIRED)
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
 # Define the executable
 add_executable(universe
@@ -44,7 +45,6 @@ target_include_directories(universe PRIVATE
 
 # Link libraries
 target_link_libraries(universe PRIVATE
-    Boost::beast
     Boost::system
     Boost::thread
     nlohmann_json::nlohmann_json
