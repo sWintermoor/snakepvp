@@ -1,1 +1,0 @@
-("8.14" ta6nt ("a8c5b2e775d0f32e51f965cce4a9a7a8fbdab77b" . "d6def213c19f4023d50f78c05bf61b7d0f7efc52") #"C:\\Users\\Mark Oliver\\Desktop\\Projekt\\SnakePvPProjekt\\snakepvp\\global-features.rkt" (collects #"2htdp" #"universe.rkt") (collects #"drracket" #"private" #"drracket-errortrace-key.rkt") (collects #"racket" #"main.rkt") (collects #"racket" #"runtime-config.rkt"))

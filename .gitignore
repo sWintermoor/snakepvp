@@ -5,3 +5,15 @@ build/
 .DS_Store
 .env
 .venv
+
+# Generated Racket-Bytecode
+compiled/
+
+# CMake Build-Output
+out/
+
+# Compiled Binary
+src/snake-server/universe
+
+# VS Code
+.vscode/
